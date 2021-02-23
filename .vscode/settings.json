@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.lvs": "lua",
+        "parser.h": "c"
+    }
+}
