@@ -6,36 +6,37 @@
 #include <string.h>
 
 #include "util.h"
+#include "arraylist.h"
 #include "token.h"
 #include "expression.h"
 #include "statement.h"
 
 // ----------------------------------------------------------
 
-typedef enum _ParserItemType parser_item_t;
-typedef struct _ParserItem ParserItem;
+typedef enum _ParserObjectType parser_object_t;
+typedef struct _ParserObject ParserObject;
 
 // ----------------------------------------------------------
 
-enum _ParserItemType {
-    PI_TOKEN,
-    PI_EXPR,
+enum _ParserObjectType {
+    TYPE_TOKEN,
+    TYPE_EXPRESSION,
+    TYPE_STATEMENT
 };
 
-struct _ParserItem {
-    ParserItem *previous;
-    parser_item_t type;
+struct _ParserObject {
+    parser_object_t type;
     union {
         Token token;
-        Expr *expr;
+        Expr expr;
+        Statement statement;
     };
-    ParserItem *next;
 };
 
 // ----------------------------------------------------------
 
 void parser_create_ast(TokenList *tokens);
 Expr *parser_create_expr(TokenList *list);
-Expr *evaluate_parenthesis(ParserItem *start, int depth);
+Expr *evaluate_parenthesis(ArrayList *list);
 
 #endif//LUVA_PARSER_H

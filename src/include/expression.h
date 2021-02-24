@@ -23,6 +23,7 @@ typedef struct _TernaryExpr TernaryExpr;
 // -----------------------------------------------
 
 enum _ExprType {
+    EXPR_BASE,
     EXPR_LITERAL,
     EXPR_BINARY,
     EXPR_UNARY,
@@ -40,6 +41,7 @@ enum _LiteralExprType {
 struct _Expr {
     expr_t type;
     union {
+        Expr *e;
         LiteralExpr *l;
         BinaryExpr *b;
         UnaryExpr *u;
