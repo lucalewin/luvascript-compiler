@@ -3,6 +3,11 @@
 
 // ----------------------------------------------------------------
 
+#include <stdio.h>
+#include <stdlib.h>
+
+// ----------------------------------------------------------------
+
 enum _TokenType {
     TOKEN_KEYWORD,
     TOKEN_IDENDIFIER,
@@ -34,4 +39,4 @@ typedef struct _Token Token;
 Token* token_create(char* data, TokenType type, int line, int pos);
 void token_free(Token* t);
 
-#endif//LUVA_TOKEN_H
+#endif // LUVA_TOKEN_H
