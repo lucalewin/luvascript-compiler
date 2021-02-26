@@ -37,40 +37,38 @@ ArrayList *lexer_start(char *code) {
             arraylist_add(list, token_create(number, TOKEN_NUMBER, 0, index));
 
             // move pointer by length of number
-            // 2 needs to be subtracted because 
+            //   2 needs to be subtracted because 
             // i is incremented two times to much
-            code = &(*(code + i - 2));
-
+            code = code + i - 2;
             index += i - 2;
         } else if (*code == '"') {          // string literal
             // get length of string 
             int i = 0;
-            *code++; // increment because *code is currently pointing to the first " 
+            code++; // increment because *code is currently pointing to the first " 
             while (*code != '\0' && *code != '"') {
-                *code++;
+                code++;
                 i++;
                 index++;
             }
 
             // extract string from *code
             char *string = malloc(sizeof(char) * i);
-            substring(&(*(code - i)), string, i);
+            substring(code - i, string, i);
 
             // create new token && add it to the list
             arraylist_add(list, token_create(string, TOKEN_STRING, 0, index));
-
         } else if ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {  // regex: [_a-zA-Z] -> identifier / keyword
             // get length of identifier 
             int i = 0;
             while ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {
-                *code++;
+                code++;
                 i++;
                 index++;
             }
 
             // extract identifier or keyword from *code
             char *identifier = malloc(sizeof(char) * i);
-            substring(&(*(code - i)), identifier, i);
+            substring(code - i, identifier, i);
             
             // check if identifier could be a keyword
             if (arr_contains(keywords, keywords_length, identifier)) {
@@ -82,7 +80,7 @@ ArrayList *lexer_start(char *code) {
             }
 
             // decrement pointer because it was incremented one time to much
-            *code--;
+            code--;
         } else if (*code == '+') {
             arraylist_add(list, token_create("+", TOKEN_PLUS, 0, index));
         }else if (*code == '-') {
@@ -106,12 +104,8 @@ ArrayList *lexer_start(char *code) {
         } else {
             printf("CHAR: %c\n", *code);
         }
-        *code++;
+        code++;
         index++;
     }
-    // printf("\n\ntokens: %d\n", list->size);
-    // for (int i = 0; i < list->size; i++) {
-    //     printf("data: %s\n", list->tokens[i].data);
-    // }
     return list;
 }
