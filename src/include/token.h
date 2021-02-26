@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // ----------------------------------------------------------------
 
@@ -22,7 +23,8 @@ enum _TokenType {
     TOKEN_RPAREN,
     TOKEN_COLON,
     TOKEN_SEMICOLON,
-    TOKEN_DOT
+    TOKEN_DOT,
+    TOKEN_POWER
 };
 typedef enum _TokenType TokenType;
 

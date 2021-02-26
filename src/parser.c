@@ -123,6 +123,26 @@ Expr *evaluate_parenthesis(ArrayList *list) {
      */
     for (int i = list->size - 1; i >= 0; i--) {
         ParserObject *current = arraylist_get(list, i);
+        if (current->type == TYPE_TOKEN) {
+            if (current->token->type == TOKEN_POWER) {
+                ParserObject *previous = arraylist_get(list, i - 1);
+                ParserObject *next = arraylist_get(list, i + 1);
+                if (previous->type != TYPE_EXPRESSION || next->type != TYPE_EXPRESSION) {
+                	printf("ERROR: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
+                	return NULL;
+                }
+                BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
+                free(current->token); /* because token->data is created as string, gcc already knows the strings size 
+                                         therefor it doesnt need to be freed */
+                Expr *expr = binary_expr_to_expr(bin_expr);
+                ParserObject *obj = malloc(sizeof(ParserObject));
+                obj->type = TYPE_EXPRESSION;
+                obj->expr = expr;
+                arraylist_set_at_index(list, i+1, obj, 0);
+                arraylist_remove_at_index(list, i-1);
+                arraylist_remove_at_index(list, i++);
+            }
+        }
     }
 
     if (list->capacity > list->size + 16) {
@@ -155,6 +175,8 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                         	return NULL;
                         }
                         BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
+                        free(current->token); /* because token->data is created as string, gcc already knows the strings size 
+                                                 therefor it doesnt need to be freed */
                         Expr *expr = binary_expr_to_expr(bin_expr);
                         ParserObject *obj = malloc(sizeof(ParserObject));
                         obj->type = TYPE_EXPRESSION;
@@ -202,6 +224,8 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                         	return NULL;
                         }
                         BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
+                        free(current->token); /* because token->data is created as string, gcc already knows the strings size 
+                                                 therefor it doesnt need to be freed */
                         Expr *expr = binary_expr_to_expr(bin_expr);
                         ParserObject *obj = malloc(sizeof(ParserObject));
                         obj->type = TYPE_EXPRESSION;
