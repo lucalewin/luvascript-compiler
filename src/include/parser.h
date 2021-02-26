@@ -27,16 +27,16 @@ enum _ParserObjectType {
 struct _ParserObject {
     parser_object_t type;
     union {
-        Token token;
-        Expr expr;
-        Statement statement;
+        Token *token;
+        Expr *expr;
+        Statement *statement;
     };
 };
 
 // ----------------------------------------------------------
 
-void parser_create_ast(TokenList *tokens);
-Expr *parser_create_expr(TokenList *list);
+void parser_create_ast(ArrayList *tokens);
+Expr *parser_create_expr(ArrayList *list);
 Expr *evaluate_parenthesis(ArrayList *list);
 
 #endif//LUVA_PARSER_H

@@ -52,6 +52,8 @@ struct _Expr {
 Expr *literal_expr_to_expr(LiteralExpr *literal_expr);
 Expr *binary_expr_to_expr(BinaryExpr *binary_expr);
 
+void print_expr(Expr *expr);
+
 // -----------------------------------------------
 
 struct _LiteralExpr {

@@ -14,9 +14,11 @@ char *keywords[keywords_length] = {
     "double"
 };
 
-TokenList *lexer_start(char *code) {
+ArrayList *lexer_start(char *code) {
     // create new TokenList pointer (init)
-    TokenList *list = tokenlist_init();
+    // TokenList *list = tokenlist_init();
+
+    ArrayList *list = arraylist_create();
 
     int index = 0;
     // move through code until end is reached
@@ -32,7 +34,7 @@ TokenList *lexer_start(char *code) {
     	    substring(code, number, i-1);
 
             // create new token && add it to the list
-            tokenlist_add(list, token_create(number, TOKEN_NUMBER, 0, index));
+            arraylist_add(list, token_create(number, TOKEN_NUMBER, 0, index));
 
             // move pointer by length of number
             // 2 needs to be subtracted because 
@@ -55,7 +57,7 @@ TokenList *lexer_start(char *code) {
             substring(&(*(code - i)), string, i);
 
             // create new token && add it to the list
-            tokenlist_add(list, token_create(string, TOKEN_STRING, 0, index));
+            arraylist_add(list, token_create(string, TOKEN_STRING, 0, index));
 
         } else if ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {  // regex: [_a-zA-Z] -> identifier / keyword
             // get length of identifier 
@@ -73,34 +75,34 @@ TokenList *lexer_start(char *code) {
             // check if identifier could be a keyword
             if (arr_contains(keywords, keywords_length, identifier)) {
                 // create new token && add it to the list
-                tokenlist_add(list, token_create(identifier, TOKEN_KEYWORD, 0, index));
+                arraylist_add(list, token_create(identifier, TOKEN_KEYWORD, 0, index));
             } else {
                 // create new token && add it to the list
-                tokenlist_add(list, token_create(identifier, TOKEN_IDENDIFIER, 0, index));
+                arraylist_add(list, token_create(identifier, TOKEN_IDENDIFIER, 0, index));
             }
 
             // decrement pointer because it was incremented one time to much
             *code--;
         } else if (*code == '+') {
-            tokenlist_add(list, token_create("+", TOKEN_PLUS, 0, index));
+            arraylist_add(list, token_create("+", TOKEN_PLUS, 0, index));
         }else if (*code == '-') {
-            tokenlist_add(list, token_create("-", TOKEN_MINUS, 0, index));
+            arraylist_add(list, token_create("-", TOKEN_MINUS, 0, index));
         }else if (*code == '*') {
-            tokenlist_add(list, token_create("*", TOKEN_ASTERISK, 0, index));
+            arraylist_add(list, token_create("*", TOKEN_ASTERISK, 0, index));
         }else if (*code == '/') {
-            tokenlist_add(list, token_create("/", TOKEN_SLASH, 0, index));
+            arraylist_add(list, token_create("/", TOKEN_SLASH, 0, index));
         }else if (*code == '%') {
-            tokenlist_add(list, token_create("%", TOKEN_MOD, 0, index));
+            arraylist_add(list, token_create("%", TOKEN_MOD, 0, index));
         } else if (*code == '(') {
-            tokenlist_add(list, token_create("(", TOKEN_LPAREN, 0, index));
+            arraylist_add(list, token_create("(", TOKEN_LPAREN, 0, index));
         } else if (*code == ')') {
-            tokenlist_add(list, token_create(")", TOKEN_RPAREN, 0, index));
+            arraylist_add(list, token_create(")", TOKEN_RPAREN, 0, index));
         } else if (*code == ':') {
-            tokenlist_add(list, token_create(":", TOKEN_COLON, 0, index));
+            arraylist_add(list, token_create(":", TOKEN_COLON, 0, index));
         } else if (*code == ';') {
-            tokenlist_add(list, token_create(";", TOKEN_SEMICOLON, 0, index));
+            arraylist_add(list, token_create(";", TOKEN_SEMICOLON, 0, index));
         } else if (*code == '.') {
-            tokenlist_add(list, token_create(".", TOKEN_DOT, 0, index));
+            arraylist_add(list, token_create(".", TOKEN_DOT, 0, index));
         } else {
             printf("CHAR: %c\n", *code);
         }

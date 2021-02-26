@@ -21,7 +21,7 @@ ArrayListPtr arraylist_create() {
 
 void arraylist_add(ArrayList *arr, void *item) {
     while (arr->size >= arr->capacity) {
-        printf("REALLOCATING\n");
+        // printf("REALLOCATING\n");
         arr->capacity += INITIAL_BASE_ARRAY_SIZE;
         arr->data = realloc(arr->data, sizeof(void *) * arr->capacity);
     }
@@ -70,7 +70,7 @@ void arraylist_remove_at_index(ArrayList *arr, int index) {
         return;
     }
 
-//    free(arraylist_get(arr, index));
+    // free(arraylist_get(arr, index));
 
     for (int i = index; i < arr->size; ++i) {
         if (i == arr->size - 1) {
@@ -95,4 +95,16 @@ void arraylist_clear(ArrayList *arr) {
 void arraylist_shrink_capacity_to_size(ArrayList *arr) {
     arr->capacity = arr->size + 1;
     arr->data = realloc(arr->data, sizeof(void *) * arr->capacity);
+}
+
+// ---------------------------------------------------------------------
+
+void arraylist_free(ArrayList *list) {
+    if (list == NULL) {
+        printf("ERROR: Arraylist is NULL!\n");
+        return;
+    }
+
+    arraylist_clear(list);
+    free(list);
 }

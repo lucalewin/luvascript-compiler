@@ -4,9 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "token.h"
+#include "arraylist.h"
 #include "util.h"
+#include "token.h"
 
-TokenList *lexer_start(char *code);
+ArrayList *lexer_start(char *code);
 
 #endif // LUVA_LEXER_H

@@ -31,21 +31,21 @@ struct _Token {
 };
 typedef struct _Token Token;
 
-Token* token_create(char* data, TokenType type, int pos, int line);
+Token* token_create(char* data, TokenType type, int line, int pos);
 void token_free(Token* t);
 
 // ----------------------------------------------------------------
 
-struct _TokenList {
-    int heap_size;
-    int size;
-    Token *tokens;
-};
-typedef struct _TokenList TokenList;
+// struct _TokenList {
+//     int heap_size;
+//     int size;
+//     Token *tokens;
+// };
+// typedef struct _TokenList TokenList;
 
-TokenList* tokenlist_init();
-void tokenlist_add(TokenList* list, Token* t);
-void tokenlist_free(TokenList* list);
+// TokenList* tokenlist_init();
+// void tokenlist_add(TokenList* list, Token* t);
+// void tokenlist_free(TokenList* list);
 
 // ----------------------------------------------------------------
 

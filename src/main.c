@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "include/util.h"
+#include "include/arraylist.h"
 #include "include/lexer.h"
 #include "include/parser.h"
 
@@ -16,7 +17,7 @@ int main(int argc, char **argv) {
     char* file_contents = read_file(argv[1]);
 
     // get list of tokens from code
-    TokenList *list = lexer_start(file_contents);
+    ArrayList *list = lexer_start(file_contents);
 
     // create AST from tokens
     parser_create_ast(list);
@@ -25,6 +26,6 @@ int main(int argc, char **argv) {
     free(file_contents);
     
     // free tokenlist
-    tokenlist_free(list);
+    arraylist_free(list);
     return 0;
 }

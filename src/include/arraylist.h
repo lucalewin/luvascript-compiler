@@ -29,6 +29,7 @@ void arraylist_set_at_index(ArrayList *list, int index, void *item, int _free);
 void arraylist_remove_at_index(ArrayList *arr, int index);
 void arraylist_clear(ArrayList *arr);
 void arraylist_shrink_capacity_to_size(ArrayList *arr);
+void arraylist_free(ArrayList *list);
 
 // -----------------------------------------
 
