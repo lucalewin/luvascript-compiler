@@ -19,11 +19,11 @@ int main(int argc, char **argv) {
     // get list of tokens from code
     ArrayList *list = lexer_start(file_contents);
 
-    // create AST from tokens
-    parser_create_ast(list);
-
     // free file contents -> no longer needed
     free(file_contents);
+
+    // create AST from tokens
+    parser_create_ast(list);
     
     // free tokenlist
     arraylist_free(list);
