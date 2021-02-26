@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -c -std=c99 -g
+CFLAGS= -c -std=c11 -g
 LDFLAGS= -g
 
 SRC=$(wildcard src/*.c)
