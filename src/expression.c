@@ -16,11 +16,18 @@ Expr *binary_expr_to_expr(BinaryExpr *binary_expr) {
     return expr;
 }
 
+Expr *unary_expr_to_expr(UnaryExpr *unary_expr) {
+    Expr *expr = malloc(sizeof(Expr));
+    expr->type = EXPR_UNARY;
+    expr->u = unary_expr;
+    return expr;
+}
+
 // ----------------------------------------------------------------
 
 void print_expr(Expr *expr) {
     if (expr == NULL) {
-        printf("ERROR: Expression is NULL!\n");
+        printf("ERROR #221: Expression is NULL!\n");
         return;
     }
     
@@ -44,7 +51,7 @@ void print_expr(Expr *expr) {
                     printf("NUMBER=%d", l->number);
                     break;
                 default:
-                    printf("ERROR: Unknown literal expression type: %d\n", l->type);
+                    printf("ERROR #222: Unknown literal expression type: %d\n", l->type);
                     break;
             }
             break;
@@ -69,7 +76,7 @@ void print_expr(Expr *expr) {
             printf("WARNING #1 (expression.c)");
             break;
         default:
-            printf("ERROR: Unknown expression type: %d\n", expr->type);
+            printf("ERROR #223: Unknown expression type: %d\n", expr->type);
             break;
     }
 }
@@ -79,8 +86,7 @@ void print_expr(Expr *expr) {
 LiteralExpr *literal_expr_create(literal_expr_t type, char *data) {
     LiteralExpr *expr = malloc(sizeof(LiteralExpr));
     expr->type = type;
-    switch (type)
-    {
+    switch (type) {
         case IDENTIFIER:
             expr->identifier = malloc(strlen(data));
             strcpy(expr->identifier, data);
@@ -111,12 +117,18 @@ BinaryExpr *binary_expr_create(Expr *left, char *op, Expr *right) {
 // ----------------------------------------------------------------
 
 UnaryExpr *unary_expr_create(char *op, Expr *expr) {
-    UnaryExpr *u_expr = malloc(sizeof(BinaryExpr));
+    UnaryExpr *u_expr = malloc(sizeof(UnaryExpr));
     u_expr->op = op;
-    u_expr->expr;
+    u_expr->expr = expr;
     return u_expr;
 }
 
-// TernaryExpr *ternary_expr_create(Expr *expr_cond, Expr *expr_true, Expr *expr_false) {
-// TODO
-// }
+// ----------------------------------------------------------------
+
+TernaryExpr *ternary_expr_create(Expr *expr_cond, Expr *expr_true, Expr *expr_false) {
+    TernaryExpr *expr = malloc(sizeof(TernaryExpr));
+    expr->condition = expr_cond;
+    expr->expr_true = expr_true;
+    expr->expr_false = expr_false;
+    return expr;
+}
