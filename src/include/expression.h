@@ -51,6 +51,7 @@ struct _Expr {
 
 Expr *literal_expr_to_expr(LiteralExpr *literal_expr);
 Expr *binary_expr_to_expr(BinaryExpr *binary_expr);
+Expr *unary_expr_to_expr(UnaryExpr *unary_expr);
 
 void print_expr(Expr *expr);
 
@@ -64,7 +65,6 @@ struct _LiteralExpr {
         int number;
     };
 };
-
 LiteralExpr *literal_expr_create(literal_expr_t type, char *data);
 
 // -----------------------------------------------
@@ -74,7 +74,6 @@ struct _BinaryExpr {
     char *op;
     Expr *right;
 };
-
 BinaryExpr *binary_expr_create(Expr *left, char *op, Expr *right);
 
 // -----------------------------------------------
@@ -83,7 +82,6 @@ struct _UnaryExpr {
     char *op;
     Expr *expr;
 };
-
 UnaryExpr *unary_expr_create(char *op, Expr *expr);
 
 // -----------------------------------------------
@@ -93,7 +91,6 @@ struct _TernaryExpr {
     Expr *expr_true;
     Expr *expr_false;
 };
-
 TernaryExpr *ternary_expr_create(Expr *expr_cond, Expr *expr_true, Expr *expr_false);
 
 #endif // LUVA_EXPR_H
