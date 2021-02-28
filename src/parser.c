@@ -100,11 +100,96 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                 obj->type = TYPE_EXPRESSION;
                 obj->expr = temp_expr;
 
-                arraylist_set_at_index(list, i, obj, 0);   // replace first paren with new Expr struct
+                arraylist_set_at_index(list, i, obj, 1);   // replace first paren with new Expr struct
 
                 for (int j = index - 1; j > i; j--) {
                     arraylist_remove_at_index(list, j);     // remove tokens from inside the parenthesis
                 }
+            }
+        }
+    }
+
+    if (list->capacity > list->size + 16) {
+        arraylist_shrink_capacity_to_size(list);
+    }
+
+    /*
+     * precedence level: 1
+     * 
+     * operators: 
+     *   ++  suffix increment
+     *   --  suffix decrement
+     * associativity: left-to-right
+     * 
+     */
+    // for (int i = 0; i < list->size; i++) {
+    //     ParserObject *current = arraylist_get(list, i);
+    //     if (current->type == TYPE_TOKEN) {
+    //         switch (current->token->type) {
+    //             case TOKEN_INCREMENT:
+    //             case TOKEN_DECREMENT: {
+    //                 ParserObject *previous = arraylist_get(list, i - 1);
+    //                 if (previous->type != TYPE_EXPRESSION) {
+    //                     break;   // break, because it could be a prefix increment/decrement -> throw no error
+    //                 }
+
+    //                 /*
+    //                  *
+    //                  * Todo
+    //                  *  - create suffix increment/decrement expression struct
+    //                  *  - implement methods to create newly created expression
+    //                  * 
+    //                  */
+
+    //                 // arraylist_set_at_index(list, i-1, obj, 0);    // replace ++ token with unary expression
+    //                 // arraylist_remove_at_index(list, i+1);       // remove literal expression
+    //                 // i--;
+    //                 break;
+    //             }
+    //             default:
+    //                 break;
+    //         }
+    //     }
+    // }
+
+    if (list->capacity > list->size + 16) {
+        arraylist_shrink_capacity_to_size(list);
+    }
+
+    /*
+     * precedence level: 2
+     * 
+     * operators: 
+     *   ++  prefix increment
+     *   --  prefix decrement
+     * associativity: right-to-left
+     * 
+     */
+    for (int i = list->size - 1; i >= 0; i--) {
+        ParserObject *current = arraylist_get(list, i);
+        if (current->type == TYPE_TOKEN) {
+            switch (current->token->type) {
+                case TOKEN_INCREMENT:
+                case TOKEN_DECREMENT: {
+                    ParserObject *next = arraylist_get(list, i + 1);
+                    if (next->type != TYPE_EXPRESSION) {
+                        printf("ERROR #21: expected expression at [%d:%d]\n", next->token->line, next->token->pos);
+                        printf("TYPE: %d\n", next->type);
+                        return NULL;
+                    }
+                    UnaryExpr *unary_expr = unary_expr_create(current->token->data, next->expr);
+                    free(current->token); /* because token->data is created as string, gcc already knows the strings size 
+                                            therefor it doesnt need to be freed */
+                    Expr *expr = unary_expr_to_expr(unary_expr);
+                    ParserObject *obj = malloc(sizeof(ParserObject));
+                    obj->type = TYPE_EXPRESSION;
+                    obj->expr = expr;
+                    arraylist_set_at_index(list, i, obj, 0);    // replace ++ token with unary expression
+                    arraylist_remove_at_index(list, i+1);       // remove literal expression
+                    break;
+                }
+                default:
+                    break;
             }
         }
     }
@@ -128,7 +213,7 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                 ParserObject *previous = arraylist_get(list, i - 1);
                 ParserObject *next = arraylist_get(list, i + 1);
                 if (previous->type != TYPE_EXPRESSION || next->type != TYPE_EXPRESSION) {
-                	printf("ERROR: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
+                	printf("ERROR #31: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
                 	return NULL;
                 }
                 BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
@@ -138,9 +223,9 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                 ParserObject *obj = malloc(sizeof(ParserObject));
                 obj->type = TYPE_EXPRESSION;
                 obj->expr = expr;
-                arraylist_set_at_index(list, i+1, obj, 0);
-                arraylist_remove_at_index(list, i-1);
-                arraylist_remove_at_index(list, i++);
+                arraylist_set_at_index(list, i-1, obj, 0);
+                arraylist_remove_at_index(list, i+1);
+                arraylist_remove_at_index(list, i--);
             }
         }
     }
@@ -171,7 +256,7 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                         ParserObject *previous = arraylist_get(list, i - 1);
                         ParserObject *next = arraylist_get(list, i + 1);
                         if (previous->type != TYPE_EXPRESSION || next->type != TYPE_EXPRESSION) {
-                        	printf("ERROR: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
+                        	printf("ERROR #41: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
                         	return NULL;
                         }
                         BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
@@ -185,7 +270,7 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                         arraylist_remove_at_index(list, i+1);
                         arraylist_remove_at_index(list, i--);
                     } else {
-                        printf("ERROR\n");
+                        printf("ERROR #42\n");
                         return NULL;
                     }
                     break;
@@ -220,7 +305,7 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                         ParserObject *previous = arraylist_get(list, i - 1);
                         ParserObject *next = arraylist_get(list, i + 1);
                         if (previous->type != TYPE_EXPRESSION || next->type != TYPE_EXPRESSION) {
-                        	printf("ERROR: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
+                        	printf("ERROR #51: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
                         	return NULL;
                         }
                         BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
@@ -234,7 +319,7 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                         arraylist_remove_at_index(list, i+1);
                         arraylist_remove_at_index(list, i--);
                     } else {
-                    	printf("ERROR\n");
+                    	printf("ERROR #52\n");
                     }
                     break;
                 }
@@ -244,8 +329,190 @@ Expr *evaluate_parenthesis(ArrayList *list) {
         }
     }
 
+    /*
+     * precedence level: 7
+     * 
+     * operators:
+     *   <  
+     *   <= 
+     *   >  
+     *   >= 
+     * 
+     * associativity: left-to-right
+     * 
+     */
+    for (int i = 0; i < list->size; i++) {
+        ParserObject *current = arraylist_get(list, i);
+        if (current->type == TYPE_TOKEN) {
+            switch (current->token->type) {
+                case TOKEN_RELATIONAL_LESS:
+                case TOKEN_RELATIONAL_LESS_OR_EQUAL:
+                case TOKEN_RELATIONAL_GREATER:
+                case TOKEN_RELATIONAL_GREATER_OR_EQUAL: {
+                    ParserObject *previous = arraylist_get(list, i - 1);
+                        ParserObject *next = arraylist_get(list, i + 1);
+                        if (previous->type != TYPE_EXPRESSION || next->type != TYPE_EXPRESSION) {
+                        	printf("ERROR #51: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
+                        	return NULL;
+                        }
+                        BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
+                        free(current->token); /* because token->data is created as string, gcc already knows the strings size 
+                                                 therefor it doesnt need to be freed */
+                        Expr *expr = binary_expr_to_expr(bin_expr);
+                        ParserObject *obj = malloc(sizeof(ParserObject));
+                        obj->type = TYPE_EXPRESSION;
+                        obj->expr = expr;
+                        arraylist_set_at_index(list, i-1, obj, 0);
+                        arraylist_remove_at_index(list, i+1);
+                        arraylist_remove_at_index(list, i--);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+    /*
+     * precedence level: 8
+     * 
+     * operators:
+     *   ==
+     *   !=
+     * 
+     * associativity: left-to-right
+     * 
+     */
+    for (int i = 0; i < list->size; i++) {
+        ParserObject *current = arraylist_get(list, i);
+        if (current->type == TYPE_TOKEN) {
+            switch (current->token->type) {
+                case TOKEN_RELATIONAL_EQUAL:
+                case TOKEN_RELATIONAL_NOT_EQUAL: {
+                    ParserObject *previous = arraylist_get(list, i - 1);
+                    ParserObject *next = arraylist_get(list, i + 1);
+                    if (previous->type != TYPE_EXPRESSION || next->type != TYPE_EXPRESSION) {
+                    	printf("ERROR #51: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
+                    	return NULL;
+                    }
+                    BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
+                    free(current->token); /* because token->data is created as string, gcc already knows the strings size 
+                                             therefor it doesnt need to be freed */
+                    Expr *expr = binary_expr_to_expr(bin_expr);
+                    ParserObject *obj = malloc(sizeof(ParserObject));
+                    obj->type = TYPE_EXPRESSION;
+                    obj->expr = expr;
+                    arraylist_set_at_index(list, i-1, obj, 0);
+                    arraylist_remove_at_index(list, i+1);
+                    arraylist_remove_at_index(list, i--);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+    /*
+     * precedence level: 9
+     * 
+     * operators:
+     *   &
+     * 
+     * associativity: left-to-right
+     * 
+     */
+    for (int i = 0; i < list->size; i++) {
+        ParserObject *current = arraylist_get(list, i);
+        if (current->type == TYPE_TOKEN) {
+            switch (current->token->type) {
+                case TOKEN_AMPERSAND: {
+                    ParserObject *previous = arraylist_get(list, i - 1);
+                    ParserObject *next = arraylist_get(list, i + 1);
+                    if (previous->type != TYPE_EXPRESSION || next->type != TYPE_EXPRESSION) {
+                    	printf("ERROR #51: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
+                    	return NULL;
+                    }
+                    BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
+                    free(current->token); /* because token->data is created as string, gcc already knows the strings size 
+                                             therefor it doesnt need to be freed */
+                    Expr *expr = binary_expr_to_expr(bin_expr);
+                    ParserObject *obj = malloc(sizeof(ParserObject));
+                    obj->type = TYPE_EXPRESSION;
+                    obj->expr = expr;
+                    arraylist_set_at_index(list, i-1, obj, 0);
+                    arraylist_remove_at_index(list, i+1);
+                    arraylist_remove_at_index(list, i--);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+    /*
+     * precedence level: 15
+     * 
+     * operators: 
+     *   =
+     *   += 
+     *   -=
+     *   *= 
+     *   /= 
+     *   %=
+     *   <<= 
+     *   >>=
+     *   &= 
+     *   ^= 
+     *   |=
+     * 
+     * associativity: right-to-left
+     * 
+     */
+    for (int i = list->size - 1; i >= 0; i--) {
+        ParserObject *current = arraylist_get(list, i);
+        if (current->type == TYPE_TOKEN) {
+            switch (current->token->type) {
+                case TOKEN_ASSIGNMENT_SIMPLE:
+                case TOKEN_ASSIGNMENT_SUM:
+                case TOKEN_ASSIGNMENT_DIFFERENCE:
+                case TOKEN_ASSIGNMENT_PRODUCT:
+                case TOKEN_ASSIGNMENT_QUOTIENT:
+                case TOKEN_ASSIGNMENT_REMAINDER:
+                case TOKEN_ASSIGNMENT_BITWISE_LEFT_SHIFT:
+                case TOKEN_ASSIGNMENT_BITWISE_RIGHT_SHIFT:
+                case TOKEN_ASSIGNMENT_BITWISE_AND:
+                case TOKEN_ASSIGNMENT_BITWISE_XOR:
+                case TOKEN_ASSIGNMENT_BITWISE_OR: {
+                    ParserObject *previous = arraylist_get(list, i - 1);
+                    ParserObject *next = arraylist_get(list, i + 1);
+                    if (previous->type != TYPE_EXPRESSION || next->type != TYPE_EXPRESSION) {
+                    	printf("ERROR #151: expected expression at [%d:%d]\n", previous->token->line, previous->token->pos);
+                    	return NULL;
+                    }
+                    BinaryExpr *bin_expr = binary_expr_create(previous->expr, current->token->data, next->expr);
+                    free(current->token); /* because token->data is created as string, gcc already knows the strings size 
+                                             therefor it doesnt need to be freed */
+                    Expr *expr = binary_expr_to_expr(bin_expr);
+                    ParserObject *obj = malloc(sizeof(ParserObject));
+                    obj->type = TYPE_EXPRESSION;
+                    obj->expr = expr;
+                    arraylist_set_at_index(list, i-1, obj, 0);
+                    arraylist_remove_at_index(list, i+1);
+                    arraylist_remove_at_index(list, i--);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+
+
     if (list->size != 1) {
-        printf("ERROR #1\n");
+        printf("ERROR #161\n");
         return NULL;
     }
 
@@ -254,21 +521,21 @@ Expr *evaluate_parenthesis(ArrayList *list) {
     if (current->type != TYPE_EXPRESSION) {
         if (current->type == TYPE_TOKEN) {
             Token *t = current->token;
-            printf("ERROR #2: Unexpected token at [%d:%d]: %s\n", t->line, t->pos, t->data);
+            printf("ERROR #162: Unexpected token at [%d:%d]: %s\n", t->line, t->pos, t->data);
             return NULL;
         }
-        printf("\nERROR #3: Encountered unknown type: %d\n", current->type);
-        printf("    This is an error in the compiler\n");
+        printf("\nERROR #163: Encountered unknown type: %d\n", current->type);
+        printf("    This is an compiler error!\n");
         printf("    Please create an issue on the luvascript-compiler github repo:\n");
-        printf("    https://github.com/lucr4ft/luvascript-compiler\n\n");
+        printf("    https://github.com/lucr4ft/luvascript-compiler \n\n");
         return NULL;
     }
 
     if (current->expr == NULL) {
-        printf("\nERROR #4: Expression was NULL!\n");
-        printf("    This is an error in the compiler\n");
+        printf("\nERROR #164: Expression was NULL!\n");
+        printf("    This is an compiler error!\n");
         printf("    Please create an issue on the luvascript-compiler github repo:\n");
-        printf("    https://github.com/lucr4ft/luvascript-compiler\n\n");
+        printf("    https://github.com/lucr4ft/luvascript-compiler \n\n");
     }
 
     arraylist_free(list);
