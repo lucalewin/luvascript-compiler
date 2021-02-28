@@ -82,15 +82,131 @@ ArrayList *lexer_start(char *code) {
             // decrement pointer because it was incremented one time to much
             code--;
         } else if (*code == '+') {
-            arraylist_add(list, token_create("+", TOKEN_PLUS, 0, index));
-        }else if (*code == '-') {
-            arraylist_add(list, token_create("-", TOKEN_MINUS, 0, index));
-        }else if (*code == '*') {
-            arraylist_add(list, token_create("*", TOKEN_ASTERISK, 0, index));
-        }else if (*code == '/') {
-            arraylist_add(list, token_create("/", TOKEN_SLASH, 0, index));
-        }else if (*code == '%') {
-            arraylist_add(list, token_create("%", TOKEN_MOD, 0, index));
+            switch (*(code + 1)) {
+                case '\0':
+                    break;
+                case '+': {
+                    arraylist_add(list, token_create("++", TOKEN_INCREMENT, 0, index));
+                    code++;
+                    break;
+                }
+                case '=': {
+                    arraylist_add(list, token_create("+=", TOKEN_ASSIGNMENT_SUM, 0, index));
+                    code++;
+                    break;
+                }
+                default:
+                    arraylist_add(list, token_create("+", TOKEN_PLUS, 0, index));
+                    break;
+            }
+        } else if (*code == '-') {
+            switch (*(code + 1)) {
+                case '\0':
+                    break;
+                case '-': {
+                    arraylist_add(list, token_create("--", TOKEN_DECREMENT, 0, index));
+                    code++;
+                    break;
+                }
+                case '=': {
+                    arraylist_add(list, token_create("-=", TOKEN_ASSIGNMENT_DIFFERENCE, 0, index));
+                    code++;
+                    break;
+                }
+                default:
+                    arraylist_add(list, token_create("-", TOKEN_MINUS, 0, index));
+                    break;
+            }
+        } else if (*code == '*') {
+            switch (*(code + 1)) {
+                case '\0':
+                    break;
+                case '=': {
+                    arraylist_add(list, token_create("*=", TOKEN_ASSIGNMENT_PRODUCT, 0, index));
+                    code++;
+                    break;
+                }
+                case '*': {
+                    arraylist_add(list, token_create("**", TOKEN_POWER, 0, index));
+                    code++;
+                    break;
+                }
+                default:
+                    arraylist_add(list, token_create("*", TOKEN_ASTERISK, 0, index));
+                    break;
+            }
+        } else if (*code == '/') {
+            switch (*(code + 1)) {
+                case '\0':
+                    break;
+                case '=': {
+                    arraylist_add(list, token_create("/=", TOKEN_ASSIGNMENT_QUOTIENT, 0, index));
+                    code++;
+                    break;
+                }
+                default:
+                    arraylist_add(list, token_create("/", TOKEN_SLASH, 0, index));
+                    break;
+            }
+        } else if (*code == '%') {
+            switch (*(code + 1)) {
+                case '\0':
+                    break;
+                case '=': {
+                    arraylist_add(list, token_create("%=", TOKEN_ASSIGNMENT_REMAINDER, 0, index));
+                    code++;
+                    break;
+                }
+                default:
+                    arraylist_add(list, token_create("%", TOKEN_MOD, 0, index));
+                    break;
+            }
+        } else if (*code == '<') {
+            switch (*(code + 1)) {
+                case '\0':
+                    break;
+                case '=': {
+                    arraylist_add(list, token_create("<=", TOKEN_RELATIONAL_LESS, 0, index));
+                    code++;
+                    break;
+                }
+                case '<': {
+                    if (*(code + 2) == '=') {
+                        arraylist_add(list, token_create("<<=", TOKEN_ASSIGNMENT_BITWISE_LEFT_SHIFT, 0, index));
+                        code+=2;
+                    } else {
+                        arraylist_add(list, token_create("<<", TOKEN_BITWISE_LEFT_SHIFT, 0, index));
+                        code++;
+                    }
+                    break;
+                }
+                default:
+                    arraylist_add(list, token_create("<", TOKEN_RELATIONAL_LESS_OR_EQUAL, 0, index));
+                    break;
+            }
+        } else if (*code == '>') {
+            switch (*(code + 1)) {
+                case '\0':
+                    break;
+                case '=': {
+                    arraylist_add(list, token_create(">=", TOKEN_RELATIONAL_GREATER, 0, index));
+                    code++;
+                    break;
+                }
+                case '>': {
+                    if (*(code + 2) == '=') {
+                        arraylist_add(list, token_create(">>=", TOKEN_ASSIGNMENT_BITWISE_RIGHT_SHIFT, 0, index));
+                        code+=2;
+                    } else {
+                        arraylist_add(list, token_create(">>", TOKEN_BITWISE_RIGHT_SHIFT, 0, index));
+                        code++;
+                    }
+                    break;
+                }
+                default:
+                    arraylist_add(list, token_create(">", TOKEN_RELATIONAL_GREATER_OR_EQUAL, 0, index));
+                    break;
+            }
         } else if (*code == '(') {
             arraylist_add(list, token_create("(", TOKEN_LPAREN, 0, index));
         } else if (*code == ')') {
@@ -107,5 +223,11 @@ ArrayList *lexer_start(char *code) {
         code++;
         index++;
     }
+
+    // for (int i = 0; i < list->size; i++) {
+    //     Token *t = arraylist_get(list, i);
+    //     printf("TOKEN: %s\n", t->data);
+    // }
+
     return list;
 }
