@@ -34,14 +34,13 @@
 <td>4</td>
 <td>* / %</td>
 <td>Multiplication, division, and remainder</td>
-<td>left-to-right</td>
+<td rowspan=11>left-to-right</td>
 </tr>
 
 <tr>
 <td>5</td>
 <td>+ -</td>
 <td>Addition and subtraction</td>
-<td rowspan=10>left-to-right</td>
 </tr>
 
 <tr>
@@ -101,7 +100,7 @@ For relational operators > and ≥ respectively</td>
 
 <tr>
 <td>15</td>
-<td> = <br> += -= <br> *= /= %= <br> <<= >>= <br> &= ^= \</td>
+<td> = <br> += -= <br> *= /= %= <br> <<= >>= <br> &= ^= |=</td>
 <td>Simple assignment <br>
 Assignment by sum and difference <br>
 Assignment by product, quotient, and remainder <br>
