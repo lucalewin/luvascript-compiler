@@ -25,7 +25,19 @@ char *read_file(const char* path) {
 
 // ----------------------------------------------------------
 
-char *substring(char *source, char *target, int offset) {
+void write_file(const char* path, char *text) {
+    FILE *file = fopen(path, "w");
+    if (!file) {
+        printf("Could not open file '%s'\n", path);
+        return;
+    }
+    fputs(text, file);
+    fclose(file);
+}
+
+// ----------------------------------------------------------
+
+void substring(char *source, char *target, int offset) {
     char *destination = target;
     int index = 0;
     while (index < offset) {
@@ -33,7 +45,19 @@ char *substring(char *source, char *target, int offset) {
         index++;
     }
     destination[index] = '\0';
-    return destination;
+    // return destination;
+}
+
+// ----------------------------------------------------------
+
+int str_last_index_of(char *str, char x) { 
+    // Traverse from right 
+    int str_len = strlen(str);
+    for (int i = str_len - 1; i >= 0; i--) 
+        if (str[i] == x) 
+            return i; 
+  
+    return -1; 
 }
 
 // ----------------------------------------------------------
