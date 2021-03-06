@@ -56,8 +56,14 @@ void debugPrintExpression(Expr *expr, int depth) {
         }
         case EXPR_UNARY: {
             UnaryExpr *u = expr->u;
-            printf("unary-expr{operator=%s,expression=", u->op);
-            print_expr(u->expr);
+            printf("unary-expr{\n");
+            debugPrintTab(depth);
+            printf("operator=%s,\n", expr->u->op);
+            debugPrintTab(depth);
+            printf("expression=");
+            debugPrintExpression(expr->u->expr, depth+1);
+            printf("\n");
+            debugPrintTab(depth-1);
             printf("}");
             break;
         }
