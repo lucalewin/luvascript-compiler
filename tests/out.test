@@ -1,0 +1,21 @@
+binary-expr{
+    left=IDENTIFIER=x,
+    operator==,
+    right=binary-expr{
+        left=binary-expr{
+            left=binary-expr{
+                left=NUMBER=12,
+                operator=<,
+                right=IDENTIFIER=x
+            },
+            operator=<=,
+            right=IDENTIFIER=y
+        },
+        operator=<,
+        right=binary-expr{
+            left=NUMBER=13,
+            operator=**,
+            right=NUMBER=2
+        }
+    }
+}

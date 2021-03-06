@@ -5,6 +5,8 @@
 #include "include/arraylist.h"
 #include "include/lexer.h"
 #include "include/parser.h"
+#include "include/compiler.h"
+#include "include/ast.h"
 
 int main(int argc, char **argv) {
     // validate command line arguments
@@ -13,19 +15,30 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    // read file
-    char* file_contents = read_file(argv[1]);
+    int last_index = str_last_index_of(argv[1], '.');
+    char *file_base_name = malloc(last_index);
+    substring(argv[1], file_base_name, last_index);
 
-    // get list of tokens from code
-    ArrayList *list = lexer_start(file_contents);
-
-    // free file contents -> no longer needed
-    free(file_contents);
-
-    // create AST from tokens
-    parser_create_ast(list);
     
-    // free tokenlist
-    arraylist_free(list);
+    char* file_contents = read_file(argv[1]);           // read file
+    
+    ArrayList *list = lexer_start(file_contents);       // get list of tokens from code
+    free(file_contents);                                // free file contents -> no longer needed
+    AST *ast = parser_create_ast(list);                 // create AST from tokens
+    arraylist_free(list);                               // free tokenlist
+
+    // ---------------------------------
+
+    parser_generate_assembly_from_expr(file_base_name, NULL);
+
+    // ---------------------------------
+
+    compile(file_base_name);
+
+    /* run generated assembly */
+    // system(file_base_name);
+
+    free(file_base_name);
+
     return 0;
 }
