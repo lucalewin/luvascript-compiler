@@ -10,6 +10,7 @@
 #include "token.h"
 #include "expression.h"
 #include "statement.h"
+#include "ast.h"
 
 // ----------------------------------------------------------
 
@@ -35,8 +36,11 @@ struct _ParserObject {
 
 // ----------------------------------------------------------
 
-void parser_create_ast(ArrayList *tokens);
+AST *parser_create_ast(ArrayList *tokens);
 Expr *parser_create_expr(ArrayList *list);
 Expr *evaluate_parenthesis(ArrayList *list);
 
-#endif//LUVA_PARSER_H
+void parser_generate_assembly_from_expr(char *filename, Expr *expr);
+void parser_generate_assembly_from_ast(char *filename, AST *ast);
+
+#endif // LUVA_PARSER_H
