@@ -207,6 +207,8 @@ ArrayList *lexer_start(char *code) {
                     arraylist_add(list, token_create(">", TOKEN_RELATIONAL_GREATER_OR_EQUAL, 0, index));
                     break;
             }
+        } else if (*code == '=') {
+            arraylist_add(list, token_create("=", TOKEN_ASSIGNMENT_SIMPLE, 0, index));
         } else if (*code == '(') {
             arraylist_add(list, token_create("(", TOKEN_LPAREN, 0, index));
         } else if (*code == ')') {
