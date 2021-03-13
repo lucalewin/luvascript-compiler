@@ -29,11 +29,11 @@ int main(int argc, char **argv) {
 
     // ---------------------------------
 
-    parser_generate_assembly_from_expr(file_base_name, NULL);
+    // parser_generate_assembly_from_expr(file_base_name, NULL);
 
     // ---------------------------------
 
-    compile(file_base_name);
+    // compile(file_base_name);
 
     /* run generated assembly */
     // system(file_base_name);

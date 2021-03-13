@@ -5,7 +5,7 @@ LDFLAGS= -g
 SRC=$(wildcard src/*.c)
 #INC=$(wildcard src/include/*.h)
 OBJ=$(subst src/,obj/,$(SRC:.c=.o))
-TARGET=bin/luvac
+TARGET=bin/lvc
 TESTS=$(wildcard tests/*lvs)
 
 # ------------------

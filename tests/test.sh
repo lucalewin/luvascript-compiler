@@ -12,6 +12,6 @@ do
     echo "";
     echo "---------------- [Test "$index"] ----------------"
     echo "";
-    ./bin/luvac $file
+    ./bin/lvc $file
     index=$((index+1));
 done

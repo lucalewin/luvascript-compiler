@@ -1,8 +1,10 @@
 #include "include/lexer.h"
 
-#define keywords_length 9
+#define keywords_length 11
 
 char *keywords[keywords_length] = {
+    "function",
+    "return",
     "true",
     "false",
     "null",
@@ -213,12 +215,22 @@ ArrayList *lexer_start(char *code) {
             arraylist_add(list, token_create("(", TOKEN_LPAREN, 0, index));
         } else if (*code == ')') {
             arraylist_add(list, token_create(")", TOKEN_RPAREN, 0, index));
+        } else if (*code == '[') {
+            arraylist_add(list, token_create("[", TOKEN_LBRACKET, 0, index));
+        } else if (*code == ']') {
+            arraylist_add(list, token_create("]", TOKEN_RBRACKET, 0, index));
+        } else if (*code == '{') {
+            arraylist_add(list, token_create("{", TOKEN_LBRACE, 0, index));
+        } else if (*code == '}') {
+            arraylist_add(list, token_create("}", TOKEN_RBRACE, 0, index));
         } else if (*code == ':') {
             arraylist_add(list, token_create(":", TOKEN_COLON, 0, index));
         } else if (*code == ';') {
             arraylist_add(list, token_create(";", TOKEN_SEMICOLON, 0, index));
         } else if (*code == '.') {
             arraylist_add(list, token_create(".", TOKEN_DOT, 0, index));
+        } else if (*code == ',') {
+            arraylist_add(list, token_create(",", TOKEN_COMMA, 0, index));
         } else {
             printf("CHAR: %c\n", *code);
         }
@@ -228,7 +240,7 @@ ArrayList *lexer_start(char *code) {
 
     // for (int i = 0; i < list->size; i++) {
     //     Token *t = arraylist_get(list, i);
-    //     printf("TOKEN: %s\n", t->data);
+    //     printf("TOKEN: %s\t\t\tTYPE: %d\n", t->data, t->type);
     // }
 
     return list;

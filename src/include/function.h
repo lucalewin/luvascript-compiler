@@ -4,14 +4,33 @@
 // ------------------------------------
 
 #include "statement.h"
+#include "type.h"
 
 // ------------------------------------
 
-typedef struct Func {
+typedef struct _Func Function;
+typedef struct _FuncParam FuncParam; 
+typedef struct _FuncReturnType FuncReturnType;
+
+// ------------------------------------
+
+struct Func {
     char *name;
     char *return_type;
     // FuncParam* params
+    FuncReturnType *return_types;
     Statement *root_statement; 
-} Function;
+};
+
+struct _FuncParam {
+    Type type;
+    char *var_name;
+    void *default_value;
+};
+
+struct _FuncReturnType {
+    Type type;
+    void *default_value;
+};
 
 #endif // LUVA_FUNCTION_H

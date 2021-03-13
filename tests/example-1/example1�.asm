@@ -2,7 +2,7 @@ section .data
 STDOUT      equ     1
 sys_write   equ     1
 sys_exit    equ     60
-msg         db      "filename=tests/test1", 10, 0
+msg         db      "filename=tests/example-1/example1á", 10, 0
 msgLen      dq      ($ - msg)
 section .text
 global _start

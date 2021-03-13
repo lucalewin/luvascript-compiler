@@ -11,21 +11,34 @@
 
 enum _TokenType {
     TOKEN_KEYWORD,
+
+    /* literals */
     TOKEN_IDENDIFIER,
     TOKEN_NUMBER,
     TOKEN_STRING,
+
+    /* arithmetic operators */
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_ASTERISK,
     TOKEN_SLASH,
     TOKEN_MOD,
     TOKEN_AMPERSAND,
-    TOKEN_LPAREN,
-    TOKEN_RPAREN,
+    TOKEN_POWER,
+
+    /* seperator tokens */
     TOKEN_COLON,
     TOKEN_SEMICOLON,
     TOKEN_DOT,
-    TOKEN_POWER,
+    TOKEN_COMMA,
+
+    /* parenthesis / brackets / braces */
+    TOKEN_LPAREN,
+    TOKEN_RPAREN,
+    TOKEN_LBRACKET,
+    TOKEN_RBRACKET,
+    TOKEN_LBRACE,
+    TOKEN_RBRACE,
 
     /* increment/decrement tokens */
     TOKEN_INCREMENT,

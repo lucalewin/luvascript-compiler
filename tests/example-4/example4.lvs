@@ -1,1 +1,51 @@
-x += y /= z <<= i >>= j %= k -= l
+import File, Console from System.IO;
+
+/* same as 
+
+import System.IO.Console;
+import System.IO.File;
+
+*/
+
+function main(): int {
+    string fileContents = File.readFile("~/test.txt");    // where ~ means the directory of the current user on windows
+    Console.printLine(fileContents);
+}
+
+/*
+
+package System.IO {
+
+    public class File {
+
+        const filename: string;
+
+        public constructor(filename: string) {
+            this.filename = filename;
+        }
+
+        static function readFile(filename: string): string {
+            string s = "";
+            asm {
+                // write assembly code to read file contents
+                // then save it into s
+            }
+            return s;
+        }
+
+    }
+
+}
+
+*/
+
+/*
+
+lvc - the compiler
+lvp - the package manager
+
+
+// install package globaly on your machine to use it in all your projects
+lvp install <package-uid>
+
+*/

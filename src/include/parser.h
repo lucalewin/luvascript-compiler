@@ -10,6 +10,7 @@
 #include "token.h"
 #include "expression.h"
 #include "statement.h"
+#include "function.h"
 #include "ast.h"
 
 // ----------------------------------------------------------
@@ -37,6 +38,9 @@ struct _ParserObject {
 // ----------------------------------------------------------
 
 AST *parser_create_ast(ArrayList *tokens);
+Function *parse_function(ArrayList *tokens);
+Statement *parse_statement(ArrayList *tokens);
+Expr *parse_expression(ArrayList *tokens);
 Expr *parser_create_expr(ArrayList *list);
 Expr *evaluate_parenthesis(ArrayList *list);
 

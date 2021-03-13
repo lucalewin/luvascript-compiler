@@ -24,13 +24,28 @@ void debugPrintExpression(Expr *expr, int depth) {
             // debugPrintTab(depth);
             switch (l->type) {
                 case IDENTIFIER:
-                    printf("IDENTIFIER=%s", l->identifier);
+                    debugPrintTab(depth);
+                    printf("\"type\": \"LiteralExpression\",\n");
+                    debugPrintTab(depth);
+                    printf("\"literal-type\": \"Identifier\",\n");
+                    debugPrintTab(depth);
+                    printf("\"value\": \"%s\"\n", l->identifier);
                     break;
                 case STRING:
-                    printf("STRING=\"%s\"", l->string);
+                    debugPrintTab(depth);
+                    printf("\"type\": \"LiteralExpression\",\n");
+                    debugPrintTab(depth);
+                    printf("\"literal-type\": \"String\",\n");
+                    debugPrintTab(depth);
+                    printf("\"value\": \"%s\"\n", l->string);
                     break;
                 case NUMBER:
-                    printf("NUMBER=%d", l->number);
+                    debugPrintTab(depth);
+                    printf("\"type\": \"LiteralExpression\",\n");
+                    debugPrintTab(depth);
+                    printf("\"literal-type\": \"Number\",\n");
+                    debugPrintTab(depth);
+                    printf("\"value\": %d\n", l->number);
                     break;
                 default:
                     printf("ERROR #222: Unknown literal expression type: %d\n", l->type);
@@ -39,19 +54,24 @@ void debugPrintExpression(Expr *expr, int depth) {
             break;
         }
         case EXPR_BINARY: {
-            printf("binary-expr{\n");
-            debugPrintTab(depth);
-            printf("left=");
-            debugPrintExpression(expr->b->left, depth+1);
-            printf(",\n");
-            debugPrintTab(depth);
-            printf("operator=%s,\n", expr->b->op);
-            debugPrintTab(depth);
-            printf("right=");
-            debugPrintExpression(expr->b->right, depth+1);
-            printf("\n");
             debugPrintTab(depth-1);
-            printf("}");
+            printf("\"expression\": {\n");
+            debugPrintTab(depth);
+            printf("\"type\": \"BinaryExpression\"\n");
+            debugPrintTab(depth);
+            printf("\"expression\": {\n");
+            debugPrintExpression(expr->b->left, depth+1);
+            debugPrintTab(depth);
+            printf("},\n");
+            debugPrintTab(depth);
+            printf("\"operator\": \"%s\",\n", expr->b->op);
+            debugPrintTab(depth);
+            printf("\"expression\": {\n");
+            debugPrintExpression(expr->b->right, depth+1);
+            debugPrintTab(depth);
+            printf("}\n");
+            debugPrintTab(depth-1);
+            printf("}\n");
             break;
         }
         case EXPR_UNARY: {
@@ -79,5 +99,34 @@ void debugPrintExpression(Expr *expr, int depth) {
     }
 }
 
-// void debugPrintStatement(Statement *st);
+void debugPrintStatement(Statement *st, int depth) {
+    printf("\"statement\": {\n");
+    debugPrintTab(depth);
+    switch (st->type)
+    {
+    case STATEMENT_BLOCK:
+    printf("HELLO\n");
+        /* code */
+        break;
+    
+    case STATEMENT_EXPR: {
+        ExprStatement *e_stmt = st->statement;
+        printf("\"type\": \"ExpressionStatement\",\n");
+        debugPrintExpression(e_stmt->expr, depth + 1);
+        break;
+    }
+    case STATEMENT_RETURN: {
+        ReturnStatement *r_stmt = st->statement;
+        printf("\"type\": \"ReturnStatement\",\n");
+        debugPrintExpression(r_stmt->expr, depth + 1);
+        break;
+    }
+    default:
+        printf("Unknown type: %d\n", st->type);
+        break;
+    }
+    debugPrintTab(depth - 1);
+    printf("}\n");
+}
+
 // void debugPrintFunction(Function *func);
