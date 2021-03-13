@@ -1,16 +1,113 @@
 #include "include/parser.h"
-
 #include "include/debug.h"
 
 AST *parser_create_ast(ArrayList *tokens) {
-    // Statement *root = malloc(sizeof(Statement));
-    // root->expr = parser_create_expr(tokens);
+    ArrayList *functions = arraylist_create();
+
+    for (int i = 0; i < tokens->size; i++) {
+        Token *current = arraylist_get(tokens, i);
+        if (current->type != TOKEN_IDENDIFIER && strcmp(current->data, "function") != 0) {
+            printf("ERROR #0001: expected function declaration at [%d,%d]\n", current->line, current->pos);
+            exit(1);
+        }
+        
+    }
+
+    Statement *stmt = parse_statement(tokens);
+    debugPrintStatement(stmt, 1);
+
     AST *ast = malloc(sizeof(AST));
-    ast->root = parser_create_expr(tokens);
-    // print_expr(ast->root);
-    // printf("\n");
-    debugPrintExpression(ast->root, 1);
+    // ast->root = parser_create_expr(tokens);
+    // debugPrintExpression(ast->root, 1);
     return ast;
+}
+
+/**
+ * 
+ * This method parses the given tokens and returns a new function struct.
+ * 
+ * It returns a new function pointer, 
+ *  - if the tokens are in a syntactically correct order
+ *  - else it displays an error and exits the program 
+ * 
+ */
+Function *parse_function(ArrayList *tokens) {
+    int index = 0;
+    // parse func name
+
+    // parse params
+
+    // parse return types
+
+    // parse statements
+    ArrayList *statements = arraylist_create();
+    ArrayList *stmt_tokens = arraylist_create();
+    for (; index < tokens->size; index++) {
+        Token *current = arraylist_get(tokens, index);
+        if (current->type == TOKEN_SEMICOLON) {
+            Statement *stmt = parse_statement(stmt_tokens);
+            arraylist_add(statements, stmt);
+            arraylist_clear(stmt_tokens);
+        }
+        arraylist_add(stmt_tokens, current);
+    }
+}
+
+Statement *parse_statement(ArrayList *tokens) {
+    if (tokens->size == 0) {
+        printf("ERROR #5467: No tokens\n");
+    }
+    // no-op statement
+    if (tokens->size == 1) {
+        Token *t = arraylist_get(tokens, 0);
+        if (t->type != TOKEN_SEMICOLON) {
+            printf("ERROR #5468: Wrong token type: %d\n", t->type);
+        }
+        return NULL;
+    }
+    // return statement
+    Token *first = arraylist_get(tokens, 0);
+    Token *last = arraylist_get(tokens, tokens->size - 1);
+    // printf("first type %d, %s\n", first->type, first->data);
+    if (first->type == TOKEN_KEYWORD && strcmp(first->data, "return") == 0) {
+        ReturnStatement *r_stmt = malloc(sizeof(ReturnStatement));
+        
+        ArrayList *list = arraylist_create();
+        for (int i = 1; i < tokens->size; i++) {
+            Token *t = arraylist_get(tokens, i);
+            arraylist_add(list, t);
+        }
+
+        Expr *expr = parse_expression(list);
+        r_stmt->expr = expr;
+
+        arraylist_free(list);
+
+        Statement *stmt = malloc(sizeof(Statement));
+        stmt->type = STATEMENT_RETURN;
+        stmt->statement = r_stmt;
+        return stmt;
+    } 
+    
+    
+    else {
+        ExprStatement *e_stmt = malloc(sizeof(ExprStatement));
+        // for (int i = 0; i < tokens->size; i++) {
+        //     Token *t = arraylist_get(tokens, i);
+        //     printf("TOKEN: %d, %s\n", t->type, t->data);
+        // }
+        Expr *expr = parse_expression(tokens);
+        e_stmt->expr = expr;
+        Statement *stmt = malloc(sizeof(Statement));
+        stmt->type = STATEMENT_EXPR;
+        stmt->statement = e_stmt;
+        return stmt;
+    }
+    arraylist_free(tokens);
+}
+
+Expr *parse_expression(ArrayList *tokens) {
+    return parser_create_expr(tokens);
 }
 
 void parser_generate_assembly_from_expr(char *filename, Expr *expr) {
