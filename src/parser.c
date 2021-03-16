@@ -2,19 +2,42 @@
 #include "include/debug.h"
 
 AST *parser_create_ast(ArrayList *tokens) {
-    ArrayList *functions = arraylist_create();
+    // ArrayList *functions = arraylist_create();
 
-    for (int i = 0; i < tokens->size; i++) {
-        Token *current = arraylist_get(tokens, i);
-        if (current->type != TOKEN_IDENDIFIER && strcmp(current->data, "function") != 0) {
-            printf("ERROR #0001: expected function declaration at [%d,%d]\n", current->line, current->pos);
-            exit(1);
-        }
+    // // for (int i = 0; i < tokens->size; i++) {
+    // //     Token *current = arraylist_get(tokens, i);
+    // //     if (current->type != TOKEN_IDENDIFIER && strcmp(current->data, "function") != 0) {
+    // //         printf("ERROR #0001: expected function declaration at [%d,%d]\n", current->line, current->pos);
+    // //         exit(1);
+    // //     }
         
+    // // }
+
+    // Statement *stmt = parse_statement(tokens);
+    // debugPrintStatement(stmt, 1);
+
+    int index = 0;
+
+    ArrayList *statements = arraylist_create();
+    ArrayList *stmt_tokens = arraylist_create();
+    for (; index < tokens->size; index++) {
+        Token *current = arraylist_get(tokens, index);
+        if (current->type == TOKEN_SEMICOLON) {
+            printf("STATEMENT\n");
+            Statement *stmt = parse_statement(stmt_tokens);
+            arraylist_add(statements, stmt);
+            // arraylist_clear(stmt_tokens);
+            stmt_tokens = arraylist_create();
+        } else {
+            arraylist_add(stmt_tokens, current);
+        }
     }
 
-    Statement *stmt = parse_statement(tokens);
-    debugPrintStatement(stmt, 1);
+    printf("\"statements\": [\n");
+    for (int i = 0; i < statements->size; i++) {
+        debugPrintStatement(arraylist_get(statements, i), 2);
+    }
+    printf("\b\b\b]\n");
 
     AST *ast = malloc(sizeof(AST));
     // ast->root = parser_create_expr(tokens);
@@ -32,10 +55,29 @@ AST *parser_create_ast(ArrayList *tokens) {
  * 
  */
 Function *parse_function(ArrayList *tokens) {
-    int index = 0;
+    int index = 1;
+    Function *func = malloc(sizeof(Function));
     // parse func name
-
+    Token *current = arraylist_get(tokens, index++);
+    if (current->type != TOKEN_IDENDIFIER) {
+        printf("ERROR #0002: Expected function identifier at [%d,%d]\n", current->line, current->pos);
+        exit(2);
+    }
+    strcpy(func->name, current->data);
     // parse params
+    current = arraylist_get(tokens, index++);
+    if (current->type != TOKEN_LPAREN) {
+        printf("ERROR #0003: Expected function parameter declaration at [%d,%d]", current->pos, current->line);
+        exit(3);
+    }
+    ArrayList *param_tokens = arraylist_create();
+    for (; index < tokens->size; index++) {
+        current = arraylist_get(tokens, index);
+        if (current->type == TOKEN_RPAREN) {
+            break;
+        }
+        arraylist_add(param_tokens, current);
+    }
 
     // parse return types
 
@@ -45,11 +87,14 @@ Function *parse_function(ArrayList *tokens) {
     for (; index < tokens->size; index++) {
         Token *current = arraylist_get(tokens, index);
         if (current->type == TOKEN_SEMICOLON) {
+            printf("STATEMENT\n");
             Statement *stmt = parse_statement(stmt_tokens);
             arraylist_add(statements, stmt);
-            arraylist_clear(stmt_tokens);
+            // arraylist_clear(stmt_tokens);
+            stmt_tokens = arraylist_create();
+        } else {
+            arraylist_add(stmt_tokens, current);
         }
-        arraylist_add(stmt_tokens, current);
     }
 }
 
@@ -81,7 +126,7 @@ Statement *parse_statement(ArrayList *tokens) {
         Expr *expr = parse_expression(list);
         r_stmt->expr = expr;
 
-        arraylist_free(list);
+        // arraylist_free(list);
 
         Statement *stmt = malloc(sizeof(Statement));
         stmt->type = STATEMENT_RETURN;
@@ -103,7 +148,7 @@ Statement *parse_statement(ArrayList *tokens) {
         stmt->statement = e_stmt;
         return stmt;
     }
-    arraylist_free(tokens);
+    // arraylist_free(tokens);
 }
 
 Expr *parse_expression(ArrayList *tokens) {
