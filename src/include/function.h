@@ -3,6 +3,8 @@
 
 // ------------------------------------
 
+#include "arraylist.h"
+#include "expression.h"
 #include "statement.h"
 #include "type.h"
 
@@ -14,23 +16,22 @@ typedef struct _FuncReturnType FuncReturnType;
 
 // ------------------------------------
 
-struct Func {
+struct _Func {
     char *name;
-    char *return_type;
-    // FuncParam* params
-    FuncReturnType *return_types;
-    Statement *root_statement; 
+    ArrayList *params;
+    ArrayList *return_types;
+    ArrayList *statements;
 };
 
 struct _FuncParam {
     Type type;
     char *var_name;
-    void *default_value;
+    Expr *default_value;
 };
 
 struct _FuncReturnType {
     Type type;
-    void *default_value;
+    Expr *default_value;
 };
 
 #endif // LUVA_FUNCTION_H

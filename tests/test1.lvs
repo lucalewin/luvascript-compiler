@@ -3,7 +3,7 @@ function main(): int {
     return 0;
 }
 
-function fizzbuzz(from: int = 0, to: int = 10): void {
+function fizzbuzz(from: int = 0, to: int = 10) {
     var printNumber: bool = false;
     for (int i = from; i <= to; i++) {
         printNumber = false;

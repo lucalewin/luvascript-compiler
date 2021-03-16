@@ -54,8 +54,8 @@ void debugPrintExpression(Expr *expr, int depth) {
             break;
         }
         case EXPR_BINARY: {
-            debugPrintTab(depth-1);
-            printf("\"expression\": {\n");
+            // debugPrintTab(depth-1);
+            // printf("\"expression\": {\n");
             debugPrintTab(depth);
             printf("\"type\": \"BinaryExpression\"\n");
             debugPrintTab(depth);
@@ -70,8 +70,8 @@ void debugPrintExpression(Expr *expr, int depth) {
             debugPrintExpression(expr->b->right, depth+1);
             debugPrintTab(depth);
             printf("}\n");
-            debugPrintTab(depth-1);
-            printf("}\n");
+            // debugPrintTab(depth-1);
+            // printf("}\n");
             break;
         }
         case EXPR_UNARY: {
@@ -100,6 +100,7 @@ void debugPrintExpression(Expr *expr, int depth) {
 }
 
 void debugPrintStatement(Statement *st, int depth) {
+    debugPrintTab(depth-1);
     printf("\"statement\": {\n");
     debugPrintTab(depth);
     switch (st->type)
@@ -112,7 +113,11 @@ void debugPrintStatement(Statement *st, int depth) {
     case STATEMENT_EXPR: {
         ExprStatement *e_stmt = st->statement;
         printf("\"type\": \"ExpressionStatement\",\n");
+        debugPrintTab(depth);
+        printf("\"expression\": {\n");
         debugPrintExpression(e_stmt->expr, depth + 1);
+        debugPrintTab(depth);
+        printf("}\n");
         break;
     }
     case STATEMENT_RETURN: {
@@ -126,7 +131,16 @@ void debugPrintStatement(Statement *st, int depth) {
         break;
     }
     debugPrintTab(depth - 1);
-    printf("}\n");
+    printf("},\n");
 }
 
-// void debugPrintFunction(Function *func);
+void debugPrintFunction(Function *func, int depth) {
+    // name
+    debugPrintTab(depth);
+    printf("\"name\": \"%s\"\n", func->name);
+    // params
+
+    // return types
+
+    // statements
+}
