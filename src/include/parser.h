@@ -38,8 +38,17 @@ struct _ParserObject {
 // ----------------------------------------------------------
 
 AST *parser_create_ast(ArrayList *tokens);
+
 Function *parse_function(ArrayList *tokens);
+
+ArrayList *parse_func_params_decl(ArrayList *tokens);
+FuncParam *parse_func_param_decl(ArrayList *tokens);
+
+ArrayList *parse_func_return_types(ArrayList *tokens);
+FuncReturnType *parse_func_return_type(ArrayList* tokens);
+
 Statement *parse_statement(ArrayList *tokens);
+
 Expr *parse_expression(ArrayList *tokens);
 Expr *parser_create_expr(ArrayList *list);
 Expr *evaluate_parenthesis(ArrayList *list);
