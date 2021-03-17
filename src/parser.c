@@ -1,43 +1,17 @@
 #include "include/parser.h"
 #include "include/debug.h"
 
+/**
+ * 
+ * 
+ * 
+ */
 AST *parser_create_ast(ArrayList *tokens) {
     // ArrayList *functions = arraylist_create();
 
-    // // for (int i = 0; i < tokens->size; i++) {
-    // //     Token *current = arraylist_get(tokens, i);
-    // //     if (current->type != TOKEN_IDENDIFIER && strcmp(current->data, "function") != 0) {
-    // //         printf("ERROR #0001: expected function declaration at [%d,%d]\n", current->line, current->pos);
-    // //         exit(1);
-    // //     }
-        
-    // // }
+    FuncParam *func_param = parse_func_param_decl(tokens);
 
-    // Statement *stmt = parse_statement(tokens);
-    // debugPrintStatement(stmt, 1);
-
-    int index = 0;
-
-    ArrayList *statements = arraylist_create();
-    ArrayList *stmt_tokens = arraylist_create();
-    for (; index < tokens->size; index++) {
-        Token *current = arraylist_get(tokens, index);
-        if (current->type == TOKEN_SEMICOLON) {
-            printf("STATEMENT\n");
-            Statement *stmt = parse_statement(stmt_tokens);
-            arraylist_add(statements, stmt);
-            // arraylist_clear(stmt_tokens);
-            stmt_tokens = arraylist_create();
-        } else {
-            arraylist_add(stmt_tokens, current);
-        }
-    }
-
-    printf("\"statements\": [\n");
-    for (int i = 0; i < statements->size; i++) {
-        debugPrintStatement(arraylist_get(statements, i), 2);
-    }
-    printf("\b\b\b]\n");
+    debugPrintFuncParam(func_param, 1);
 
     AST *ast = malloc(sizeof(AST));
     // ast->root = parser_create_expr(tokens);
@@ -79,6 +53,8 @@ Function *parse_function(ArrayList *tokens) {
         arraylist_add(param_tokens, current);
     }
 
+
+
     // parse return types
 
     // parse statements
@@ -87,7 +63,6 @@ Function *parse_function(ArrayList *tokens) {
     for (; index < tokens->size; index++) {
         Token *current = arraylist_get(tokens, index);
         if (current->type == TOKEN_SEMICOLON) {
-            printf("STATEMENT\n");
             Statement *stmt = parse_statement(stmt_tokens);
             arraylist_add(statements, stmt);
             // arraylist_clear(stmt_tokens);
@@ -98,6 +73,114 @@ Function *parse_function(ArrayList *tokens) {
     }
 }
 
+/**
+ * 
+ * parse multiple function parameter declarations
+ * 
+ */
+ArrayList *parse_func_params_decl(ArrayList *tokens) {
+
+}
+
+/**
+ * 
+ * parse single function parameter declaration
+ * 
+ */
+FuncParam *parse_func_param_decl(ArrayList *list) {
+    if (list->size < 1) {
+        printf("ERROR #0008: \n");
+        exit(1);
+    }
+    Token *current = arraylist_get(list, 0);
+    if (current->type != TOKEN_IDENDIFIER) {
+        printf("ERROR #0009: Expected identifier at [%d,%d]\n", current->line, current->pos);
+        exit(1);
+    }
+    FuncParam *param = malloc(sizeof(FuncParam));
+    param->var_name = current->data;
+
+    current = arraylist_get(list, 1);
+    if (list->size < 3) {
+        switch (current->type) {
+            case TOKEN_COLON:
+                printf("ERROR #0010: Expected type after ':'\n");
+                break;
+            case TOKEN_ASSIGNMENT_SIMPLE:
+                printf("ERROR #0011: Expected expression after '='\n");
+                break;
+            default:
+                printf("ERROR #0012: Unexpected token at [%d,%d]: %s\n", current->line, current->pos, current->data);
+                break;
+        }
+        exit(1);
+    }
+
+    Token *next = arraylist_get(list, 2);
+
+    switch (current->type) {
+        case TOKEN_COLON: {
+            if (next->type != TOKEN_KEYWORD) {
+                printf("ERROR #0013: Expected type after ':'\n");
+            }
+// Todo: implement parsing of primitive types
+            if (list->size > 3) {
+                if (list->size == 4) {
+                    printf("ERROR #0011: Expected expression after '='\n");
+                    exit(1);
+                }
+                // try parse expression from tokens left
+                ArrayList *expr_tokens_list = arraylist_create();
+                for (int i = 4; i < list->size; i++) {
+                    Token *t = arraylist_get(list, i);
+                    arraylist_add(expr_tokens_list, t);
+                }
+                Expr *default_expr = parse_expression(expr_tokens_list);
+                param->default_value = default_expr;
+            }
+            break;
+        }
+        case TOKEN_ASSIGNMENT_SIMPLE: {
+            // try parse expression from tokens left
+            ArrayList *expr_tokens_list = arraylist_create();
+            for (int i = 2; i < list->size; i++) {
+                Token *t = arraylist_get(list, i);
+                arraylist_add(expr_tokens_list, t);
+            }
+            Expr *default_expr = parse_expression(expr_tokens_list);
+            param->default_value = default_expr;
+            break;
+        }
+        default:
+            printf("ERROR #0014: Unexpected token at [%d,%d]: %s\n", current->line, current->pos, current->data);
+            break;
+    }
+    return param;
+}
+
+/**
+ * 
+ * parse multiple function return types
+ * 
+ */
+ArrayList *parse_func_return_types(ArrayList *tokens) {
+
+}
+
+/**
+ * 
+ * parse single function return type
+ * 
+ */
+FuncReturnType *parse_func_return_type(ArrayList* tokens) {
+
+}
+
+/**
+ * 
+ * parse single statement
+ * 
+ */
 Statement *parse_statement(ArrayList *tokens) {
     if (tokens->size == 0) {
         printf("ERROR #5467: No tokens\n");
@@ -151,10 +234,20 @@ Statement *parse_statement(ArrayList *tokens) {
     // arraylist_free(tokens);
 }
 
+/**
+ * 
+ * parse single expression
+ * 
+ */
 Expr *parse_expression(ArrayList *tokens) {
     return parser_create_expr(tokens);
 }
 
+/**
+ * 
+ * 
+ * 
+ */
 void parser_generate_assembly_from_expr(char *filename, Expr *expr) {
     char *path = malloc(sizeof(filename) + 4);
     sprintf(path, "%s.asm", filename);
@@ -196,8 +289,11 @@ void parser_generate_assembly_from_expr(char *filename, Expr *expr) {
     fclose(file);
 }
 
-// ----------------------------------------------------------------------------------------------------------
-
+/**
+ * 
+ * 
+ * 
+ */
 Expr *parser_create_expr(ArrayList *list) {
     ArrayList *arraylist = arraylist_create();
     
@@ -249,8 +345,11 @@ Expr *parser_create_expr(ArrayList *list) {
     return evaluate_parenthesis(arraylist);
 }
 
-// ----------------------------------------------------------------------------------------------------------
-
+/**
+ * 
+ * 
+ * 
+ */
 Expr *evaluate_parenthesis(ArrayList *list) {
 
     /* evaluate paranthesis 
