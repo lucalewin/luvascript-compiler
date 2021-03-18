@@ -1,10 +1,11 @@
 #include "include/lexer.h"
 
-#define keywords_length 11
+#define keywords_length 12
 
 char *keywords[keywords_length] = {
     "function",
     "return",
+    "void",
     "true",
     "false",
     "null",
