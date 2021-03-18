@@ -9,13 +9,14 @@
 AST *parser_create_ast(ArrayList *tokens) {
     // ArrayList *functions = arraylist_create();
 
-    FuncParam *func_param = parse_func_param_decl(tokens);
+    Function *func = parse_function(tokens);
 
-    debugPrintFuncParam(func_param, 1);
+    printf("\"function\": {\n");
+    debugPrintFunction(func, 1);
+    printf("}\n");
 
     AST *ast = malloc(sizeof(AST));
-    // ast->root = parser_create_expr(tokens);
-    // debugPrintExpression(ast->root, 1);
+    arraylist_free(tokens);
     return ast;
 }
 
@@ -31,19 +32,25 @@ AST *parser_create_ast(ArrayList *tokens) {
 Function *parse_function(ArrayList *tokens) {
     int index = 1;
     Function *func = malloc(sizeof(Function));
+
+
     // parse func name
     Token *current = arraylist_get(tokens, index++);
     if (current->type != TOKEN_IDENDIFIER) {
         printf("ERROR #0002: Expected function identifier at [%d,%d]\n", current->line, current->pos);
         exit(2);
     }
+    func->name = malloc(strlen(current->data));
     strcpy(func->name, current->data);
+
+
     // parse params
     current = arraylist_get(tokens, index++);
     if (current->type != TOKEN_LPAREN) {
         printf("ERROR #0003: Expected function parameter declaration at [%d,%d]", current->pos, current->line);
         exit(3);
     }
+
     ArrayList *param_tokens = arraylist_create();
     for (; index < tokens->size; index++) {
         current = arraylist_get(tokens, index);
@@ -52,25 +59,44 @@ Function *parse_function(ArrayList *tokens) {
         }
         arraylist_add(param_tokens, current);
     }
-
+    ArrayList *params = parse_func_params_decl(param_tokens);
+    func->params = params;
 
 
     // parse return types
+    ArrayList *return_types_tokens = arraylist_create();
+    for (; index < tokens->size; index++) {
+        current = arraylist_get(tokens, index);
+        if (current->type == TOKEN_LBRACE) {
+            break;
+        }
+        arraylist_add(param_tokens, current);
+    }
+    ArrayList *func_return_types = parse_func_return_types(return_types_tokens);
+    func->return_types = func_return_types;
+
 
     // parse statements
-    ArrayList *statements = arraylist_create();
     ArrayList *stmt_tokens = arraylist_create();
-    for (; index < tokens->size; index++) {
-        Token *current = arraylist_get(tokens, index);
-        if (current->type == TOKEN_SEMICOLON) {
-            Statement *stmt = parse_statement(stmt_tokens);
-            arraylist_add(statements, stmt);
-            // arraylist_clear(stmt_tokens);
-            stmt_tokens = arraylist_create();
+    int open = 1, close = 0;
+    while (++index < tokens->size) {
+        current = arraylist_get(tokens, index);
+        if (current->type == TOKEN_LBRACE) 
+            open++;
+        else if (current->type == TOKEN_RBRACE) 
+            close++;
+
+        if (open == close) {
+            break;
         } else {
-            arraylist_add(stmt_tokens, current);
+            arraylist_add(stmt_tokens, arraylist_get(tokens, index));
         }
     }
+
+    BlockStatement *stmt = parse_block_statement(stmt_tokens);
+    func->statements = stmt->stmts;
+
+    return func;
 }
 
 /**
@@ -79,7 +105,25 @@ Function *parse_function(ArrayList *tokens) {
  * 
  */
 ArrayList *parse_func_params_decl(ArrayList *tokens) {
-
+    ArrayList *func_params_decl = arraylist_create();
+    if (tokens->size == 0) {
+        return func_params_decl; // empty arraylist
+    }
+    ArrayListPtr func_params_decl_tokens = arraylist_create();
+    for (int i = 0; i < tokens->size; i++) {
+        Token *current = arraylist_get(tokens, i);
+        if (current->type == TOKEN_COMMA) {
+            FuncParam *param = parse_func_param_decl(func_params_decl_tokens);
+            arraylist_add(func_params_decl, param);
+            // arraylist_clear(func_params_decl_tokens);
+            func_params_decl_tokens = arraylist_create();
+        } else {
+            arraylist_add(func_params_decl_tokens, current);
+        }
+    }
+    FuncParam *param = parse_func_param_decl(func_params_decl_tokens);
+    arraylist_add(func_params_decl, param);
+    return func_params_decl;
 }
 
 /**
@@ -104,7 +148,7 @@ FuncParam *parse_func_param_decl(ArrayList *list) {
     if (list->size < 3) {
         switch (current->type) {
             case TOKEN_COLON:
-                printf("ERROR #0010: Expected type after ':'\n");
+                printf("ERROR #0010: Expected type after ':' at [%d,%d]\n", current->line, current->pos);
                 break;
             case TOKEN_ASSIGNMENT_SIMPLE:
                 printf("ERROR #0011: Expected expression after '='\n");
@@ -121,7 +165,7 @@ FuncParam *parse_func_param_decl(ArrayList *list) {
     switch (current->type) {
         case TOKEN_COLON: {
             if (next->type != TOKEN_KEYWORD) {
-                printf("ERROR #0013: Expected type after ':'\n");
+                printf("ERROR #0013: Expected type after ':' at [%d,%d]\n", next->line, next->pos);
             }
 // Todo: implement parsing of primitive types
             if (list->size > 3) {
@@ -236,6 +280,35 @@ Statement *parse_statement(ArrayList *tokens) {
 
 /**
  * 
+ * parse block-statement
+ * 
+ * {
+ *     ...;
+ *     ...;
+ * }
+ * 
+ */
+BlockStatement *parse_block_statement(ArrayList *tokens) {
+    ArrayList *statements = arraylist_create();
+    ArrayList *stmt_tokens = arraylist_create();
+    for (int index = 0; index < tokens->size; index++) {
+        Token *current = arraylist_get(tokens, index);
+        if (current->type == TOKEN_SEMICOLON) {
+            Statement *stmt = parse_statement(stmt_tokens);
+            arraylist_add(statements, stmt);
+            stmt_tokens = arraylist_create();
+        } else {
+            arraylist_add(stmt_tokens, current);
+        }
+    }
+    printf("statement count: %ld\n", statements->size);
+    BlockStatement *b_stmt = malloc(sizeof(BlockStatement));
+    b_stmt->stmts = statements;
+    return b_stmt;
+}
+
+/**
+ * 
  * parse single expression
  * 
  */
@@ -249,44 +322,44 @@ Expr *parse_expression(ArrayList *tokens) {
  * 
  */
 void parser_generate_assembly_from_expr(char *filename, Expr *expr) {
-    char *path = malloc(sizeof(filename) + 4);
-    sprintf(path, "%s.asm", filename);
-    FILE *file = fopen(path, "w");
-    if (!file) {
-        printf("Could not open file '%s'\n", path);
-        return;
-    }
-    fputs("section .data\n", file);       // start of data section
+    // char *path = malloc(sizeof(filename) + 4);
+    // sprintf(path, "%s.asm", filename);
+    // FILE *file = fopen(path, "w");
+    // if (!file) {
+    //     printf("Could not open file '%s'\n", path);
+    //     return;
+    // }
+    // fputs("section .data\n", file);       // start of data section
 
-    /* define important / standart fields */
-    fputs("STDOUT      equ     1\n", file);
-    fputs("sys_write   equ     1\n", file);
-    fputs("sys_exit    equ     60\n", file);
+    // /* define important / standart fields */
+    // fputs("STDOUT      equ     1\n", file);
+    // fputs("sys_write   equ     1\n", file);
+    // fputs("sys_exit    equ     60\n", file);
 
-    fputs("msg         db      \"filename=", file);
-    fputs(filename, file);
-    fputs("\", 10, 0\n", file);
-    fputs("msgLen      dq      ($ - msg)\n", file);
+    // fputs("msg         db      \"filename=", file);
+    // fputs(filename, file);
+    // fputs("\", 10, 0\n", file);
+    // fputs("msgLen      dq      ($ - msg)\n", file);
 
-    fputs("section .text\n", file);       // start of code section
-    fputs("global _start\n", file);       // define global entry point
-    fputs("_start:\n", file);
+    // fputs("section .text\n", file);       // start of code section
+    // fputs("global _start\n", file);       // define global entry point
+    // fputs("_start:\n", file);
 
-    /* print string */
-    fputs("    mov     rax, sys_write\n", file);
-    fputs("    mov     rdi, STDOUT\n", file);
-    fputs("    mov     rsi, msg\n", file);
-    fputs("    mov     rdx, qword [msgLen]\n", file);
-    fputs("    syscall\n", file);
-    fputs("    jmp exit\n", file);
+    // /* print string */
+    // fputs("    mov     rax, sys_write\n", file);
+    // fputs("    mov     rdi, STDOUT\n", file);
+    // fputs("    mov     rsi, msg\n", file);
+    // fputs("    mov     rdx, qword [msgLen]\n", file);
+    // fputs("    syscall\n", file);
+    // fputs("    jmp exit\n", file);
 
-    /* exit function */
-    fputs("exit:\n", file);
-    fputs("    mov     rax, sys_exit\n", file);
-    fputs("    xor     rdi, rdi\n", file);
-    fputs("    syscall\n", file);
+    // /* exit function */
+    // fputs("exit:\n", file);
+    // fputs("    mov     rax, sys_exit\n", file);
+    // fputs("    xor     rdi, rdi\n", file);
+    // fputs("    syscall\n", file);
 
-    fclose(file);
+    // fclose(file);
 }
 
 /**
