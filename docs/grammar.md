@@ -10,10 +10,10 @@
                           | <identifier> ':' <type> '=' <expression> [',' <param declaration>]
                           | <identifier> '=' <expression> [',' <param declaration>]
 
-<function return types> ::= <identifier> [',' <function return types>]
-                          | <identifier> ':' <type> [',' <function return types>]
-                          | <identifier> ':' <type> '=' <expression> [',' <function return types>]
-                          | <identifier> '=' <expression> [',' <function return types>]
+<function return types> ::= [',' <function return types>]
+                          | ':' <type> [',' <function return types>]
+                          | ':' <type> '=' <expression> [',' <function return types>]
+                          | '=' <expression> [',' <function return types>]
 
 # ---------------- [ Statements ] ----------------
 
