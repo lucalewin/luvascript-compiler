@@ -4,11 +4,13 @@
 // ---------------------------------
 
 #include "expression.h"
+#include "arraylist.h"
 
 // ---------------------------------
 
 typedef enum _StatementType StatementType;
 typedef struct _Statement Statement;
+typedef struct _BlockStatement BlockStatement;
 typedef struct _ExprStatement ExprStatement;
 typedef struct _ReturnStatement ReturnStatement;
 
@@ -23,6 +25,10 @@ enum _StatementType {
 struct _Statement {
     StatementType type;
     void *statement;
+};
+
+struct _BlockStatement {
+    ArrayList *stmts;
 };
 
 struct _ExprStatement {
