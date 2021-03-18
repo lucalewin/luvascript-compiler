@@ -1,1 +1,5 @@
-x: int
+function main(x: int = 2 ** 8, y = x * 2): int {
+    x %= 2;
+    y %= 2;
+    return 0;
+}
