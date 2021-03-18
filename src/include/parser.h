@@ -48,6 +48,7 @@ ArrayList *parse_func_return_types(ArrayList *tokens);
 FuncReturnType *parse_func_return_type(ArrayList* tokens);
 
 Statement *parse_statement(ArrayList *tokens);
+BlockStatement *parse_block_statement(ArrayList *tokens);
 
 Expr *parse_expression(ArrayList *tokens);
 Expr *parser_create_expr(ArrayList *list);
