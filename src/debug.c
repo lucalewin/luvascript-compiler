@@ -100,8 +100,6 @@ void debugPrintExpression(Expr *expr, int depth) {
 }
 
 void debugPrintStatement(Statement *st, int depth) {
-    debugPrintTab(depth-1);
-    printf("\"statement\": {\n");
     debugPrintTab(depth);
     switch (st->type)
     {
@@ -130,8 +128,6 @@ void debugPrintStatement(Statement *st, int depth) {
         printf("Unknown type: %d\n", st->type);
         break;
     }
-    debugPrintTab(depth - 1);
-    printf("},\n");
 }
 
 void debugPrintFuncParam(FuncParam *func_param, int depth) {
@@ -153,8 +149,31 @@ void debugPrintFunction(Function *func, int depth) {
     debugPrintTab(depth);
     printf("\"name\": \"%s\"\n", func->name);
     // params
-
+    debugPrintTab(depth);
+    printf("\"params\": [\n");
+    for (int i = 0; i < func->params->size; i++) {
+        debugPrintTab(depth + 1);
+        printf("{\n");
+        debugPrintFuncParam(arraylist_get(func->params, i), depth + 2);
+        debugPrintTab(depth + 1);
+        printf("},\n");
+    }
     // return types
 
+    // Todo: implement debug print for return types
+
     // statements
+    debugPrintTab(depth);
+    printf("],\n");
+    debugPrintTab(depth);
+    printf("\"statements\": [\n");
+    for (int i = 0; i < func->statements->size; i++) {
+        debugPrintTab(depth + 1);
+        printf("{\n");
+        debugPrintStatement(arraylist_get(func->statements, i), depth + 2);
+        debugPrintTab(depth + 1);
+        printf("},\n");
+    }
+    debugPrintTab(depth);
+    printf("]\n");
 }
