@@ -16,69 +16,13 @@ Expr *binary_expr_to_expr(BinaryExpr *binary_expr) {
     return expr;
 }
 
+// ----------------------------------------------------------------
+
 Expr *unary_expr_to_expr(UnaryExpr *unary_expr) {
     Expr *expr = malloc(sizeof(Expr));
     expr->type = EXPR_UNARY;
     expr->u = unary_expr;
     return expr;
-}
-
-// ----------------------------------------------------------------
-
-void print_expr(Expr *expr) {
-    if (expr == NULL) {
-        printf("ERROR #221: Expression is NULL!\n");
-        return;
-    }
-    
-    switch (expr->type) {
-        case EXPR_BASE:
-            printf("expr{");
-            print_expr(expr->e);
-            printf("}");
-            break;
-
-        case EXPR_LITERAL: {
-            LiteralExpr *l = expr->l;
-            switch (l->type) {
-                case IDENTIFIER:
-                    printf("IDENTIFIER=%s", l->identifier);
-                    break;
-                case STRING:
-                    printf("STRING=\"%s\"", l->string);
-                    break;
-                case NUMBER:
-                    printf("NUMBER=%d", l->number);
-                    break;
-                default:
-                    printf("ERROR #222: Unknown literal expression type: %d\n", l->type);
-                    break;
-            }
-            break;
-        }
-        case EXPR_BINARY: {
-            printf("binary-expr{left=");
-            BinaryExpr *b = expr->b;
-            print_expr(b->left);
-            printf(",operator=%s,right=", b->op);
-            print_expr(b->right);
-            printf("}");
-            break;
-        }
-        case EXPR_UNARY: {
-            UnaryExpr *u = expr->u;
-            printf("unary-expr{operator=%s,expression=", u->op);
-            print_expr(u->expr);
-            printf("}");
-            break;
-        }
-        case EXPR_TERNARY:
-            printf("WARNING #1 (expression.c)");
-            break;
-        default:
-            printf("ERROR #223: Unknown expression type: %d\n", expr->type);
-            break;
-    }
 }
 
 // ----------------------------------------------------------------
