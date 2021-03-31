@@ -411,52 +411,6 @@ Expr *parse_expression(ArrayList *tokens) {
  * 
  * 
  */
-void parser_generate_assembly_from_expr(char *filename, Expr *expr) {
-    // char *path = malloc(sizeof(filename) + 4);
-    // sprintf(path, "%s.asm", filename);
-    // FILE *file = fopen(path, "w");
-    // if (!file) {
-    //     printf("Could not open file '%s'\n", path);
-    //     return;
-    // }
-    // fputs("section .data\n", file);       // start of data section
-
-    // /* define important / standart fields */
-    // fputs("STDOUT      equ     1\n", file);
-    // fputs("sys_write   equ     1\n", file);
-    // fputs("sys_exit    equ     60\n", file);
-
-    // fputs("msg         db      \"filename=", file);
-    // fputs(filename, file);
-    // fputs("\", 10, 0\n", file);
-    // fputs("msgLen      dq      ($ - msg)\n", file);
-
-    // fputs("section .text\n", file);       // start of code section
-    // fputs("global _start\n", file);       // define global entry point
-    // fputs("_start:\n", file);
-
-    // /* print string */
-    // fputs("    mov     rax, sys_write\n", file);
-    // fputs("    mov     rdi, STDOUT\n", file);
-    // fputs("    mov     rsi, msg\n", file);
-    // fputs("    mov     rdx, qword [msgLen]\n", file);
-    // fputs("    syscall\n", file);
-    // fputs("    jmp exit\n", file);
-
-    // /* exit function */
-    // fputs("exit:\n", file);
-    // fputs("    mov     rax, sys_exit\n", file);
-    // fputs("    xor     rdi, rdi\n", file);
-    // fputs("    syscall\n", file);
-
-    // fclose(file);
-}
-
-/**
- * 
- * 
- * 
- */
 Expr *parser_create_expr(ArrayList *list) {
     ArrayList *arraylist = arraylist_create();
     
