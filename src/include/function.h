@@ -24,13 +24,13 @@ struct _Func {
 };
 
 struct _FuncParam {
-    Type type;
+    DataType *type;
     char *var_name;
     Expr *default_value;
 };
 
 struct _FuncReturnType {
-    Type type;
+    DataType *type;
     Expr *default_value;
 };
 
