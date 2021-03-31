@@ -133,8 +133,13 @@ void debugPrintStatement(Statement *st, int depth) {
 void debugPrintFuncParam(FuncParam *func_param, int depth) {
     debugPrintTab(depth);
     printf("\"name\": \"%s\",\n", func_param->var_name);
-    debugPrintTab(depth);
-    printf("\"type\": \"%d\",\n", func_param->type);
+    if (func_param->type != NULL) {
+        debugPrintTab(depth);
+        printf("\"type\": {\n");
+        debugPrintType(func_param->type, depth + 1);
+        debugPrintTab(depth);
+        printf("},\n");
+    }
     if (func_param->default_value != NULL) {
         debugPrintTab(depth);
         printf("\"default-value-expr\": {\n");
@@ -176,4 +181,11 @@ void debugPrintFunction(Function *func, int depth) {
     }
     debugPrintTab(depth);
     printf("]\n");
+}
+
+void debugPrintType(DataType *datatype, int depth) {
+    debugPrintTab(depth);
+    printf("\"datatype\": \"primitive\",\n");
+    debugPrintTab(depth);
+    printf("\"type-name\": \"%s\"\n", datatype->type_name);
 }
