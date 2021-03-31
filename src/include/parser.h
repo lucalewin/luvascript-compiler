@@ -8,6 +8,7 @@
 #include "util.h"
 #include "arraylist.h"
 #include "token.h"
+#include "type.h"
 #include "expression.h"
 #include "statement.h"
 #include "function.h"
@@ -50,11 +51,10 @@ FuncReturnType *parse_func_return_type(ArrayList* tokens);
 Statement *parse_statement(ArrayList *tokens);
 BlockStatement *parse_block_statement(ArrayList *tokens);
 
+DataType *parse_data_type(Token *token);
+
 Expr *parse_expression(ArrayList *tokens);
 Expr *parser_create_expr(ArrayList *list);
 Expr *evaluate_parenthesis(ArrayList *list);
-
-void parser_generate_assembly_from_expr(char *filename, Expr *expr);
-void parser_generate_assembly_from_ast(char *filename, AST *ast);
 
 #endif // LUVA_PARSER_H
