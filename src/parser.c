@@ -1,6 +1,26 @@
 #include "include/parser.h"
 #include "include/debug.h"
 
+#define PRIMITIVE_TYPES_LENGTH 15
+
+char *primitive_types[PRIMITIVE_TYPES_LENGTH] = {
+    "byte", 
+    "short", 
+    "int", 
+    "long",
+    "ubyte", 
+    "ushort", 
+    "uint", 
+    "ulong",
+    "float", 
+    "double", 
+    "decimal"
+    "char", 
+    "string",
+    "bool", 
+    "void"
+};
+
 /**
  * 
  * 
@@ -143,6 +163,7 @@ FuncParam *parse_func_param_decl(ArrayList *list) {
     }
     FuncParam *param = malloc(sizeof(FuncParam));
     param->var_name = current->data;
+    param->type = NULL;
 
     current = arraylist_get(list, 1);
     if (list->size < 3) {
@@ -167,7 +188,10 @@ FuncParam *parse_func_param_decl(ArrayList *list) {
             if (next->type != TOKEN_KEYWORD) {
                 printf("ERROR #0013: Expected type after ':' at [%d,%d]\n", next->line, next->pos);
             }
-// Todo: implement parsing of primitive types
+            // parse data typpe
+            param->type = parse_data_type(next);
+
+            // check, if default value is specified
             if (list->size > 3) {
                 if (list->size == 4) {
                     printf("ERROR #0011: Expected expression after '='\n");
@@ -208,7 +232,24 @@ FuncParam *parse_func_param_decl(ArrayList *list) {
  * 
  */
 ArrayList *parse_func_return_types(ArrayList *tokens) {
-
+    ArrayList *func_return_types = arraylist_create();
+    if (tokens->size == 0) {
+        return func_return_types; // empty arraylist
+    }
+    ArrayListPtr func_return_types_tokens = arraylist_create();
+    for (int i = 0; i < tokens->size; i++) {
+        Token *current = arraylist_get(tokens, i);
+        if (current->type == TOKEN_COMMA) {
+            FuncReturnType *param = parse_func_return_type(func_return_types_tokens);
+            arraylist_add(func_return_types, param);
+            func_return_types_tokens = arraylist_create();
+        } else {
+            arraylist_add(func_return_types_tokens, current);
+        }
+    }
+    FuncReturnType *param = parse_func_return_type(func_return_types_tokens);
+    arraylist_add(func_return_types, param);
+    return func_return_types;
 }
 
 /**
@@ -217,7 +258,35 @@ ArrayList *parse_func_return_types(ArrayList *tokens) {
  * 
  */
 FuncReturnType *parse_func_return_type(ArrayList* tokens) {
-
+    if (tokens->size == 0) {
+        printf("ERROR #0017: Excpected type\n");
+        exit(1);
+    }
+    Token *current = arraylist_get(tokens, 0); 
+    if (current->type != TOKEN_KEYWORD || current->type != TOKEN_IDENDIFIER) {
+        printf("ERROR #0018: Expected type name at [%d,%d]\n", current->line, current->pos);
+        exit(1);
+    }
+    FuncReturnType *func_return_type = malloc(sizeof(FuncReturnType));
+    // Todo : parse type
+    func_return_type->type = parse_data_type(current);
+    // parse default return value
+    if (tokens->size == 2) {
+        current = arraylist_get(tokens, 1);
+        if (current->type != TOKEN_ASSIGNMENT_SIMPLE) {
+            printf("ERROR #0019: Expected = at [%d,%d]\n", current->line, current->pos);
+            exit(1);
+        }
+        printf("ERROR #0020: Expected expression after '=' at [%d,%d]\n", current->line, current->pos);
+        exit(1);
+    }
+    ArrayList *expr_tokens = arraylist_create();
+    for (int i = 2; i < tokens->size; i++) {
+        arraylist_add(expr_tokens, arraylist_get(tokens, i));
+    }
+    Expr *default_value = parse_expression(expr_tokens);
+    func_return_type->default_value = default_value;
+    return func_return_type;
 }
 
 /**
@@ -301,10 +370,31 @@ BlockStatement *parse_block_statement(ArrayList *tokens) {
             arraylist_add(stmt_tokens, current);
         }
     }
-    printf("statement count: %ld\n", statements->size);
     BlockStatement *b_stmt = malloc(sizeof(BlockStatement));
     b_stmt->stmts = statements;
     return b_stmt;
+}
+
+/**
+ * 
+ * parse datatype
+ * 
+ */
+DataType *parse_data_type(Token *token) {
+    if (token == NULL || token->data == NULL) {
+        printf("ERROR #839475: Token data is NULL [%d,%d]\n", token->line, token->pos);
+        exit(1);
+    }
+    DataType *type = malloc(sizeof(DataType));
+    if (arr_contains(primitive_types, PRIMITIVE_TYPES_LENGTH, token->data)) {
+        type->type = TYPE_PRIMITIVE;
+        // type->type_name = token->data;
+        type->type_name = malloc(strlen(token->data));
+        strcpy(type->type_name, token->data);
+        return type;
+    }
+    printf("ERROR #893465: ???\n");
+    exit(1);
 }
 
 /**
