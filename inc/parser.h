@@ -5,14 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "util.h"
-#include "arraylist.h"
-#include "token.h"
-#include "type.h"
-#include "expression.h"
-#include "statement.h"
-#include "function.h"
-#include "ast.h"
+#include <util.h>
+#include <arraylist.h>
+#include <token.h>
+#include <debug.h>
+#include <ast.h>
+#include <type.h>
+#include <expression.h>
+#include <statement.h>
+#include <function.h>
 
 // ----------------------------------------------------------
 

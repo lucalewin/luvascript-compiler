@@ -39,6 +39,5 @@ bool is_whitespace(char c);
 bool arr_contains(char **arr, int arr_length, char *key);
 
 int32_t get_int(char *c);
-//int64_t get_long(char *c);
 
 #endif // LUVA_UTIL_H
