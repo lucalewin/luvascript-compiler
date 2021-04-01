@@ -1,7 +1,7 @@
 PROJ_DIR	:= $(CURDIR)
 
 SRC_DIR		:= src
-INC_DIRS	:= -I./inc $(addprefix -I./,$(dir $(wildcard inc/*/.))) # all include folders with depth=1
+INC_DIR		:= inc
 OBJ_DIR		:= obj
 BIN_DIR		:= bin
 
@@ -9,15 +9,23 @@ TARGET		:= $(BIN_DIR)/lvc
 
 SOURCES		:= $(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c)
 OBJECTS		:= $(subst src/,obj/,$(SOURCES:.c=.o))
+INC_DIRS	:= -I$(INC_DIR) $(addprefix -I,$(dir $(wildcard $(INC_DIR)/*/.))) # all include folders with depth=1
 
 CC			:= gcc
-CFLAGS		:= -c -std=c17 -g
+CFLAGS		:= -g -c -std=c17
 LDFLAGS		:= -g
-
 
 # ------------------------------------
 
-all: dirs $(TARGET)
+all: build
+
+build: dirs $(TARGET)
+
+rebuild: clean build
+
+dirs:
+	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(BIN_DIR)
 
 $(OBJECTS): obj/%.o : src/%.c
 	@mkdir -p $(@D)
@@ -27,50 +35,5 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@
 
 
-dirs:
-	@mkdir -p $(OBJ_DIR)
-	@mkdir -p $(BIN_DIR)
-
-
 clean:
-	@rm -rf $(OBJECTS) $(TARGET)
-
-
-# @echo $(SOURCES)
-# @echo ---- OBJECTS ----
-# @echo $(OBJECTS)
-# CC=gcc
-# CFLAGS= -c -std=c17 -g
-# LDFLAGS= -g
-
-# SRC=$(wildcard src/*.c)
-# OBJ=$(subst src/,obj/,$(SRC:.c=.o))
-# TARGET=bin/lvc
-# TESTS=$(wildcard tests/*lvs)
-
-# # ------------------
-
-# $(TARGET): $(OBJ)
-# 	$(CC) $(LDFLAGS) $^ -o $@
-
-# obj/%.o: src/%.c
-# 	$(CC) $(CFLAGS) $< -o $@
-
-# # ------------------
-
-# all: build
-
-# build: $(SRC) $(OBJ) $(TARGET)
-
-# rebuild: clean build
-
-# run: build
-# 	$(TARGET)
-
-# test: $(TESTS) build
-# 	$(TARGET) $(TESTS)
-
-# install:
-
-# clean:
-# 	rm -rf $(OBJ) $(TARGET)
+	rm -rf $(OBJECTS) $(TARGET)
