@@ -1,12 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "include/util.h"
-#include "include/arraylist.h"
-#include "include/lexer.h"
-#include "include/parser.h"
-#include "include/compiler.h"
-#include "include/ast.h"
+//#include "include/util.h"
+// #include "include/arraylist.h"
+// #include "include/lexer.h"
+// #include "include/parser.h"
+// #include "include/compiler.h"
+// #include "include/ast.h"
+#include <util.h>
+#include <arraylist.h>
+#include <lexer.h>
+#include <parser.h>
+#include <compiler.h>
+#include <ast.h>
 
 int main(int argc, char **argv) {
     // validate command line arguments

@@ -1,5 +1,4 @@
-#include "include/parser.h"
-#include "include/debug.h"
+#include <parser.h>
 
 #define PRIMITIVE_TYPES_LENGTH 15
 

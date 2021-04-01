@@ -1,4 +1,4 @@
-#include "include/expression.h"
+#include <expression.h>
 
 Expr *literal_expr_to_expr(LiteralExpr *literal_expr) {
     Expr *expr = malloc(sizeof(Expr));

@@ -1,4 +1,4 @@
-#include "include/debug.h"
+#include <debug.h>
 
 void debugPrintTab(int amount) {
     for (int i = 0; i < amount; i++) {

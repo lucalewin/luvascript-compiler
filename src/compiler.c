@@ -1,4 +1,4 @@
-#include "include/compiler.h"
+#include <compiler.h>
 
 char *assembler = "nasm -f elf64";
 char *linker = "ld -g";

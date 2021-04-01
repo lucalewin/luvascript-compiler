@@ -1,4 +1,4 @@
-#include "include/arraylist.h"
+#include <arraylist.h>
 
 ArrayListPtr arraylist_create() {
     ArrayList *list = malloc(sizeof *list);

@@ -1,4 +1,4 @@
-#include "include/lexer.h"
+#include <lexer.h>
 
 #define keywords_length 12
 
