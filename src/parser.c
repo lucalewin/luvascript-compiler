@@ -307,8 +307,7 @@ Statement *parse_statement(ArrayList *tokens) {
     }
     // return statement
     Token *first = arraylist_get(tokens, 0);
-    Token *last = arraylist_get(tokens, tokens->size - 1);
-    // printf("first type %d, %s\n", first->type, first->data);
+    
     if (first->type == TOKEN_KEYWORD && strcmp(first->data, "return") == 0) {
         ReturnStatement *r_stmt = malloc(sizeof(ReturnStatement));
         
