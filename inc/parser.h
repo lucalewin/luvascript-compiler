@@ -13,6 +13,7 @@
 #include <type.h>
 #include <expression.h>
 #include <statement.h>
+#include <variable.h>
 #include <function.h>
 
 // ----------------------------------------------------------
@@ -42,6 +43,8 @@ struct _ParserObject {
 AST *parser_create_ast(ArrayList *tokens);
 
 Function *parse_function(ArrayList *tokens);
+
+VariableDecl *parse_var_decl(ArrayList *tokens);
 
 ArrayList *parse_func_params_decl(ArrayList *tokens);
 FuncParam *parse_func_param_decl(ArrayList *tokens);
