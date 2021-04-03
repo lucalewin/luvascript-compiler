@@ -7,7 +7,7 @@ make build
 
 index=1
 
-for file in "tests"/*.lvs
+for file in "tests"/*.lv
 do
     echo ""
     echo "---------------- [Test $index] ----------------"
