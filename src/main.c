@@ -15,9 +15,6 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    int optimize = 0;
-    int optimizaionLvl = 3;
-
     int last_index = str_last_index_of(argv[1], '.');   //
     char *file_base_name = malloc(last_index);          // get filepath without extension
     substring(argv[1], file_base_name, last_index);     //
@@ -30,13 +27,9 @@ int main(int argc, char **argv) {
     AST *ast = parser_create_ast(list);                 // create AST from tokens
     arraylist_free(list);                               // free tokenlist
 
+    char *asm = convert_ast_to_x86_64_assembly(ast);
 
-    if (optimize) {
-        // Todo implement optimization
-    }
-
-
-    char *asm = parser_convert_ast_to_assembly(ast);
+    printf("%s\n", asm);
 
     // compile(file_base_name);
 
