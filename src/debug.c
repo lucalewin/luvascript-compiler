@@ -121,7 +121,15 @@ void debugPrintStatement(Statement *st, int depth) {
     case STATEMENT_RETURN: {
         ReturnStatement *r_stmt = st->statement;
         printf("\"type\": \"ReturnStatement\",\n");
-        debugPrintExpression(r_stmt->expr, depth + 1);
+        debugPrintTab(depth);
+        if (r_stmt->expr == NULL) {
+            printf("\"expression\": null\n");
+        } else {
+            printf("\"expression\": {\n");
+            debugPrintExpression(r_stmt->expr, depth + 1);
+            debugPrintTab(depth);
+            printf("}\n");
+        }
         break;
     }
     default:
@@ -149,6 +157,21 @@ void debugPrintFuncParam(FuncParam *func_param, int depth) {
     }
 }
 
+void debugPrintFuncReturnType(FuncReturnType *return_type, int depth) {
+    debugPrintTab(depth);
+    printf("\"type\": {\n");
+    debugPrintType(return_type->type, depth + 1);
+    debugPrintTab(depth);
+    printf("},\n");
+    if (return_type->default_value != NULL) {
+        debugPrintTab(depth);
+        printf("\"default-value\": {\n");
+        debugPrintExpression(return_type->default_value, depth + 1);
+        debugPrintTab(depth);
+        printf("}\n");
+    }
+}
+
 void debugPrintFunction(Function *func, int depth) {
     // name
     debugPrintTab(depth);
@@ -163,13 +186,23 @@ void debugPrintFunction(Function *func, int depth) {
         debugPrintTab(depth + 1);
         printf("},\n");
     }
-    // return types
-
-    // Todo: implement debug print for return types
-
-    // statements
     debugPrintTab(depth);
     printf("],\n");
+
+    // return types
+    debugPrintTab(depth);
+    printf("\"return-types\": [\n");
+    for (int i = 0; i < func->return_types->size; i++) {
+        debugPrintTab(depth + 1);
+        printf("{\n");
+        debugPrintFuncReturnType(arraylist_get(func->return_types, i), depth + 2);
+        debugPrintTab(depth + 1);
+        printf("},\n");
+    }
+    debugPrintTab(depth);
+    printf("],\n");
+
+    // statements
     debugPrintTab(depth);
     printf("\"statements\": [\n");
     for (int i = 0; i < func->statements->size; i++) {
