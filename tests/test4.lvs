@@ -1,6 +1,0 @@
-function main(): int {
-    var x: int = 6;
-    var y: int = 9;
-    var z: int = x + y * x + y;
-    return z;
-}
