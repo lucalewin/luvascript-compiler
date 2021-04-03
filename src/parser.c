@@ -29,9 +29,8 @@ AST *parser_create_ast(ArrayList *tokens) {
     ArrayList *functions = arraylist_create();
     ArrayList *global_var_decl = arraylist_create();
 
-    Token *current;
     for (int i = 0; i < tokens->size; i++) {
-        current = arraylist_get(tokens, i);
+        Token *current = arraylist_get(tokens, i);
         if (current->type != TOKEN_KEYWORD) {
             printf("ERROR #5843846: Expected function or variable declaration at [%d,%d]!\n", current->line, current->pos);
             printf("data: %s", current->data);
