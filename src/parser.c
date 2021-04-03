@@ -29,13 +29,13 @@ AST *parser_create_ast(ArrayList *tokens) {
     // ArrayList *functions = arraylist_create();
 
     Function *func = parse_function(tokens);
+    arraylist_free(tokens);
 
     printf("\"function\": {\n");
     debugPrintFunction(func, 1);
     printf("}\n");
 
     AST *ast = malloc(sizeof(AST));
-    arraylist_free(tokens);
     return ast;
 }
 
@@ -66,7 +66,7 @@ Function *parse_function(ArrayList *tokens) {
     // parse params
     current = arraylist_get(tokens, index++);
     if (current->type != TOKEN_LPAREN) {
-        printf("ERROR #0003: Expected function parameter declaration at [%d,%d]", current->pos, current->line);
+        printf("ERROR #0003: Expected function parameter declaration at [%d,%d]\n", current->pos, current->line);
         exit(3);
     }
 
@@ -81,40 +81,47 @@ Function *parse_function(ArrayList *tokens) {
     ArrayList *params = parse_func_params_decl(param_tokens);
     func->params = params;
 
-
-    // parse return types
-    ArrayList *return_types_tokens = arraylist_create();
-    for (; index < tokens->size; index++) {
-        current = arraylist_get(tokens, index);
-        if (current->type == TOKEN_LBRACE) {
+    current = arraylist_get(tokens, ++index);
+    switch (current->type) {
+        case TOKEN_COLON: {
+            // parse return types
+            index++;
+            ArrayList *return_types_tokens = arraylist_create();
+            for (; index < tokens->size; index++) {
+                current = arraylist_get(tokens, index);
+                if (current->type == TOKEN_LBRACE) {
+                    break;
+                }
+                arraylist_add(return_types_tokens, current);
+            }
+            ArrayList *func_return_types = parse_func_return_types(return_types_tokens);
+            func->return_types = func_return_types;
             break;
         }
-        arraylist_add(param_tokens, current);
+        case TOKEN_LBRACE:
+            break;
+
+        default: {
+            printf("ERROR #78368547: Expected ':' or '{' at [%d,%d]\n", current->line, current->pos);
+            exit(1);
+            break;
+        }
     }
-    ArrayList *func_return_types = parse_func_return_types(return_types_tokens);
-    func->return_types = func_return_types;
-
-
     // parse statements
     ArrayList *stmt_tokens = arraylist_create();
     int open = 1, close = 0;
     while (++index < tokens->size) {
         current = arraylist_get(tokens, index);
-        if (current->type == TOKEN_LBRACE) 
-            open++;
-        else if (current->type == TOKEN_RBRACE) 
-            close++;
+        if (current->type == TOKEN_LBRACE)      { open++; } 
+        else if (current->type == TOKEN_RBRACE) { close++; }
 
-        if (open == close) {
-            break;
-        } else {
-            arraylist_add(stmt_tokens, arraylist_get(tokens, index));
+        if (open == close) { break; } 
+        else {
+            arraylist_add(stmt_tokens, arraylist_get(tokens, index)); 
         }
     }
-
     BlockStatement *stmt = parse_block_statement(stmt_tokens);
     func->statements = stmt->stmts;
-
     return func;
 }
 
@@ -262,7 +269,8 @@ FuncReturnType *parse_func_return_type(ArrayList* tokens) {
         exit(1);
     }
     Token *current = arraylist_get(tokens, 0); 
-    if (current->type != TOKEN_KEYWORD || current->type != TOKEN_IDENDIFIER) {
+    if (current->type != TOKEN_KEYWORD && current->type != TOKEN_IDENDIFIER) {
+        printf("type: %d\n", current->type);
         printf("ERROR #0018: Expected type name at [%d,%d]\n", current->line, current->pos);
         exit(1);
     }
@@ -283,6 +291,10 @@ FuncReturnType *parse_func_return_type(ArrayList* tokens) {
     for (int i = 2; i < tokens->size; i++) {
         arraylist_add(expr_tokens, arraylist_get(tokens, i));
     }
+    if (expr_tokens->size == 0) {
+        func_return_type->default_value = NULL;
+        return func_return_type;
+    }
     Expr *default_value = parse_expression(expr_tokens);
     func_return_type->default_value = default_value;
     return func_return_type;
@@ -298,13 +310,13 @@ Statement *parse_statement(ArrayList *tokens) {
         printf("ERROR #5467: No tokens\n");
     }
     // no-op statement
-    if (tokens->size == 1) {
-        Token *t = arraylist_get(tokens, 0);
-        if (t->type != TOKEN_SEMICOLON) {
-            printf("ERROR #5468: Wrong token type: %d\n", t->type);
-        }
-        return NULL;
-    }
+    // if (tokens->size == 1) {
+    //     Token *t = arraylist_get(tokens, 0);
+    //     if (t->type != TOKEN_SEMICOLON) {
+    //         printf("ERROR #5468: Wrong token type: %d\n", t->type);
+    //     }
+    //     return NULL;
+    // }
     // return statement
     Token *first = arraylist_get(tokens, 0);
 
@@ -317,9 +329,12 @@ Statement *parse_statement(ArrayList *tokens) {
             arraylist_add(list, t);
         }
 
-        Expr *expr = parse_expression(list);
-        r_stmt->expr = expr;
-
+        if (list->size == 0) {
+            r_stmt->expr = NULL;
+        } else {
+            Expr *expr = parse_expression(list);
+            r_stmt->expr = expr;
+        }
         // arraylist_free(list);
 
         Statement *stmt = malloc(sizeof(Statement));
@@ -328,7 +343,15 @@ Statement *parse_statement(ArrayList *tokens) {
         return stmt;
     } 
     
-    
+    /**
+     * 
+     * To implement:
+     *  - if statements
+     *  - for / while loops
+     *  - match / switch statement
+     * 
+     */
+
     else {
         ExprStatement *e_stmt = malloc(sizeof(ExprStatement));
         // for (int i = 0; i < tokens->size; i++) {
