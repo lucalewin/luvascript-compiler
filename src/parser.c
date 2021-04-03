@@ -104,7 +104,6 @@ Function *parse_function(ArrayList *tokens) {
         default: {
             printf("ERROR #78368547: Expected ':' or '{' at [%d,%d]\n", current->line, current->pos);
             exit(1);
-            break;
         }
     }
     // parse statements
