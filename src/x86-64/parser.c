@@ -1,3 +1,4 @@
+#include <parser.h>
 #include <x86-64/parser.h>
 
 char *parser_convert_ast_to_assembly(AST *ast) {
