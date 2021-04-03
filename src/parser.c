@@ -439,8 +439,9 @@ Expr *parser_create_expr(ArrayList *list) {
     ArrayList *arraylist = arraylist_create();
     
     /* convert literal tokens to literal expressions */
+    Token *current;
     for (int i = 0; i < list->size; i++) {
-        Token *current = arraylist_get(list, i);
+        current = arraylist_get(list, i);
         ParserObject *obj = malloc(sizeof(ParserObject));
         switch (current->type) {
             case TOKEN_IDENDIFIER: {
