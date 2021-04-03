@@ -18,7 +18,7 @@ char *read_file(const char* path) {
 
     // read file
     char *buffer = (char*) malloc(sizeof(char) * (size + 1));
-    size_t t = fread(buffer, 1, size, file);
+    fread(buffer, 1, size, file);
     buffer[size] = '\0';
     fclose(file);
 
