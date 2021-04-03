@@ -307,7 +307,7 @@ Statement *parse_statement(ArrayList *tokens) {
     }
     // return statement
     Token *first = arraylist_get(tokens, 0);
-    
+
     if (first->type == TOKEN_KEYWORD && strcmp(first->data, "return") == 0) {
         ReturnStatement *r_stmt = malloc(sizeof(ReturnStatement));
         
@@ -379,7 +379,11 @@ BlockStatement *parse_block_statement(ArrayList *tokens) {
  * 
  */
 DataType *parse_data_type(Token *token) {
-    if (token == NULL || token->data == NULL) {
+    if (token == NULL) {
+        printf("ERROR #892367: Token is NULL\n");
+        exit(1);
+    }
+    if (token->data == NULL) {
         printf("ERROR #839475: Token data is NULL [%d,%d]\n", token->line, token->pos);
         exit(1);
     }
