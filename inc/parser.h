@@ -58,4 +58,9 @@ Expr *parse_expression(ArrayList *tokens);
 Expr *parser_create_expr(ArrayList *list);
 Expr *evaluate_parenthesis(ArrayList *list);
 
+// ----------------------------------------------------------
+
+char *convert_ast_to_x86_64_assembly(AST *ast);
+char *convert_ast_to_arm64_assembly(AST *ast);
+
 #endif // LUVA_PARSER_H
