@@ -439,11 +439,9 @@ Expr *parser_create_expr(ArrayList *list) {
     ArrayList *arraylist = arraylist_create();
     
     /* convert literal tokens to literal expressions */
-    Token *current;
-    ParserObject *obj;
     for (int i = 0; i < list->size; i++) {
-        current = arraylist_get(list, i);
-        obj = malloc(sizeof(ParserObject));
+        Token *current = arraylist_get(list, i);
+        ParserObject *obj = malloc(sizeof(ParserObject));
         switch (current->type) {
             case TOKEN_IDENDIFIER: {
                 LiteralExpr *le = literal_expr_create(IDENTIFIER, current->data);
