@@ -26,16 +26,38 @@ char *primitive_types[PRIMITIVE_TYPES_LENGTH] = {
  * 
  */
 AST *parser_create_ast(ArrayList *tokens) {
-    // ArrayList *functions = arraylist_create();
+    ArrayList *functions = arraylist_create();
+    ArrayList *global_var_decl = arraylist_create();
 
-    Function *func = parse_function(tokens);
+    Token *current;
+    for (int i = 0; i < tokens->size; i++) {
+        current = arraylist_get(tokens, i);
+        if (current->type != TOKEN_KEYWORD) {
+            printf("ERROR #5843846: Expected function or variable declaration at [%d,%d]!\n", current->line, current->pos);
+            printf("data: %s", current->data);
+            exit(1);
+        }
+        if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
+            ArrayList *list = arraylist_create();
+            do {
+                arraylist_add(list, arraylist_get(tokens, i));
+                printf("ADD\n");
+            } while ((current = arraylist_get(tokens, ++i))->type != TOKEN_SEMICOLON && i < tokens->size);
+            VariableDecl *varDecl = parse_var_decl(list);
+            arraylist_add(global_var_decl, varDecl);
+        } else if (strcmp(current->data, "function") == 0) {
+
+        } else {
+            printf("ERROR #9237981: Excpected function or variable declaration at [%d,%d]!\n", current->line, current->pos);
+            exit(1);
+        }
+    }
+
     arraylist_free(tokens);
 
-    printf("\"function\": {\n");
-    debugPrintFunction(func, 1);
-    printf("}\n");
-
     AST *ast = malloc(sizeof(AST));
+    ast->functions = functions;
+    ast->global_var_decls = global_var_decl;
     return ast;
 }
 
@@ -122,6 +144,15 @@ Function *parse_function(ArrayList *tokens) {
     BlockStatement *stmt = parse_block_statement(stmt_tokens);
     func->statements = stmt->stmts;
     return func;
+}
+
+/**
+ * 
+ * parse a variable declaration
+ * 
+ */
+VariableDecl *parse_var_decl(ArrayList *tokens) {
+    return NULL;
 }
 
 /**
@@ -535,53 +566,6 @@ Expr *evaluate_parenthesis(ArrayList *list) {
         }
     }
 
-    if (list->capacity > list->size + 16) {
-        arraylist_shrink_capacity_to_size(list);
-    }
-
-    /*
-     * precedence level: 1
-     * 
-     * operators: 
-     *   ++  suffix increment
-     *   --  suffix decrement
-     * associativity: left-to-right
-     * 
-     */
-    // for (int i = 0; i < list->size; i++) {
-    //     ParserObject *current = arraylist_get(list, i);
-    //     if (current->type == TYPE_TOKEN) {
-    //         switch (current->token->type) {
-    //             case TOKEN_INCREMENT:
-    //             case TOKEN_DECREMENT: {
-    //                 ParserObject *previous = arraylist_get(list, i - 1);
-    //                 if (previous->type != TYPE_EXPRESSION) {
-    //                     break;   // break, because it could be a prefix increment/decrement -> throw no error
-    //                 }
-
-    //                 /*
-    //                  *
-    //                  * Todo
-    //                  *  - create suffix increment/decrement expression struct
-    //                  *  - implement methods to create newly created expression
-    //                  * 
-    //                  */
-
-    //                 // arraylist_set_at_index(list, i-1, obj, 0);    // replace ++ token with unary expression
-    //                 // arraylist_remove_at_index(list, i+1);       // remove literal expression
-    //                 // i--;
-    //                 break;
-    //             }
-    //             default:
-    //                 break;
-    //         }
-    //     }
-    // }
-
-    if (list->capacity > list->size + 16) {
-        arraylist_shrink_capacity_to_size(list);
-    }
-
     /*
      * precedence level: 2
      * 
@@ -620,10 +604,6 @@ Expr *evaluate_parenthesis(ArrayList *list) {
         }
     }
 
-    if (list->capacity > list->size + 16) {
-        arraylist_shrink_capacity_to_size(list);
-    }
-
     /*
      * precedence level: 3
      * 
@@ -654,10 +634,6 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                 arraylist_remove_at_index(list, i--);
             }
         }
-    }
-
-    if (list->capacity > list->size + 16) {
-        arraylist_shrink_capacity_to_size(list);
     }
 
     /*
@@ -705,10 +681,6 @@ Expr *evaluate_parenthesis(ArrayList *list) {
                     break;
             }
         }
-    }
-
-    if (list->capacity > list->size + 16) {
-        arraylist_shrink_capacity_to_size(list);
     }
 
     /*
@@ -939,7 +911,7 @@ Expr *evaluate_parenthesis(ArrayList *list) {
 
     if (list->size != 1) {
         printf("ERROR #161\n");
-        return NULL;
+        exit(1);
     }
 
     ParserObject *current = arraylist_get(list, 0);
@@ -948,13 +920,13 @@ Expr *evaluate_parenthesis(ArrayList *list) {
         if (current->type == TYPE_TOKEN) {
             Token *t = current->token;
             printf("ERROR #162: Unexpected token at [%d:%d]: %s\n", t->line, t->pos, t->data);
-            return NULL;
+            exit(1);
         }
         printf("\nERROR #163: Encountered unknown type: %d\n", current->type);
         printf("    This is an compiler error!\n");
         printf("    Please create an issue on the luvascript-compiler github repo:\n");
         printf("    https://github.com/lucr4ft/luvascript-compiler \n\n");
-        return NULL;
+        exit(1);
     }
 
     if (current->expr == NULL) {
@@ -962,6 +934,7 @@ Expr *evaluate_parenthesis(ArrayList *list) {
         printf("    This is an compiler error!\n");
         printf("    Please create an issue on the luvascript-compiler github repo:\n");
         printf("    https://github.com/lucr4ft/luvascript-compiler \n\n");
+        exit(1);
     }
 
     arraylist_free(list);
