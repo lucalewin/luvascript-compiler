@@ -1,12 +1,13 @@
 #ifndef LUVA_AST_H
 #define LUVA_AST_H
 
-#include "expression.h"
+#include <arraylist.h>
 
 typedef struct _ast AST;
 
 struct _ast {
-    Expr *root;
+    ArrayList *functions;
+    ArrayList *global_var_decls;
 };
 
 #endif // LUVA_AST_H
