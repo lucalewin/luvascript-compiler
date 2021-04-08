@@ -8,6 +8,8 @@
 #include <compiler.h>
 #include <ast.h>
 
+#include <parser2.h>
+
 int main(int argc, char **argv) {
     // validate command line arguments
     if (argc < 2) {
@@ -22,14 +24,19 @@ int main(int argc, char **argv) {
     
     char* file_contents = read_file(argv[1]);           // read file
     
-    ArrayList *list = lexer_start(file_contents);       // get list of tokens from code
-    free(file_contents);                                // free file contents -> no longer needed
-    AST *ast = parser_create_ast(list);                 // create AST from tokens
-    arraylist_free(list);                               // free tokenlist
+    ArrayList *tokens = lexer_start(file_contents);
+    AST ast;
+    parse(&ast, tokens);
+    arraylist_free(tokens);
 
-    char *asm = convert_ast_to_x86_64_assembly(ast);
+    // ArrayList *list = lexer_start(file_contents);       // get list of tokens from code
+    // free(file_contents);                                // free file contents -> no longer needed
+    // AST *ast = parser_create_ast(list);                 // create AST from tokens
+    // arraylist_free(list);                               // free tokenlist
 
-    printf("%s\n", asm);
+    // char *asm = convert_ast_to_x86_64_assembly(ast);
+
+    // printf("%s\n", asm);
 
     // compile(file_base_name);
 
