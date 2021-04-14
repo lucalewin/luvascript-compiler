@@ -4,11 +4,12 @@
 #include <util.h>
 #include <arraylist.h>
 #include <lexer.h>
-#include <parser.h>
-#include <compiler.h>
-#include <ast.h>
+// #include <parser.h>
+// #include <compiler.h>
+// #include <ast.h>
 
-#include <parser2.h>
+// #include <parser2.h>
+#include <expr_parser.h>
 
 int main(int argc, char **argv) {
     // validate command line arguments
@@ -25,8 +26,9 @@ int main(int argc, char **argv) {
     char* file_contents = read_file(argv[1]);           // read file
     
     ArrayList *tokens = lexer_start(file_contents);
-    AST ast;
-    parse(&ast, tokens);
+    // AST ast;
+    // parse(&ast, tokens);
+    exprParserStart(tokens);
     arraylist_free(tokens);
 
     // ArrayList *list = lexer_start(file_contents);       // get list of tokens from code
