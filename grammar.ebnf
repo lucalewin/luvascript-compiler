@@ -1,0 +1,139 @@
+program
+    : {functions}, mainFunction, {functions}
+    ;
+
+(* ---------------------- functions --------------------- *)
+
+functions
+    : function
+    | functions, function
+    ;
+
+function
+    : 'function', indentifier, '(', paramDecl, ')', [':', returnTypeDecls], blockStatement
+    ;
+
+mainFunction
+    : 'function', 'main', '(', paramDecl, ')', [':', returnTypeDecls], blockStatement
+    ;
+
+(* --------------------- statements --------------------- *)
+
+statement
+    : returnStatement
+    | ';'
+    ;
+
+blockStatement
+    : '{' blockStatements '}'
+    ;
+
+blockStatements
+    : statement
+    | blockStatements, blockStatement
+    ;
+
+returnStatement
+    : 'return', [expression], ';'
+    ;
+
+(* expression statements *)
+
+expressionStatement
+    : statementExpression ';' 
+    ;
+
+statementExpression
+    : assignmentExpr
+    | preincrementExpr
+    | predecrementExpr
+    | postincrenentExpr
+    | postdecrementExpr
+    | functionCallExpr
+    ;
+
+(* -------------------- expressions --------------------- *)
+
+expression
+    : assignmentExpr
+    ;
+
+assignmentExpr
+    : conditionalExpr
+    | assignment 
+    ;
+
+assignment
+    : indentifier, assignmentOperator, conditionalExpr
+    ;
+
+assignmentOperator
+    : '=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '>>>=' | '&=' | '^=' | '|='
+    ;
+
+conditionalExpr
+    : logicalOrExpr
+    ;
+
+logicalOrExpr
+    : logicalAndExpr
+    ;
+
+logicalAndExpr
+    :
+    ;
+
+bitwiseOrExpr
+    :
+    ;
+
+bitwiseXorExpr
+    :
+    ;
+
+bitwiseAndExpr
+    :
+    ;
+
+relationalEqualityExpr
+    :
+    ;
+
+bitwiseShiftExpr
+    :
+    ;
+
+
+
+(* ----------------------- types ------------------------ *)
+
+(*                        TODO                            *)
+(*                        TYPES                           *)
+(*                        TODO                            *)
+
+type
+    : primitiveType
+    | referenceType
+    ;
+
+primitiveType
+    : numericType
+    | 'bool'
+    ;
+
+numericType
+    : integerType
+    | flotingpointType
+    | 'number' 
+    ;
+
+integerType
+    : 'int'
+    | 'long'
+    ;
+
+flotingpointType
+    : 'float'
+    | 'double'
+    | 'decimal'
+    ;
