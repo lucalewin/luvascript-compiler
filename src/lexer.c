@@ -212,6 +212,19 @@ ArrayList *lexer_start(char *code) {
                     arraylist_add(list, token_create(">", TOKEN_RELATIONAL_GREATER_OR_EQUAL, 0, index));
                     break;
             }
+        } else if (*code == '!') {
+            switch (*(code + 1)) {
+                case '\0':
+                    break;
+                case '=': {
+                    arraylist_add(list, token_create("!=", TOKEN_RELATIONAL_NOT_EQUAL, 0, index));
+                    code++;
+                    break;
+                }
+                default:
+                    arraylist_add(list, token_create("!", TOKEN_NOT, 0, index));
+                    break;
+            }
         } else if (*code == '=') {
             arraylist_add(list, token_create("=", TOKEN_ASSIGNMENT_SIMPLE, 0, index));
         } else if (*code == '(') {
@@ -234,6 +247,10 @@ ArrayList *lexer_start(char *code) {
             arraylist_add(list, token_create(".", TOKEN_DOT, 0, index));
         } else if (*code == ',') {
             arraylist_add(list, token_create(",", TOKEN_COMMA, 0, index));
+        } else if (*code == '~') {
+            arraylist_add(list, token_create("~", TOKEN_TILDE, 0, index));
+        } else if (*code == '?') {
+            arraylist_add(list, token_create("?", TOKEN_QUESTION_MARK, 0, index));
         } else {
             printf("CHAR: %c\n", *code);
         }

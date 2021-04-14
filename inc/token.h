@@ -56,6 +56,11 @@ enum _TokenType {
     TOKEN_RELATIONAL_EQUAL,
     TOKEN_RELATIONAL_NOT_EQUAL,
 
+    /* other operators */
+    TOKEN_TILDE,
+    TOKEN_NOT,
+    TOKEN_QUESTION_MARK,
+
     /* assignment tokens */
     TOKEN_ASSIGNMENT_SIMPLE,
     TOKEN_ASSIGNMENT_SUM,
