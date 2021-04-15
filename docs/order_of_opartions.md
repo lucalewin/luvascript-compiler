@@ -34,7 +34,7 @@
 <td>4</td>
 <td>* / %</td>
 <td>Multiplication, division, and remainder</td>
-<td rowspan=11>left-to-right</td>
+<td rowspan=10>left-to-right</td>
 </tr>
 
 <tr>
@@ -96,6 +96,7 @@ For relational operators > and ≥ respectively</td>
 <td>14</td>
 <td>? :</td>
 <td>Ternary conditional</td>
+<td rowspan=2>right-to-left</td>
 </tr>
 
 <tr>
@@ -106,7 +107,6 @@ Assignment by sum and difference <br>
 Assignment by product, quotient, and remainder <br>
 Assignment by bitwise left shift and right shift <br>
 Assignment by bitwise AND, XOR, and OR</td>
-<td>right-to-left</td>
 </tr>
 
 <tr>
