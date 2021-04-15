@@ -9,6 +9,11 @@
 
 // --------------------------------
 
+/**
+ * 
+ * global variables used by the expression parser
+ * 
+ */
 int index;
 ArrayList *tokens;
 Token *current;
@@ -16,6 +21,11 @@ Token *lookahead;
 
 // --------------------------------
 
+/**
+ * 
+ * struct NODE is used to create a parse tree
+ * 
+ */
 typedef struct expr_node_s expr_node_t;
 typedef struct expr_node_s NODE;
 
@@ -49,8 +59,17 @@ struct expr_node_s {
 
 void exprParserStart(ArrayList* list);
 
-NODE *expression();
-NODE *assignmentExpr();
+/**
+ * 
+ * These methods are used to create a parse tree
+ * the method name come from the rules defined in the grammar 
+ * at (docs)     https://github.com/lucr4ft/luvascript-compiler/blob/develop/docs/grammar.md
+ * or (grammar)  https://github.com/lucr4ft/luvascript-compiler/blob/develop/grammar.ebnf
+ * 
+ */
+NODE *expressionList();      // expr, expr      expr
+NODE *expression();          // any type of expression
+NODE *assignmentExpr();      // x = y     x += y
 NODE *conditionalExpr();     // ternary
 NODE *logicalOrExpr();       // x || y
 NODE *locicalAndExpr();      // x && y
@@ -70,56 +89,66 @@ NODE *primaryExpr();         // <identifier> <number> <string>
 
 /**
  * 
- * 
+ * methood to add a (child-)node to a parent node
  * 
  */
 void exprNodeAdd(expr_node_t *parent, expr_node_t *node);
 
 /**
  * 
- * 
+ * utility method to create a new node an copy the token data into node data
  * 
  */
 NODE *tokenToNode(Token *t);
 
 /**
  * 
- * 
+ * utility method to allocate memory for new Node + initialization with default values
  * 
  */
 NODE *createNode();
 
 /**
  * 
- * 
+ * utility method to print type, value and children of a node to console
  * 
  */
 void printNode(NODE *node);
 
 /**
  * 
+ * returns true if the current tokens is an assignment operator
  * 
+ * for a list of assignment operators take a look at the documentation at opertaor precendece 15
+ *  at https://github.com/lucr4ft/luvascript-compiler/blob/develop/docs/order_of_opartions.md
  * 
  */
 int isAssignmentOperator(Token *t);
 
 /**
  * 
+ * returns true if the current tokens is an unary operator
  * 
+ * for a list of unary operators take a look at the documentation at opertaor precendece 2 
+ *  at https://github.com/lucr4ft/luvascript-compiler/blob/develop/docs/order_of_opartions.md
  * 
  */
 int isUnaryOperator(Token *t);
 
 /**
  * 
+ * checks if the current token is of type 'type'
  * 
+ * else an error is thrown and the program exits
  * 
  */
 int expect(TokenType type);
 
 /**
  * 
+ * checks if the current token is of type 'type'
  * 
+ * returns 1 if current->type == type, else 0
  * 
  */
 int is(TokenType type);
