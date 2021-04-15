@@ -39,11 +39,10 @@ void exprParserStart(ArrayList* list) {
 
 // ------------------------ parsing methods ------------------------
 
-NODE *expression(expr_node_t *node) {
-    expr_node_t *assignmentExprNode = malloc(sizeof(expr_node_t));
-    assignmentExprNode->type = expr_assignment;
-    assignmentExpr(assignmentExprNode);
-    exprNodeAdd(node, assignmentExprNode);
+NODE *expressionList() {
+}
+
+NODE *expression() {
 }
 
 NODE *assignmentExpr() {
@@ -71,21 +70,89 @@ NODE *equalityExpr() {
 }
 
 NODE *relationalExpr() {
+    NODE *node = createNode();
+    node->type = expr_relational;
+
+    exprNodeAdd(node, shiftExpr());
+
+    if (is(TOKEN_RELATIONAL_LESS) || is(TOKEN_RELATIONAL_LESS_OR_EQUAL) ||
+                is(TOKEN_RELATIONAL_GREATER) || is(TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, shiftExpr());
+
+        // if next token is not '<', '<=', '>' and '>=' return the node
+        if (!is(TOKEN_RELATIONAL_LESS) && !is(TOKEN_RELATIONAL_LESS_OR_EQUAL) &&
+                    !is(TOKEN_RELATIONAL_GREATER) && !is(TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_RELATIONAL_LESS) || is(TOKEN_RELATIONAL_LESS_OR_EQUAL) ||
+                is(TOKEN_RELATIONAL_GREATER) || is(TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
+            node = createNode();
+            node->type = expr_relational;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, shiftExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *shiftExpr() {
     // add {('<<' | '>>') shift}
     NODE *node = createNode();
     node->type = expr_shift;
+
+    exprNodeAdd(node, additiveExpr());
+
+    if (is(TOKEN_BITWISE_LEFT_SHIFT) || is(TOKEN_BITWISE_RIGHT_SHIFT)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, additiveExpr());
+
+        // if next token is not '<<' and '>>' return the node
+        if (!is(TOKEN_BITWISE_LEFT_SHIFT) && !is(TOKEN_BITWISE_RIGHT_SHIFT)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_BITWISE_LEFT_SHIFT) || is(TOKEN_BITWISE_RIGHT_SHIFT)) {
+            node = createNode();
+            node->type = expr_shift;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, additiveExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *additiveExpr() {
-    // mul {('+' | '-') mul}
-
     NODE *node = createNode();
     node->type = expr_additive;
 
+    // mul
     exprNodeAdd(node, multiplicativeExpr());
+
+    // mul ('+' | '-') mul
     if (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
         exprNodeAdd(node, tokenToNode(current));
         next();
@@ -96,38 +163,104 @@ NODE *additiveExpr() {
             return node;
         }
 
+        // mul {('+' | '-') mul} 
         // if multiple (more than one) additive expression are in a row
         // parse them with a while loop and create parse tree
         NODE *temp = node;
-        NODE *top;
         while (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
-            top = createNode();
-            top->type = expr_additive;
-            exprNodeAdd(top, temp);
-            exprNodeAdd(top, tokenToNode(current));
+            node = createNode();
+            node->type = expr_additive;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
             next();
-            exprNodeAdd(top, multiplicativeExpr());
-            temp = top;
+            exprNodeAdd(node, multiplicativeExpr());
+            temp = node;
         }
         // only free pointer, not it's value
-        // temp = NULL;
-        // free(temp);
-        return top;
+        temp = NULL;
+        free(temp);
+        return node;
     }
+    return node;
 }
 
 NODE *multiplicativeExpr() {
-    // unary {('*' | '/' | '%') unary}
-    
-    return unaryExpr();
+    NODE *node = createNode();
+    node->type = expr_multiplicative;
+
+    // unary
+    exprNodeAdd(node, unaryExpr());
+
+    // unary ('*' | '/' | '%') unary
+    if (is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_MOD)) {
+        printf("UJUHKUGU\n");
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, unaryExpr());
+
+        // if next token is not '+' and '-' return the node
+        if (!is(TOKEN_ASTERISK) && !is(TOKEN_SLASH) && !is(TOKEN_MOD)) {
+            return node;
+        }
+
+        // unary {('*' | '/' | '%') unary} 
+        // if multiple (more than one) multiplicative expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_MOD)) {
+            node = createNode();
+            node->type = expr_multiplicative;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, unaryExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *unaryExpr() {
+    // NODE *node = createNode();
+    // if (isUnaryOperator(current)) {
+    //     exprNodeAdd(node, tokenToNode(current));
+    //     next();
+    //     exprNodeAdd(node, unaryExpr());
+    //     return node;
+    // }
     return postfixExpr();
 }
 
 NODE *postfixExpr() {
-    return primaryExpr();
+    NODE *node = createNode();
+    exprNodeAdd(node, primaryExpr());
+
+    if (is(TOKEN_LPAREN)) {
+        // function call expression
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, expression());
+        expect(TOKEN_RPAREN);
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+    } else if (is(TOKEN_LBRACKET)) {
+        // indexing expression
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, expression());
+        expect(TOKEN_RBRACKET);
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+    } else if (is(TOKEN_INCREMENT) || is(TOKEN_DECREMENT)) {
+        // postfix increment/decrement
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+    }
+    return node;
 }
 
 NODE *primaryExpr() {
@@ -144,6 +277,7 @@ NODE *primaryExpr() {
         // exprNodeAdd(primary_node, tokenToNode(current));
         free(primary_node);
         primary_node = tokenToNode(current);
+        primary_node->type = expr_primary;
     } else {
         error("Expected literal or nested expression!");
     }
@@ -181,16 +315,16 @@ void printNode(NODE *node) {
         printf("NULL\n");
         return;
     }
-    printf("{type: %s", types[node->type]);
+    printf("{\"type\": \"%s\"", types[node->type]);
     if (node->value != NULL) {
-        printf(",value: %s", node->value);
+        printf(",\"value\": \"%s\"", node->value);
     }
     if (node->childrenCount > 0) {
         printf(",\"children\": [");
     }
     for (int i = 0; i < node->childrenCount; i++) {
-        printf(",");
         printNode(node->children[i]);
+        printf(",");
     }
     if (node->childrenCount > 0) {
         printf("]");
