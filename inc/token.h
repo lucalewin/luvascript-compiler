@@ -24,7 +24,9 @@ enum _TokenType {
     TOKEN_SLASH,
     TOKEN_MOD,
     TOKEN_AMPERSAND,
+    TOKEN_VERTICAL_BAR,
     TOKEN_POWER,
+    TOKEN_CIRCUMFLEX,
 
     /* seperator tokens */
     TOKEN_COLON,
@@ -55,6 +57,10 @@ enum _TokenType {
     TOKEN_RELATIONAL_GREATER_OR_EQUAL,
     TOKEN_RELATIONAL_EQUAL,
     TOKEN_RELATIONAL_NOT_EQUAL,
+
+    /* logical operators */
+    TOKEN_LOGICAL_AND,
+    TOKEN_LOGICAL_OR,
 
     /* other operators */
     TOKEN_TILDE,
