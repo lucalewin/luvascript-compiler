@@ -1,6 +1,7 @@
 #include <expr_parser.h>
 
 char* types[] = {
+    "expr_list",
     "expr_expression",
     "expr_assignment",
     "expr_conditional",
@@ -40,33 +41,299 @@ void exprParserStart(ArrayList* list) {
 // ------------------------ parsing methods ------------------------
 
 NODE *expressionList() {
+    NODE *node = createNode();
+    node->type = expr_list;
+
+    exprNodeAdd(node, expression());
+
+    if (is(TOKEN_COMMA)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, expression());
+
+        // if next token is not '<', '<=', '>' and '>=' return the node
+        if (!is(TOKEN_COMMA)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_COMMA)) {
+            node = createNode();
+            node->type = expr_list;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, expression());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *expression() {
+    NODE *node = createNode();
+
+    exprNodeAdd(node, assignmentExpr());
+
+    return node;
 }
 
 NODE *assignmentExpr() {
+    NODE *node = createNode();
+
+    if (isAssignmentOperator(lookahead)) {
+        exprNodeAdd(node, unaryExpr());
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, assignmentExpr());
+    } else {
+        exprNodeAdd(node, conditionalExpr());
+    }
+
+    return node;
 }
 
 NODE *conditionalExpr() {
+    NODE *node = createNode();
+
+    exprNodeAdd(node, logicalOrExpr());
+
+    if (is(TOKEN_QUESTION_MARK)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+
+        exprNodeAdd(node, expression());
+
+        expect(TOKEN_COLON);
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+
+        exprNodeAdd(node, expression());
+    }
+
+    return node;
 }
 
 NODE *logicalOrExpr() {
+    NODE *node = createNode();
+    node->type = expr_logicalOr;
+
+    exprNodeAdd(node, locicalAndExpr());
+
+    if (is(TOKEN_LOGICAL_OR)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, locicalAndExpr());
+
+        // if next token is not '<', '<=', '>' and '>=' return the node
+        if (!is(TOKEN_LOGICAL_OR)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_LOGICAL_OR)) {
+            node = createNode();
+            node->type = expr_logicalOr;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, locicalAndExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *locicalAndExpr() {
+    NODE *node = createNode();
+    node->type = expr_locicalAnd;
+
+    exprNodeAdd(node, bitwiseOrExpr());
+
+    if (is(TOKEN_LOGICAL_AND)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, bitwiseOrExpr());
+
+        // if next token is not '<', '<=', '>' and '>=' return the node
+        if (!is(TOKEN_LOGICAL_AND)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_LOGICAL_AND)) {
+            node = createNode();
+            node->type = expr_locicalAnd;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, bitwiseOrExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *bitwiseOrExpr() {
+    NODE *node = createNode();
+    node->type = expr_bitwiseOr;
+
+    exprNodeAdd(node, bitwiseXorExpr());
+
+    if (is(TOKEN_VERTICAL_BAR)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, bitwiseXorExpr());
+
+        // if next token is not '<', '<=', '>' and '>=' return the node
+        if (!is(TOKEN_VERTICAL_BAR)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_VERTICAL_BAR)) {
+            node = createNode();
+            node->type = expr_bitwiseOr;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, bitwiseXorExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *bitwiseXorExpr() {
+    NODE *node = createNode();
+    node->type = expr_bitwiseXor;
+
+    exprNodeAdd(node, bitwiseAndExpr());
+
+    if (is(TOKEN_CIRCUMFLEX)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, bitwiseAndExpr());
+
+        // if next token is not '<', '<=', '>' and '>=' return the node
+        if (!is(TOKEN_CIRCUMFLEX)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_CIRCUMFLEX)) {
+            node = createNode();
+            node->type = expr_bitwiseXor;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, bitwiseAndExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *bitwiseAndExpr() {
+    NODE *node = createNode();
+    node->type = expr_bitwiseAnd;
+
+    exprNodeAdd(node, equalityExpr());
+
+    if (is(TOKEN_AMPERSAND)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, shiequalityExprftExpr());
+
+        // if next token is not '<', '<=', '>' and '>=' return the node
+        if (!is(TOKEN_AMPERSAND)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_AMPERSAND)) {
+            node = createNode();
+            node->type = expr_bitwiseAnd;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, equalityExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *equalityExpr() {
+    NODE *node = createNode();
+    node->type = expr_equality;
+
+    exprNodeAdd(node, relationalExpr());
+
+    if (is(TOKEN_RELATIONAL_EQUAL) || is(TOKEN_RELATIONAL_NOT_EQUAL)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, relationalExpr());
+
+        // if next token is not '<', '<=', '>' and '>=' return the node
+        if (!is(TOKEN_RELATIONAL_EQUAL) && !is(TOKEN_RELATIONAL_NOT_EQUAL)) {
+            return node;
+        }
+
+        // if multiple (more than one) shift expression are in a row
+        // parse them with a while loop and create parse tree
+        NODE *temp = node;
+        while (is(TOKEN_RELATIONAL_EQUAL) || is(TOKEN_RELATIONAL_NOT_EQUAL)) {
+            node = createNode();
+            node->type = expr_equality;
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, relationalExpr());
+            temp = node;
+        }
+        // only free pointer, not it's value
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *relationalExpr() {
