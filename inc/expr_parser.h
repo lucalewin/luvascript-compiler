@@ -46,7 +46,6 @@ struct expr_node_s {
         expr_unary,
         expr_postfix,
         expr_primary,
-
         token
     } type;
     char *value;
