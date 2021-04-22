@@ -1,139 +1,41 @@
-program
-    : {functions}, mainFunction, {functions}
-    ;
+program = [{function}] mainfunction [{function}];
 
-(* ---------------------- functions --------------------- *)
+library = [{function}];
 
-functions
-    : function
-    | functions, function
-    ;
+(* function *)
 
-function
-    : 'function', indentifier, '(', paramDecl, ')', [':', returnTypeDecls], blockStatement
-    ;
+function = "function" identifier "(" [funcParamDeclList] ")" [":" funcReturnTypeDeclList] compundStmt;
 
-mainFunction
-    : 'function', 'main', '(', paramDecl, ')', [':', returnTypeDecls], blockStatement
-    ;
+mainfunction = "function" "main" "(" [funcParamDeclList] ")" [":" funcReturnTypeDeclList] compundStmt;
 
-(* --------------------- statements --------------------- *)
+funcReturnTypeDeclList = funcReturnTypeDecl [{"," funcReturnTypeDecl}];
+funcReturnTypeDecl = type ["=" expression];
 
-statement
-    : returnStatement
-    | ';'
-    ;
+funcParamDeclList = funcParamDecl [{"," funcParamDecl}];
+funcParamDecl = identifier ":" type ["=" expression];
 
-blockStatement
-    : '{' blockStatements '}'
-    ;
+(* struct / enum / class / interface *)
 
-blockStatements
-    : statement
-    | blockStatements, blockStatement
-    ;
+structDecl = "struct" identifier "{" {function} "}";
 
-returnStatement
-    : 'return', [expression], ';'
-    ;
+(* variables *)
 
-(* expression statements *)
+vardecl = vartype identifier (":=" expression | ":" type ["=" expression]) [{"," identifier (":=" expression | ":" type ["=" expression])}];
 
-expressionStatement
-    : statementExpression ';' 
-    ;
+vartype = "var" | "const";
 
-statementExpression
-    : assignmentExpr
-    | preincrementExpr
-    | predecrementExpr
-    | postincrenentExpr
-    | postdecrementExpr
-    | functionCallExpr
-    ;
+(* statements *)
 
-(* -------------------- expressions --------------------- *)
+statement = expressionStmt
+          | compundStmt
+          | returnStmt
+          ;
 
-expression
-    : assignmentExpr
-    ;
+expressionStmt =;
+compundStmt = "{" [{statement}] "}";
+returnStmt =;
 
-assignmentExpr
-    : conditionalExpr
-    | assignment 
-    ;
+(* expressions *)
 
-assignment
-    : indentifier, assignmentOperator, conditionalExpr
-    ;
-
-assignmentOperator
-    : '=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '>>>=' | '&=' | '^=' | '|='
-    ;
-
-conditionalExpr
-    : logicalOrExpr
-    ;
-
-logicalOrExpr
-    : logicalAndExpr
-    ;
-
-logicalAndExpr
-    :
-    ;
-
-bitwiseOrExpr
-    :
-    ;
-
-bitwiseXorExpr
-    :
-    ;
-
-bitwiseAndExpr
-    :
-    ;
-
-relationalEqualityExpr
-    :
-    ;
-
-bitwiseShiftExpr
-    :
-    ;
-
-
-
-(* ----------------------- types ------------------------ *)
-
-(*                        TODO                            *)
-(*                        TYPES                           *)
-(*                        TODO                            *)
-
-type
-    : primitiveType
-    | referenceType
-    ;
-
-primitiveType
-    : numericType
-    | 'bool'
-    ;
-
-numericType
-    : integerType
-    | flotingpointType
-    | 'number' 
-    ;
-
-integerType
-    : 'int'
-    | 'long'
-    ;
-
-flotingpointType
-    : 'float'
-    | 'double'
-    | 'decimal'
-    ;
+expressionList = expression [{"," expression}];
+expression =;
