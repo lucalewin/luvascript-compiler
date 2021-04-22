@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef LUVA_EXPR_PARSER_H
 #define LUVA_EXPR_PARSER_H
 
@@ -31,6 +29,7 @@ typedef struct expr_node_s NODE;
 
 struct expr_node_s {
     enum {
+        expr_list,
         expr_expression,
         expr_assignment,
         expr_conditional,
@@ -67,6 +66,13 @@ void exprParserStart(ArrayList* list);
  * or (grammar)  https://github.com/lucr4ft/luvascript-compiler/blob/develop/grammar.ebnf
  * 
  */
+NODE *function();
+
+NODE *statement();
+NODE *compundStmt();
+NODE *expressionStmt();
+NODE *jumpStmt();
+
 NODE *expressionList();      // expr, expr      expr
 NODE *expression();          // any type of expression
 NODE *assignmentExpr();      // x = y     x += y
