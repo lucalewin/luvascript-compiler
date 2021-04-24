@@ -149,9 +149,7 @@ NODE *jumpStmt() {
 
 }
 
-
-
-
+// -------------------------- expressions --------------------------
 
 NODE *expressionList() {
     NODE *node = createNode();
@@ -315,12 +313,12 @@ NODE *bitwiseOrExpr() {
         next();
         exprNodeAdd(node, bitwiseXorExpr());
 
-        // if next token is not '<', '<=', '>' and '>=' return the node
+        // if next token is not '|' return the node
         if (!is(TOKEN_VERTICAL_BAR)) {
             return node;
         }
 
-        // if multiple (more than one) shift expression are in a row
+        // if multiple (more than one) $ expression are in a row
         // parse them with a while loop and create parse tree
         NODE *temp = node;
         while (is(TOKEN_VERTICAL_BAR)) {
@@ -572,7 +570,6 @@ NODE *multiplicativeExpr() {
 
     // unary ('*' | '/' | '%') unary
     if (is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_MOD)) {
-        printf("UJUHKUGU\n");
         exprNodeAdd(node, tokenToNode(current));
         next();
         exprNodeAdd(node, unaryExpr());
