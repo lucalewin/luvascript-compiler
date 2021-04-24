@@ -42,14 +42,14 @@ ArrayList *lexer_start(char *code) {
             arraylist_add(list, token_create(number, TOKEN_NUMBER, 0, index));
 
             // move pointer by length of number
-            //   2 needs to be subtracted because 
+            //   2 needs to be subtracted because
             // i is incremented two times to much
             code = code + i - 2;
             index += i - 2;
         } else if (*code == '"') {          // string literal
-            // get length of string 
+            // get length of string
             int i = 0;
-            code++; // increment because *code is currently pointing to the first " 
+            code++; // increment because *code is currently pointing to the first "
             while (*code != '\0' && *code != '"') {
                 code++;
                 i++;
@@ -63,7 +63,7 @@ ArrayList *lexer_start(char *code) {
             // create new token && add it to the list
             arraylist_add(list, token_create(string, TOKEN_STRING, 0, index));
         } else if ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {  // regex: [_a-zA-Z] -> identifier / keyword
-            // get length of identifier 
+            // get length of identifier
             int i = 0;
             while ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {
                 code++;
@@ -74,7 +74,7 @@ ArrayList *lexer_start(char *code) {
             // extract identifier or keyword from *code
             char *identifier = malloc(sizeof(char) * i);
             substring(code - i, identifier, i);
-            
+
             // check if identifier could be a keyword
             if (arr_contains(keywords, keywords_length, identifier)) {
                 // create new token && add it to the list
@@ -217,7 +217,7 @@ ArrayList *lexer_start(char *code) {
                     break;
                 }
                 case '&': {
-                    brraylist_add(list, token_create("&&", TOKEN_LOGICAL_AND, 0, index));
+                    arraylist_add(list, token_create("&&", TOKEN_LOGICAL_AND, 0, index));
                     code++;
                     break;
                 }
@@ -233,7 +233,7 @@ ArrayList *lexer_start(char *code) {
                     break;
                 }
                 case '|': {
-                    brraylist_add(list, token_create("||", TOKEN_LOGICAL_OR, 0, index));
+                    arraylist_add(list, token_create("||", TOKEN_LOGICAL_OR, 0, index));
                     code++;
                     break;
                 }
