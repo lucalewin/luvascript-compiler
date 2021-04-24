@@ -21,21 +21,21 @@ char* types[] = {
 };
 
 void exprParserStart(ArrayList* list) {
+
     tokens = list;
     index = 0;
 
     // load tokens into 'current' and 'lookahead'
     next();
 
-    // allocate memory for root expression
-    expr_node_t *root = createNode();
+    // parse root expression
+    expr_node_t *root = expression();
 
-    // expecting an expression
-    // expression(root);
-    root = additiveExpr();
+    // print root expression
     printNode(root);
-    
-    // free(root);
+
+    // free root expression
+    free(root);
 }
 
 // ------------------------ parsing methods ------------------------
@@ -273,7 +273,7 @@ NODE *bitwiseAndExpr() {
     if (is(TOKEN_AMPERSAND)) {
         exprNodeAdd(node, tokenToNode(current));
         next();
-        exprNodeAdd(node, shiequalityExprftExpr());
+        exprNodeAdd(node, equalityExpr());
 
         // if next token is not '<', '<=', '>' and '>=' return the node
         if (!is(TOKEN_AMPERSAND)) {
@@ -430,7 +430,7 @@ NODE *additiveExpr() {
             return node;
         }
 
-        // mul {('+' | '-') mul} 
+        // mul {('+' | '-') mul}
         // if multiple (more than one) additive expression are in a row
         // parse them with a while loop and create parse tree
         NODE *temp = node;
@@ -470,7 +470,7 @@ NODE *multiplicativeExpr() {
             return node;
         }
 
-        // unary {('*' | '/' | '%') unary} 
+        // unary {('*' | '/' | '%') unary}
         // if multiple (more than one) multiplicative expression are in a row
         // parse them with a while loop and create parse tree
         NODE *temp = node;
@@ -504,6 +504,7 @@ NODE *unaryExpr() {
 
 NODE *postfixExpr() {
     NODE *node = createNode();
+    node->type = expr_postfix;
     exprNodeAdd(node, primaryExpr());
 
     if (is(TOKEN_LPAREN)) {
@@ -591,7 +592,9 @@ void printNode(NODE *node) {
     }
     for (int i = 0; i < node->childrenCount; i++) {
         printNode(node->children[i]);
-        printf(",");
+        if (i +1 < node->childrenCount) {
+            printf(",");
+        }
     }
     if (node->childrenCount > 0) {
         printf("]");
