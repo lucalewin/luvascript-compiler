@@ -78,15 +78,14 @@ NODE *expressionList() {
 
 NODE *expression() {
     NODE *node = createNode();
-
+    node->type = expr_expression;
     exprNodeAdd(node, assignmentExpr());
-
     return node;
 }
 
 NODE *assignmentExpr() {
     NODE *node = createNode();
-
+    node->type = expr_assignment;
     if (isAssignmentOperator(lookahead)) {
         exprNodeAdd(node, unaryExpr());
         exprNodeAdd(node, tokenToNode(current));
@@ -95,13 +94,13 @@ NODE *assignmentExpr() {
     } else {
         exprNodeAdd(node, conditionalExpr());
     }
-
     return node;
 }
 
 NODE *conditionalExpr() {
     NODE *node = createNode();
-
+    node->type = expr_conditional;
+    
     exprNodeAdd(node, logicalOrExpr());
 
     if (is(TOKEN_QUESTION_MARK)) {
