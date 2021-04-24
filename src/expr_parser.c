@@ -40,6 +40,119 @@ void exprParserStart(ArrayList* list) {
 
 // ------------------------ parsing methods ------------------------
 
+NODE *test();
+
+NODE *test() {
+    NODE *root = createNode();
+    NODE *node;
+
+    expect(TOKEN_KEYWORD);
+
+    if (strcmp(current->data, "function") == 0) {
+        // function declaration
+        node = function();
+    } else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
+        // variable declaration
+        node = var_decl();
+    } else {
+        error("expeced function or variable declaration");
+    }
+    exprNodeAdd(root, node);
+
+    return root;
+}
+
+NODE *function() {
+    NODE *node = createNode();
+
+    // adding function keyword to root node
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    // expecting function identifier
+    expect(TOKEN_IDENDIFIER);
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    // expecting lparen
+    expect(TOKEN_LPAREN);
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    // TODO: implement param declartion
+
+    // expecting rparen
+    expect(TOKEN_RPAREN);
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    // TODO: implement return type declaration
+
+    // expecting block statement
+    exprNodeAdd(node, blockStmt());
+
+    return node;
+}
+
+NODE *var_decl() {
+    NODE *node = createNode();
+
+    // 'var' or 'const'
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    expect(TOKEN_IDENDIFIER);
+
+    // TODO: implement variable declaration parsing
+}
+
+NODE *statement() {
+    NODE *node = createNode();
+
+    if (is(TOKEN_RBRACE)) {
+        exprNodeAdd(node, blockStmt());
+    } else if (is(TOKEN_KEYWORD)) {
+        exprNodeAdd(node, jumpStmt());
+    } else {
+        exprNodeAdd(node, expressionStmt());
+    }
+
+    return node;
+}
+
+NODE *blockStmt() {
+    NODE *node = createNode();
+
+    expect(TOKEN_LBRACE);
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    while(!is(TOKEN_RBRACE)) {
+        exprNodeAdd(node, statement());
+    }
+    expect(TOKEN_RBRACE);
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    return node;
+}
+
+NODE *expressionStmt() {
+    NODE *node = createNode();
+
+    exprNodeAdd(node, expression());
+
+    return node;
+}
+
+NODE *jumpStmt() {
+
+}
+
+
+
+
+
 NODE *expressionList() {
     NODE *node = createNode();
     node->type = expr_list;
@@ -100,7 +213,7 @@ NODE *assignmentExpr() {
 NODE *conditionalExpr() {
     NODE *node = createNode();
     node->type = expr_conditional;
-    
+
     exprNodeAdd(node, logicalOrExpr());
 
     if (is(TOKEN_QUESTION_MARK)) {

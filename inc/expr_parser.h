@@ -60,15 +60,17 @@ void exprParserStart(ArrayList* list);
 /**
  * 
  * These methods are used to create a parse tree
- * the method name come from the rules defined in the grammar 
+ * the method name come from the rules defined in the grammar
  * at (docs)     https://github.com/lucr4ft/luvascript-compiler/blob/develop/docs/grammar.md
  * or (grammar)  https://github.com/lucr4ft/luvascript-compiler/blob/develop/grammar.ebnf
  * 
  */
 NODE *function();
+NODE *var_decl();
 
 NODE *statement();
 NODE *compundStmt();
+NODE *blockStmt();
 NODE *expressionStmt();
 NODE *jumpStmt();
 
@@ -134,7 +136,7 @@ int isAssignmentOperator(Token *t);
  * 
  * returns true if the current tokens is an unary operator
  * 
- * for a list of unary operators take a look at the documentation at opertaor precendece 2 
+ * for a list of unary operators take a look at the documentation at opertaor precendece 2
  *  at https://github.com/lucr4ft/luvascript-compiler/blob/develop/docs/order_of_opartions.md
  * 
  */
