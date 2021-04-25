@@ -1,6 +1,6 @@
 #include <expr_parser.h>
 
-char* types[] = {
+char *types[] = {
     "expr_list",
     "expr_expression",
     "expr_assignment",
@@ -20,6 +20,8 @@ char* types[] = {
     "expr_primary"
 };
 
+NODE *test();
+
 void exprParserStart(ArrayList* list) {
 
     tokens = list;
@@ -29,7 +31,7 @@ void exprParserStart(ArrayList* list) {
     next();
 
     // parse root expression
-    expr_node_t *root = expression();
+    expr_node_t *root = test(); //expression();
 
     // print root expression
     printNode(root);
@@ -40,7 +42,7 @@ void exprParserStart(ArrayList* list) {
 
 // ------------------------ parsing methods ------------------------
 
-NODE *test();
+
 
 NODE *test() {
     NODE *root = createNode();
@@ -742,9 +744,61 @@ int isUnaryOperator(Token *t) {
     }
 }
 
+char *token_type_names[] = {
+    "TOKEN_KEYWORD",
+    "TOKEN_IDENDIFIER",
+    "TOKEN_NUMBER",
+    "TOKEN_STRING",
+    "TOKEN_PLUS",
+    "TOKEN_MINUS",
+    "TOKEN_ASTERISK",
+    "TOKEN_SLASH",
+    "TOKEN_MOD",
+    "TOKEN_AMPERSAND",
+    "TOKEN_VERTICAL_BAR",
+    "TOKEN_POWER",
+    "TOKEN_CIRCUMFLEX",
+    "TOKEN_COLON",
+    "TOKEN_SEMICOLON",
+    "TOKEN_DOT",
+    "TOKEN_COMMA",
+    "TOKEN_LPAREN",
+    "TOKEN_RPAREN",
+    "TOKEN_LBRACKET",
+    "TOKEN_RBRACKET",
+    "TOKEN_LBRACE",
+    "TOKEN_RBRACE",
+    "TOKEN_INCREMENT",
+    "TOKEN_DECREMENT",
+    "TOKEN_BITWISE_LEFT_SHIFT",
+    "TOKEN_BITWISE_RIGHT_SHIFT",
+    "TOKEN_RELATIONAL_LESS",
+    "TOKEN_RELATIONAL_LESS_OR_EQUAL",
+    "TOKEN_RELATIONAL_GREATER",
+    "TOKEN_RELATIONAL_GREATER_OR_EQUAL",
+    "TOKEN_RELATIONAL_EQUAL",
+    "TOKEN_RELATIONAL_NOT_EQUAL",
+    "TOKEN_LOGICAL_AND",
+    "TOKEN_LOGICAL_OR",
+    "TOKEN_TILDE",
+    "TOKEN_NOT",
+    "TOKEN_QUESTION_MARK",
+    "TOKEN_ASSIGNMENT_SIMPLE",
+    "TOKEN_ASSIGNMENT_SUM",
+    "TOKEN_ASSIGNMENT_DIFFERENCE",
+    "TOKEN_ASSIGNMENT_PRODUCT",
+    "TOKEN_ASSIGNMENT_QUOTIENT",
+    "TOKEN_ASSIGNMENT_REMAINDER",
+    "TOKEN_ASSIGNMENT_BITWISE_LEFT_SHIFT",
+    "TOKEN_ASSIGNMENT_BITWISE_RIGHT_SHIFT",
+    "TOKEN_ASSIGNMENT_BITWISE_AND",
+    "TOKEN_ASSIGNMENT_BITWISE_XOR",
+    "TOKEN_ASSIGNMENT_BITWISE_OR"
+};
+
 int expect(TokenType type) {
     if (current->type != type) {
-        printf("ERROR: Expected %d at [%d,%d]\n", type, current->line, current->pos);
+        printf("ERROR: Expected %s at [%d:%d]\n", token_type_names[type], current->line, current->pos);
         exit(1);
     }
     return 1;
