@@ -111,7 +111,7 @@ NODE *var_decl() {
 NODE *statement() {
     NODE *node = createNode();
 
-    if (is(TOKEN_RBRACE)) {
+    if (is(TOKEN_LBRACE)) {
         exprNodeAdd(node, blockStmt());
     } else if (is(TOKEN_KEYWORD)) {
         exprNodeAdd(node, jumpStmt());
@@ -149,6 +149,20 @@ NODE *expressionStmt() {
 
 NODE *jumpStmt() {
     // TODO: implement parsing of jump statements
+    NODE *node = createNode();
+    if (strcmp(current->data, "return") == 0) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        if (!is(TOKEN_SEMICOLON)) {
+            exprNodeAdd(node, expressionList());
+        }
+        // add semicolon
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+    } else {
+        error("expected 'return' keyword!");
+    }
+    return node;
 }
 
 // -------------------------- expressions --------------------------
