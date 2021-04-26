@@ -6,7 +6,7 @@ When compiling use the `-asm` flag. ([See more](../compiler_flags.md))
 
 ## How to use
 
-```
+```luva
 function main() {
     var x: int = 10;
     var y: int = 12;
