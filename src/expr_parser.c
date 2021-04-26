@@ -108,6 +108,14 @@ NODE *var_decl() {
     // TODO: implement variable declaration parsing
 }
 
+NODE *funcReturnTypeList() {
+
+}
+
+NODE *funcReturnTypeDecl() {
+
+}
+
 NODE *statement() {
     NODE *node = createNode();
 
@@ -701,6 +709,7 @@ NODE *createNode() {
     node->children = malloc(sizeof(NODE));
     node->value = NULL;
     node->type = 0;
+    return node;
 }
 
 void printNode(NODE *node) {
