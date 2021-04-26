@@ -68,6 +68,9 @@ void exprParserStart(ArrayList* list);
 NODE *function();
 NODE *var_decl();
 
+NODE *funcReturnTypeList();
+NODE *funcReturnTypeDecl();
+
 NODE *statement();
 NODE *compundStmt();
 NODE *blockStmt();
