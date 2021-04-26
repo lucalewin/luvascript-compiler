@@ -9,7 +9,7 @@
 // #include <ast.h>
 
 // #include <parser2.h>
-#include <expr_parser.h>
+#include <parser.h>
 
 int main(int argc, char **argv) {
     // validate command line arguments
