@@ -46,20 +46,21 @@ void exprParserStart(ArrayList* list) {
 
 NODE *test() {
     NODE *root = createNode();
-    NODE *node;
 
-    expect(TOKEN_KEYWORD);
-
-    if (strcmp(current->data, "function") == 0) {
-        // function declaration
-        node = function();
-    } else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
-        // variable declaration
-        node = var_decl();
-    } else {
-        error("expeced function or variable declaration");
+    while(index < tokens->size) {
+        NODE *node;
+        expect(TOKEN_KEYWORD);
+        if (strcmp(current->data, "function") == 0) {
+            // function declaration
+            node = function();
+        } else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
+            // variable declaration
+            node = var_decl();
+        } else {
+            error("expeced function or variable declaration");
+        }
+        exprNodeAdd(root, node);
     }
-    exprNodeAdd(root, node);
 
     return root;
 }
@@ -81,14 +82,22 @@ NODE *function() {
     exprNodeAdd(node, tokenToNode(current));
     next();
 
-    // TODO: implement param declartion
+    // optional: param delaration
+    if (!is(TOKEN_RPAREN)) {
+        // TODO: implement param declaration
+    }
 
     // expecting rparen
     expect(TOKEN_RPAREN);
     exprNodeAdd(node, tokenToNode(current));
     next();
 
-    // TODO: implement return type declaration
+    // optional: return type declaration
+    if (is(TOKEN_COLON)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, funcReturnTypeDeclList());
+    }
 
     // expecting block statement
     exprNodeAdd(node, blockStmt());
@@ -108,12 +117,56 @@ NODE *var_decl() {
     // TODO: implement variable declaration parsing
 }
 
-NODE *funcReturnTypeList() {
+NODE *funcReturnTypeDeclList() {
+    NODE *node = createNode();
 
+    exprNodeAdd(node, funcReturnTypeDecl());
+
+    if (is(TOKEN_COMMA)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, funcReturnTypeDecl());
+
+        if (!is(TOKEN_COMMA)) {
+            return node;
+        }
+
+        NODE *temp = node;
+        while (is(TOKEN_COMMA)) {
+            node = createNode();
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, funcReturnTypeDecl());
+            temp = node;
+        }
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
 }
 
 NODE *funcReturnTypeDecl() {
+    if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
+        error("Expected type name");
+    }
+    NODE *node = createNode();
 
+    // TODO: replace token with type
+    // -> exprNodeAdd(node, type());
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    // check if default value is assigned
+    if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
+        // expecting default value assignment expression
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, expression());
+    }
+
+    return node;
 }
 
 NODE *statement() {
@@ -692,7 +745,6 @@ void exprNodeAdd(expr_node_t *parent, expr_node_t *node) {
     parent->childrenCount++;
     parent->children = realloc(parent->children, sizeof(expr_node_t) * parent->childrenCount);
     parent->children[parent->childrenCount - 1] = node;
-
 }
 
 NODE *tokenToNode(Token *t) {
