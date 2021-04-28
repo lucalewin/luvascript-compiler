@@ -20,6 +20,8 @@ char *types[] = {
     "expr_primary"
 };
 
+NODE *program();
+
 NODE *test();
 
 void exprParserStart(ArrayList* list) {
@@ -31,7 +33,7 @@ void exprParserStart(ArrayList* list) {
     next();
 
     // parse root expression
-    expr_node_t *root = test(); //expression();
+    expr_node_t *root = program(); //expression();
 
     // print root expression
     printNode(root);
@@ -42,7 +44,7 @@ void exprParserStart(ArrayList* list) {
 
 // ------------------------ parsing methods ------------------------
 
-NODE *test() {
+NODE *program() {
     NODE *root = createNode();
 
     while(index < tokens->size) {
@@ -230,6 +232,8 @@ NODE *funcReturnTypeDecl() {
     return node;
 }
 
+// -------------------------- statements ---------------------------
+
 NODE *statement() {
     NODE *node = createNode();
 
@@ -369,383 +373,259 @@ NODE *conditionalExpr() {
 }
 
 NODE *logicalOrExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_LOGICAL_OR)) {
+        return locicalAndExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_logicalOr;
-
     exprNodeAdd(node, locicalAndExpr());
+    NODE *temp = node;
 
-    if (is(TOKEN_LOGICAL_OR)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_LOGICAL_OR)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, locicalAndExpr());
-
-        // if next token is not '<', '<=', '>' and '>=' return the node
-        if (!is(TOKEN_LOGICAL_OR)) {
-            return node;
-        }
-
-        // if multiple (more than one) shift expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_LOGICAL_OR)) {
-            node = createNode();
-            node->type = expr_logicalOr;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, locicalAndExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, locicalAndExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_logicalOr;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+
     return node;
 }
 
 NODE *locicalAndExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_LOGICAL_AND)) {
+        return bitwiseOrExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_locicalAnd;
-
     exprNodeAdd(node, bitwiseOrExpr());
+    NODE *temp = node;
 
-    if (is(TOKEN_LOGICAL_AND)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_LOGICAL_AND)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, bitwiseOrExpr());
-
-        // if next token is not '<', '<=', '>' and '>=' return the node
-        if (!is(TOKEN_LOGICAL_AND)) {
-            return node;
-        }
-
-        // if multiple (more than one) shift expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_LOGICAL_AND)) {
-            node = createNode();
-            node->type = expr_locicalAnd;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, bitwiseOrExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, bitwiseOrExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_locicalAnd;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+
     return node;
 }
 
 NODE *bitwiseOrExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_VERTICAL_BAR)) {
+        return bitwiseXorExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_bitwiseOr;
-
     exprNodeAdd(node, bitwiseXorExpr());
+    NODE *temp = node;
 
-    if (is(TOKEN_VERTICAL_BAR)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_VERTICAL_BAR)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, bitwiseXorExpr());
-
-        // if next token is not '|' return the node
-        if (!is(TOKEN_VERTICAL_BAR)) {
-            return node;
-        }
-
-        // if multiple (more than one) $ expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_VERTICAL_BAR)) {
-            node = createNode();
-            node->type = expr_bitwiseOr;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, bitwiseXorExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, bitwiseXorExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_bitwiseOr;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+
     return node;
 }
 
 NODE *bitwiseXorExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_CIRCUMFLEX)) {
+        return bitwiseAndExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_bitwiseXor;
-
     exprNodeAdd(node, bitwiseAndExpr());
+    NODE *temp = node;
 
-    if (is(TOKEN_CIRCUMFLEX)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_CIRCUMFLEX)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, bitwiseAndExpr());
-
-        // if next token is not '<', '<=', '>' and '>=' return the node
-        if (!is(TOKEN_CIRCUMFLEX)) {
-            return node;
-        }
-
-        // if multiple (more than one) shift expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_CIRCUMFLEX)) {
-            node = createNode();
-            node->type = expr_bitwiseXor;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, bitwiseAndExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, bitwiseAndExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_bitwiseXor;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+
     return node;
 }
 
 NODE *bitwiseAndExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_AMPERSAND)) {
+        return equalityExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_bitwiseAnd;
-
     exprNodeAdd(node, equalityExpr());
+    NODE *temp = node;
 
-    if (is(TOKEN_AMPERSAND)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_AMPERSAND)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, equalityExpr());
-
-        // if next token is not '<', '<=', '>' and '>=' return the node
-        if (!is(TOKEN_AMPERSAND)) {
-            return node;
-        }
-
-        // if multiple (more than one) shift expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_AMPERSAND)) {
-            node = createNode();
-            node->type = expr_bitwiseAnd;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, equalityExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, equalityExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_bitwiseAnd;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+
     return node;
 }
 
 NODE *equalityExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_RELATIONAL_EQUAL && lookahead->type != TOKEN_RELATIONAL_NOT_EQUAL)) {
+        return relationalExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_equality;
-
     exprNodeAdd(node, relationalExpr());
+    NODE *temp = node;
 
-    if (is(TOKEN_RELATIONAL_EQUAL) || is(TOKEN_RELATIONAL_NOT_EQUAL)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_RELATIONAL_EQUAL) || is(TOKEN_RELATIONAL_NOT_EQUAL)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, relationalExpr());
-
-        // if next token is not '<', '<=', '>' and '>=' return the node
-        if (!is(TOKEN_RELATIONAL_EQUAL) && !is(TOKEN_RELATIONAL_NOT_EQUAL)) {
-            return node;
-        }
-
-        // if multiple (more than one) shift expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_RELATIONAL_EQUAL) || is(TOKEN_RELATIONAL_NOT_EQUAL)) {
-            node = createNode();
-            node->type = expr_equality;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, relationalExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, relationalExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_equality;
+        exprNodeAdd(temp, node);
     }
-    return node;
+    temp = NULL;
+    free(temp);
+
+    return node; 
 }
 
 NODE *relationalExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_RELATIONAL_LESS && lookahead->type != TOKEN_RELATIONAL_LESS_OR_EQUAL && 
+                lookahead->type != TOKEN_RELATIONAL_GREATER && lookahead->type != TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
+        return shiftExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_relational;
-
     exprNodeAdd(node, shiftExpr());
+    NODE *temp = node;
 
-    if (is(TOKEN_RELATIONAL_LESS) || is(TOKEN_RELATIONAL_LESS_OR_EQUAL) ||
-                is(TOKEN_RELATIONAL_GREATER) || is(TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_RELATIONAL_LESS) || is(TOKEN_RELATIONAL_LESS_OR_EQUAL) || is(TOKEN_RELATIONAL_GREATER) || is(TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, shiftExpr());
-
-        // if next token is not '<', '<=', '>' and '>=' return the node
-        if (!is(TOKEN_RELATIONAL_LESS) && !is(TOKEN_RELATIONAL_LESS_OR_EQUAL) &&
-                    !is(TOKEN_RELATIONAL_GREATER) && !is(TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
-            return node;
-        }
-
-        // if multiple (more than one) shift expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_RELATIONAL_LESS) || is(TOKEN_RELATIONAL_LESS_OR_EQUAL) ||
-                is(TOKEN_RELATIONAL_GREATER) || is(TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
-            node = createNode();
-            node->type = expr_relational;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, shiftExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, shiftExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_relational;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+
     return node;
 }
 
 NODE *shiftExpr() {
-    // add {('<<' | '>>') shift}
+    if (lookahead == NULL || (lookahead->type != TOKEN_BITWISE_LEFT_SHIFT && lookahead->type != TOKEN_BITWISE_RIGHT_SHIFT)) {
+        return additiveExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_shift;
-
     exprNodeAdd(node, additiveExpr());
+    NODE *temp = node;
 
-    if (is(TOKEN_BITWISE_LEFT_SHIFT) || is(TOKEN_BITWISE_RIGHT_SHIFT)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_BITWISE_LEFT_SHIFT) || is(TOKEN_BITWISE_RIGHT_SHIFT)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, additiveExpr());
-
-        // if next token is not '<<' and '>>' return the node
-        if (!is(TOKEN_BITWISE_LEFT_SHIFT) && !is(TOKEN_BITWISE_RIGHT_SHIFT)) {
-            return node;
-        }
-
-        // if multiple (more than one) shift expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_BITWISE_LEFT_SHIFT) || is(TOKEN_BITWISE_RIGHT_SHIFT)) {
-            node = createNode();
-            node->type = expr_shift;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, additiveExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, additiveExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_shift;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+
     return node;
 }
 
 NODE *additiveExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_PLUS && lookahead->type != TOKEN_MINUS)) {
+        // to simplify the parsetree
+        return multiplicativeExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_additive;
-
-    // mul
     exprNodeAdd(node, multiplicativeExpr());
+    NODE *temp = node;
 
-    // mul ('+' | '-') mul
-    if (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, multiplicativeExpr());
-
-        // if next token is not '+' and '-' return the node
-        if (!is(TOKEN_PLUS) && !is(TOKEN_MINUS)) {
-            return node;
-        }
-
-        // mul {('+' | '-') mul}
-        // if multiple (more than one) additive expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
-            node = createNode();
-            node->type = expr_additive;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, multiplicativeExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, multiplicativeExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_additive;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+
     return node;
 }
 
 NODE *multiplicativeExpr() {
+    if (lookahead == NULL || (lookahead->type != TOKEN_ASTERISK && lookahead->type != TOKEN_SLASH && lookahead->type != TOKEN_MOD)) {
+        return unaryExpr();
+    }
+
     NODE *node = createNode();
     node->type = expr_multiplicative;
-
-    // unary
     exprNodeAdd(node, unaryExpr());
+    NODE *temp = node;
 
-    // unary ('*' | '/' | '%') unary
-    if (is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_MOD)) {
-        exprNodeAdd(node, tokenToNode(current));
+    while(is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_MOD)) {
+        exprNodeAdd(temp, tokenToNode(current));
         next();
-        exprNodeAdd(node, unaryExpr());
-
-        // if next token is not '+' and '-' return the node
-        if (!is(TOKEN_ASTERISK) && !is(TOKEN_SLASH) && !is(TOKEN_MOD)) {
-            return node;
-        }
-
-        // unary {('*' | '/' | '%') unary}
-        // if multiple (more than one) multiplicative expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_MOD)) {
-            node = createNode();
-            node->type = expr_multiplicative;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, unaryExpr());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
+        exprNodeAdd(temp, unaryExpr());
+        node = temp;
+        temp = createNode();
+        temp->type = expr_multiplicative;
+        exprNodeAdd(temp, node);
     }
+    temp = NULL;
+    free(temp);
+    
     return node;
 }
 
 NODE *unaryExpr() {
-    // NODE *node = createNode();
-    // if (isUnaryOperator(current)) {
-    //     exprNodeAdd(node, tokenToNode(current));
-    //     next();
-    //     exprNodeAdd(node, unaryExpr());
-    //     return node;
-    // }
+    // TODO: implement unary expression parsing
     return postfixExpr();
 }
 
