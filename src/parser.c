@@ -22,8 +22,6 @@ char *types[] = {
 
 NODE *program();
 
-NODE *test();
-
 void exprParserStart(ArrayList* list) {
 
     tokens = list;
@@ -33,7 +31,7 @@ void exprParserStart(ArrayList* list) {
     next();
 
     // parse root expression
-    expr_node_t *root = program(); //expression();
+    expr_node_t *root = program();
 
     // print root expression
     printNode(root);
