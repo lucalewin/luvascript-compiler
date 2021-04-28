@@ -42,8 +42,6 @@ void exprParserStart(ArrayList* list) {
 
 // ------------------------ parsing methods ------------------------
 
-
-
 NODE *test() {
     NODE *root = createNode();
 
@@ -85,6 +83,7 @@ NODE *function() {
     // optional: param delaration
     if (!is(TOKEN_RPAREN)) {
         // TODO: implement param declaration
+        exprNodeAdd(node, funcParamDeclList());
     }
 
     // expecting rparen
@@ -115,6 +114,68 @@ NODE *var_decl() {
     expect(TOKEN_IDENDIFIER);
 
     // TODO: implement variable declaration parsing
+}
+
+NODE *funcParamDeclList() {
+    NODE *node = createNode();
+
+    exprNodeAdd(node, funcParamDecl());
+
+    if (is(TOKEN_COMMA)) {
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, funcParamDecl());
+
+        if (!is(TOKEN_COMMA)) {
+            return node;
+        }
+
+        NODE *temp = node;
+        while (is(TOKEN_COMMA)) {
+            node = createNode();
+            exprNodeAdd(node, temp);
+            exprNodeAdd(node, tokenToNode(current));
+            next();
+            exprNodeAdd(node, funcParamDecl());
+            temp = node;
+        }
+        temp = NULL;
+        free(temp);
+        return node;
+    }
+    return node;
+
+    return node;
+}
+
+NODE *funcParamDecl() {
+    NODE *node = createNode();
+
+    expect(TOKEN_IDENDIFIER);
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    expect(TOKEN_COLON);
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
+        error("Expected type name");
+    }
+    // TODO: replace token with type
+    // -> exprNodeAdd(node, type());
+    exprNodeAdd(node, tokenToNode(current));
+    next();
+
+    // check if default value is assigned
+    if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
+        // expecting default value assignment expression
+        exprNodeAdd(node, tokenToNode(current));
+        next();
+        exprNodeAdd(node, expression());
+    }
+
+    return node;
 }
 
 NODE *funcReturnTypeDeclList() {
