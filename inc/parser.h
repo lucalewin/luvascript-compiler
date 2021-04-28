@@ -102,7 +102,7 @@ NODE *primaryExpr();         // <identifier> <number> <string>
 
 /**
  * 
- * methood to add a (child-)node to a parent node
+ * method to add a (child-)node to a parent node
  * 
  */
 void exprNodeAdd(expr_node_t *parent, expr_node_t *node);
