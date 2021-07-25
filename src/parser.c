@@ -36,6 +36,12 @@ void exprParserStart(ArrayList* list) {
     // print root expression
     printNode(root);
 
+    // generate assembly code
+    char *asm = convert_ast_to_x86_64_assembly(root);
+
+    // print assembly code to console for debugging
+    printf("%s\n", asm);
+
     // free root expression
     free(root);
 }

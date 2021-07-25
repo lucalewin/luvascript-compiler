@@ -1,7 +1,7 @@
 #include <parser.h>
 #include <x86-64/parser.h>
 
-char *convert_ast_to_x86_64_assembly(AST *ast) {
+char *convert_ast_to_x86_64_assembly(NODE *root_node) {
     
     return "";
 }
@@ -20,4 +20,18 @@ char *parser_convert_statement_to_assembly(Statement *stmt) {
 
 char *parser_convert_expression_to_assembly(Expr* expr) {
 
+}
+
+char *mov(char *from, char *to);
+char *test(const char* format, ...);
+
+char *mov(char *from, char *to) {
+    char *template = "mov %s, %s";
+    char *mov = calloc(sizeof(template) + sizeof(from) + sizeof(to), sizeof(char));
+    sprintf(mov, template, from, to);
+    return mov;
+}
+
+char *test(const char* format, ...) {
+    
 }
