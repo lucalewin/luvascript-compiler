@@ -55,6 +55,9 @@ struct expr_node_s {
 
 // --------------------------------
 
+char *convert_ast_to_x86_64_assembly(NODE *ast);
+// char *convert_ast_to_arm64_assembly(NODE *ast);
+
 void exprParserStart(ArrayList* list);
 
 /**
@@ -132,7 +135,7 @@ void printNode(NODE *node);
  * 
  * returns true if the current tokens is an assignment operator
  * 
- * for a list of assignment operators take a look at the documentation at opertaor precendece 15
+ * for a list of assignment operators take a look at the documentation at operator precendece 15
  *  at https://github.com/lucr4ft/luvascript-compiler/blob/develop/docs/order_of_opartions.md
  * 
  */
@@ -142,7 +145,7 @@ int isAssignmentOperator(Token *t);
  * 
  * returns true if the current tokens is an unary operator
  * 
- * for a list of unary operators take a look at the documentation at opertaor precendece 2
+ * for a list of unary operators take a look at the documentation at operator precendece 2
  *  at https://github.com/lucr4ft/luvascript-compiler/blob/develop/docs/order_of_opartions.md
  * 
  */
