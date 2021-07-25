@@ -1,4 +1,4 @@
-const EXIT_SUCCESS: int = 0;
+//const EXIT_SUCCESS: int = 0;
 
 function main(): int {
     return EXIT_SUCCESS;
