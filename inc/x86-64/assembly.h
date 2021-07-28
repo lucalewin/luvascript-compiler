@@ -17,6 +17,16 @@ typedef enum { a, b, c, d, e, f, g, h  } InstType;
 
 // -------------------------------
 
+char *asmToString(Assembly *assembly);
+char *sectionToString(Section *section);
+char *functionToString(Function *func);
+char *constToString(Const *c);
+char *varToString(Var *var);
+char *blockToString(Block *block);
+char *instToString(Instruction *inst);
+
+// -------------------------------
+
 struct _assembly {
     // sections
     Section *sections;
