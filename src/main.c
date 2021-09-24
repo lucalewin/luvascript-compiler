@@ -2,28 +2,29 @@
 #include <stdlib.h>
 
 #include <util.h>
+#include <logger.h>
 #include <arraylist.h>
 #include <lexer.h>
 #include <parser.h>
-#include <logger.h>
+#include <compiler.h>
+
+#define DEFAULT_BINARY_NAME "a.out"
 
 int main(int argc, char **argv) {
     // validate command line arguments
     if (argc < 2) {
-        print_debug("invalid argument length: %d\n", argc - 1);
-        print_error("no input file specified\n");
-        print_error("type 'lvc -h' for help\n");
+        log_debug("ERROR: invalid argument length: %d\n", argc - 1);
+        log_error("no input file specified\n");
+        log_error("type 'lvc -h' for help\n");
         return -1;
     }
 
-    print_info("reading file contents from '%s'\n", argv[1]);
+    log_debug("reading file contents from '%s' \n", argv[1]);
+    char* file_contents = read_file(argv[1]);
     
-    char* file_contents = read_file(argv[1]);           // read file
-    
-    // 
-    ArrayList *tokens = lexer_start(file_contents);
+    ArrayList *tokens = tokenize(file_contents);
 
-    exprParserStart(tokens);
+    parse_tokens(tokens);
     arraylist_free(tokens);
 
     // int last_index = str_last_index_of(argv[1], '.');   //
