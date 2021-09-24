@@ -10,13 +10,20 @@ int exec(const char *cmd, ...) {
     va_list args;
     char *arg;
     char *buffer;
+    char *temp;
 
     buffer = malloc(strlen(cmd));
     strcpy(buffer, cmd);
     va_start(args, cmd);
 
     while ((arg = va_arg(args, char *)) != NULL) {
-        buffer = realloc(buffer, sizeof(char *) * (strlen(buffer) + strlen(arg) + 1));
+        temp = realloc(buffer, sizeof(char *) * (strlen(buffer) + strlen(arg) + 1));
+        if (temp == NULL) {
+            free(buffer);
+            log_error("error occured reallocating memory");
+            exit(-1);
+        }
+        buffer = temp;
         strcat(buffer, " ");
         strcat(buffer, arg);
     }
