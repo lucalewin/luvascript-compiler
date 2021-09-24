@@ -5,6 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-void compile(char *file_base_name);
+void compile_asm(char *src_file, char *out_file);
 
 #endif // LUVA_COMPILER_H
