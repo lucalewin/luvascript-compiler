@@ -19,10 +19,7 @@ char *keywords[keywords_length] = {
     "double"
 };
 
-ArrayList *lexer_start(char *code) {
-    // create new TokenList pointer (init)
-    // TokenList *list = tokenlist_init();
-
+ArrayList *tokenize(char *code) {
     ArrayList *list = arraylist_create();
 
     int index = 0;

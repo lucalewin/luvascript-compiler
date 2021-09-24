@@ -14,7 +14,7 @@
 // ----------------------------------------------
 
 // main method prototype to lex the code
-ArrayList *lexer_start(char *code);
+ArrayList *tokenize(char *code);
 
 // prototype methods for lexing inline x86-64 assembly
 Assembly *lexer_parse_x86_64(char *code);
