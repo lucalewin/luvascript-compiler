@@ -1,3 +1,4 @@
+#include <logger.h>
 #include <parser.h>
 
 char *types[] = {
@@ -22,8 +23,7 @@ char *types[] = {
 
 NODE *program();
 
-void exprParserStart(ArrayList* list) {
-
+void parse_tokens(ArrayList* list) {
     tokens = list;
     index = 0;
 
@@ -40,7 +40,7 @@ void exprParserStart(ArrayList* list) {
     char *asm = convert_ast_to_x86_64_assembly(root);
 
     // print assembly code to console for debugging
-    printf("%s\n", asm);
+    log_info("generated assembly: \n%s\n", asm);
 
     // free root expression
     free(root);
@@ -818,7 +818,8 @@ char *token_type_names[] = {
 
 int expect(TokenType type) {
     if (current->type != type) {
-        printf("ERROR: Expected %s at [%d:%d]\n", token_type_names[type], current->line, current->pos);
+        // printf("ERROR: Expected %s at [%d:%d]\n", token_type_names[type], current->line, current->pos);
+        log_error("Expected %s at [%d:%d]\n", token_type_names[type], current->line, current->pos);
         exit(1);
     }
     return 1;
@@ -842,6 +843,6 @@ void next() {
 }
 
 void error(const char *msg) {
-    printf("ERROR: %s\n", msg);
+    log_error("an exception occured during parsing: %s\n", msg);
     exit(1);
 }

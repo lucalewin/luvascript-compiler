@@ -58,7 +58,7 @@ struct expr_node_s {
 char *convert_ast_to_x86_64_assembly(NODE *ast);
 // char *convert_ast_to_arm64_assembly(NODE *ast);
 
-void exprParserStart(ArrayList* list);
+void parse_tokens(ArrayList* list);
 
 /**
  * 
