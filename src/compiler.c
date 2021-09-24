@@ -9,7 +9,7 @@ char *linker = "ld";
 
 void compile_asm(char *src_file, char *out_file) {
     // get temp object file name
-    char *obj_file = malloc(sizeof(obj_file) * (strlen(src_file) + 2));
+    char *obj_file = malloc(sizeof(char) * (strlen(src_file) + 2));
     strcpy(obj_file, src_file);
     strcat(obj_file, ".o");
 
