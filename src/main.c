@@ -4,45 +4,32 @@
 #include <util.h>
 #include <arraylist.h>
 #include <lexer.h>
-// #include <parser.h>
-// #include <compiler.h>
-// #include <ast.h>
-
-// #include <parser2.h>
 #include <parser.h>
+#include <logger.h>
 
 int main(int argc, char **argv) {
     // validate command line arguments
     if (argc < 2) {
-        printf("invalid argument length: %d\n", argc);
+        print_debug("invalid argument length: %d\n", argc - 1);
+        print_error("no input file specified\n");
+        print_error("type 'lvc -h' for help\n");
         return -1;
     }
 
-    int last_index = str_last_index_of(argv[1], '.');   //
-    char *file_base_name = malloc(last_index);          // get filepath without extension
-    substring(argv[1], file_base_name, last_index);     //
-
+    print_info("reading file contents from '%s'\n", argv[1]);
     
     char* file_contents = read_file(argv[1]);           // read file
     
+    // 
     ArrayList *tokens = lexer_start(file_contents);
-    // AST ast;
-    // parse(&ast, tokens);
+
     exprParserStart(tokens);
     arraylist_free(tokens);
 
-    // ArrayList *list = lexer_start(file_contents);       // get list of tokens from code
-    // free(file_contents);                                // free file contents -> no longer needed
-    // AST *ast = parser_create_ast(list);                 // create AST from tokens
-    // arraylist_free(list);                               // free tokenlist
-
-    // char *asm = convert_ast_to_x86_64_assembly(ast);
-
-    // printf("%s\n", asm);
-
-    // compile(file_base_name);
-
-    free(file_base_name);
+    // int last_index = str_last_index_of(argv[1], '.');   //
+    // char *file_base_name = malloc(last_index);          // get filepath without extension
+    // substring(argv[1], file_base_name, last_index);     //
+    // free(file_base_name);
 
     return 0;
 }
