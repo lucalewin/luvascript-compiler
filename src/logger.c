@@ -13,7 +13,7 @@ void priv_print(const char *prefix, const char *message, va_list args) {
     vprintf(fmt, args);
 }
 
-void print_info(const char *message, ...) {
+void log_info(const char *message, ...) {
     /* Declare a va_list type variable */
     va_list args;
     /* Initialise the va_list variable with the ... after message */
@@ -23,7 +23,7 @@ void print_info(const char *message, ...) {
     va_end(args);
 }
 
-void print_warning(const char *message, ...) {
+void log_warning(const char *message, ...) {
     // printf("[WARNING]: %s", message);
     /* Declare a va_list type variable */
     va_list args;
@@ -38,7 +38,7 @@ void print_warning(const char *message, ...) {
     va_end(args);
 }
 
-void print_error(const char *message, ...) {
+void log_error(const char *message, ...) {
     // printf("[ERROR]: %s", message);
     /* Declare a va_list type variable */
     va_list args;
@@ -53,7 +53,7 @@ void print_error(const char *message, ...) {
     va_end(args);
 }
 
-void print_debug(const char *message, ...) {
+void log_debug(const char *message, ...) {
     // printf("[DEBUG]: %s", message);
     /* Declare a va_list type variable */
     va_list args;
@@ -68,7 +68,7 @@ void print_debug(const char *message, ...) {
     va_end(args);
 }
 
-void print_cmd(const char *message, ...) {
+void log_cmd(const char *message, ...) {
     // printf("[CMD]: %s", command);
     /* Declare a va_list type variable */
     va_list args;
