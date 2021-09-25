@@ -19,7 +19,9 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    log_debug("reading file contents from '%s' \n", argv[1]);
+    // TODO: parse commandline arguments
+
+    log_debug("reading file contents from '%s'\n", argv[1]);
     char* file_contents = read_file(argv[1]);
     
     ArrayList *tokens = tokenize(file_contents);
