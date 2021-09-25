@@ -2,6 +2,7 @@
 #include <parser.h>
 
 char *types[] = {
+    "function",
     "expr_list",
     "expr_expression",
     "expr_assignment",
@@ -34,7 +35,9 @@ void parse_tokens(ArrayList* list) {
     expr_node_t *root = program();
 
     // print root expression
+    log_debug("printing root ast:\n");
     printNode(root);
+    printf("\n");
 
     // generate assembly code
     char *asm = convert_ast_to_x86_64_assembly(root);
@@ -71,6 +74,7 @@ NODE *program() {
 
 NODE *function() {
     NODE *node = createNode();
+    node->type = node_function;
 
     // adding function keyword to root node
     exprNodeAdd(node, tokenToNode(current));

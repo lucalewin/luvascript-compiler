@@ -29,6 +29,7 @@ typedef struct expr_node_s NODE;
 
 struct expr_node_s {
     enum {
+        node_function,
         expr_list,
         expr_expression,
         expr_assignment,
