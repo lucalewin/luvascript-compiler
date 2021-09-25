@@ -1,6 +1,7 @@
 //#include "include/util.h"
 
 #include <util.h>
+#include <logger.h>
 
 // ----------------------------------------------------------
 
@@ -48,6 +49,17 @@ void substring(char *source, char *target, int offset) {
     }
     destination[index] = '\0';
     // return destination;
+}
+
+void stradd(char *src, char *str) {
+    char *temp = realloc(str, sizeof(char) * (strlen(src) + strlen(str)));
+    if (temp == NULL) {
+        log_error("[stradd]: an exception occurred reallocating memory");
+        free(src);
+        exit(1);
+    }
+    src = temp;
+    strcat(src, str);
 }
 
 // ----------------------------------------------------------

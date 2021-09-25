@@ -31,6 +31,8 @@ void write_file(const char* path, char *text);
 //char *_substring(char *source, char *target, int from, int to);
 void substring(char *source, char *target, int offset); 
 
+void stradd(char *src, char *str);
+
 int str_last_index_of(char *str, char x);
 
 bool is_number(char c);
