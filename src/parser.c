@@ -1,740 +1,40 @@
-#include <logger.h>
 #include <parser.h>
+#include <logger.h>
 
-char *types[] = {
-    "function",
-    "expr_list",
-    "expr_expression",
-    "expr_assignment",
-    "expr_conditional",
-    "expr_logicalOr",
-    "expr_locicalAnd",
-    "expr_bitwiseOr",
-    "expr_bitwiseXor",
-    "expr_bitwiseAnd",
-    "expr_equality",
-    "expr_relational",
-    "expr_shift",
-    "expr_additive",
-    "expr_multiplicative",
-    "expr_unary",
-    "expr_postfix",
-    "expr_primary"
-};
-
-NODE *program();
-
-void parse_tokens(ArrayList* list) {
-    tokens = list;
-    index = 0;
-
-    // load tokens into 'current' and 'lookahead'
-    next();
-
-    // parse root expression
-    expr_node_t *root = program();
-
-    // print root expression
-    log_debug("printing root ast:\n");
-    printNode(root);
-    printf("\n");
-
-    // generate assembly code
-    char *asm = convert_ast_to_x86_64_assembly(root);
-
-    // print assembly code to console for debugging
-    log_info("generated assembly: \n%s\n", asm);
-
-    // free root expression
-    free(root);
+int expect(TokenType type) {
+    if (current->type != type) {
+        // printf("ERROR: Expected %s at [%d:%d]\n", token_type_names[type], current->line, current->pos);
+        log_error("Expected token '%s' at [%d:%d]\n", TOKEN_TYPE_NAMES[type], current->line, current->pos);
+        exit(1);
+    }
+    return 1;
 }
 
-// ------------------------ parsing methods ------------------------
-
-NODE *program() {
-    NODE *root = createNode();
-
-    while(index < tokens->size) {
-        NODE *node;
-        expect(TOKEN_KEYWORD);
-        if (strcmp(current->data, "function") == 0) {
-            // function declaration
-            node = function();
-        } else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
-            // variable declaration
-            node = var_decl();
-        } else {
-            error("expeced function or variable declaration");
-        }
-        exprNodeAdd(root, node);
-    }
-
-    return root;
-}
-
-NODE *function() {
-    NODE *node = createNode();
-    node->type = node_function;
-
-    // adding function keyword to root node
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    // expecting function identifier
-    expect(TOKEN_IDENDIFIER);
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    // expecting lparen
-    expect(TOKEN_LPAREN);
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    // optional: param delaration
-    if (!is(TOKEN_RPAREN)) {
-        // TODO: implement param declaration
-        exprNodeAdd(node, funcParamDeclList());
-    }
-
-    // expecting rparen
-    expect(TOKEN_RPAREN);
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    // optional: return type declaration
-    if (is(TOKEN_COLON)) {
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, funcReturnTypeDeclList());
-    }
-
-    // expecting block statement
-    exprNodeAdd(node, blockStmt());
-
-    return node;
-}
-
-NODE *var_decl() {
-    NODE *node = createNode();
-
-    // 'var' or 'const'
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    expect(TOKEN_IDENDIFIER);
-
-    // TODO: implement variable declaration parsing
-}
-
-NODE *funcParamDeclList() {
-    NODE *node = createNode();
-
-    exprNodeAdd(node, funcParamDecl());
-
-    if (is(TOKEN_COMMA)) {
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, funcParamDecl());
-
-        if (!is(TOKEN_COMMA)) {
-            return node;
-        }
-
-        NODE *temp = node;
-        while (is(TOKEN_COMMA)) {
-            node = createNode();
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, funcParamDecl());
-            temp = node;
-        }
-        temp = NULL;
-        free(temp);
-        return node;
-    }
-    return node;
-
-    return node;
-}
-
-NODE *funcParamDecl() {
-    NODE *node = createNode();
-
-    expect(TOKEN_IDENDIFIER);
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    expect(TOKEN_COLON);
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
-        error("Expected type name");
-    }
-    // TODO: replace token with type
-    // -> exprNodeAdd(node, type());
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    // check if default value is assigned
-    if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
-        // expecting default value assignment expression
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, expression());
-    }
-
-    return node;
-}
-
-NODE *funcReturnTypeDeclList() {
-    NODE *node = createNode();
-
-    exprNodeAdd(node, funcReturnTypeDecl());
-
-    if (is(TOKEN_COMMA)) {
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, funcReturnTypeDecl());
-
-        if (!is(TOKEN_COMMA)) {
-            return node;
-        }
-
-        NODE *temp = node;
-        while (is(TOKEN_COMMA)) {
-            node = createNode();
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, funcReturnTypeDecl());
-            temp = node;
-        }
-        temp = NULL;
-        free(temp);
-        return node;
-    }
-    return node;
-}
-
-NODE *funcReturnTypeDecl() {
-    if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
-        error("Expected type name");
-    }
-    NODE *node = createNode();
-
-    // TODO: replace token with type
-    // -> exprNodeAdd(node, type());
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    // check if default value is assigned
-    if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
-        // expecting default value assignment expression
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, expression());
-    }
-
-    return node;
-}
-
-// -------------------------- statements ---------------------------
-
-NODE *statement() {
-    NODE *node = createNode();
-
-    if (is(TOKEN_LBRACE)) {
-        exprNodeAdd(node, blockStmt());
-    } else if (is(TOKEN_KEYWORD)) {
-        exprNodeAdd(node, jumpStmt());
+int is(TokenType type) {
+    if (current != NULL) {
+        return current->type == type;
     } else {
-        exprNodeAdd(node, expressionStmt());
+        return 0;
     }
-
-    return node;
 }
 
-NODE *blockStmt() {
-    NODE *node = createNode();
-
-    expect(TOKEN_LBRACE);
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    while(!is(TOKEN_RBRACE)) {
-        exprNodeAdd(node, statement());
-    }
-    expect(TOKEN_RBRACE);
-    exprNodeAdd(node, tokenToNode(current));
-    next();
-
-    return node;
-}
-
-NODE *expressionStmt() {
-    NODE *node = createNode();
-
-    exprNodeAdd(node, expression());
-
-    return node;
-}
-
-NODE *jumpStmt() {
-    // TODO: implement parsing of jump statements
-    NODE *node = createNode();
-    if (strcmp(current->data, "return") == 0) {
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        if (!is(TOKEN_SEMICOLON)) {
-            exprNodeAdd(node, expressionList());
-        }
-        // add semicolon
-        exprNodeAdd(node, tokenToNode(current));
-        next();
+void next() {
+    current = arraylist_get(tokens, _index++);
+    if (_index < tokens->size) {
+        lookahead = arraylist_get(tokens, _index);
     } else {
-        error("expected 'return' keyword!");
+        lookahead = NULL;
     }
-    return node;
 }
 
-// -------------------------- expressions --------------------------
-
-NODE *expressionList() {
-    NODE *node = createNode();
-    node->type = expr_list;
-
-    exprNodeAdd(node, expression());
-
-    if (is(TOKEN_COMMA)) {
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, expression());
-
-        // if next token is not '<', '<=', '>' and '>=' return the node
-        if (!is(TOKEN_COMMA)) {
-            return node;
-        }
-
-        // if multiple (more than one) shift expression are in a row
-        // parse them with a while loop and create parse tree
-        NODE *temp = node;
-        while (is(TOKEN_COMMA)) {
-            node = createNode();
-            node->type = expr_list;
-            exprNodeAdd(node, temp);
-            exprNodeAdd(node, tokenToNode(current));
-            next();
-            exprNodeAdd(node, expression());
-            temp = node;
-        }
-        // only free pointer, not it's value
-        temp = NULL;
-        free(temp);
-        return node;
-    }
-    return node;
-}
-
-NODE *expression() {
-    NODE *node = createNode();
-    node->type = expr_expression;
-    exprNodeAdd(node, assignmentExpr());
-    return node;
-}
-
-NODE *assignmentExpr() {
-    NODE *node = createNode();
-    node->type = expr_assignment;
-    if (isAssignmentOperator(lookahead)) {
-        exprNodeAdd(node, unaryExpr());
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, assignmentExpr());
-    } else {
-        exprNodeAdd(node, conditionalExpr());
-    }
-    return node;
-}
-
-NODE *conditionalExpr() {
-    NODE *node = createNode();
-    node->type = expr_conditional;
-
-    exprNodeAdd(node, logicalOrExpr());
-
-    if (is(TOKEN_QUESTION_MARK)) {
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-
-        exprNodeAdd(node, expression());
-
-        expect(TOKEN_COLON);
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-
-        exprNodeAdd(node, expression());
-    }
-
-    return node;
-}
-
-NODE *logicalOrExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_LOGICAL_OR)) {
-        return locicalAndExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_logicalOr;
-    exprNodeAdd(node, locicalAndExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_LOGICAL_OR)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, locicalAndExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_logicalOr;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node;
-}
-
-NODE *locicalAndExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_LOGICAL_AND)) {
-        return bitwiseOrExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_locicalAnd;
-    exprNodeAdd(node, bitwiseOrExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_LOGICAL_AND)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, bitwiseOrExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_locicalAnd;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node;
-}
-
-NODE *bitwiseOrExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_VERTICAL_BAR)) {
-        return bitwiseXorExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_bitwiseOr;
-    exprNodeAdd(node, bitwiseXorExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_VERTICAL_BAR)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, bitwiseXorExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_bitwiseOr;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node;
-}
-
-NODE *bitwiseXorExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_CIRCUMFLEX)) {
-        return bitwiseAndExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_bitwiseXor;
-    exprNodeAdd(node, bitwiseAndExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_CIRCUMFLEX)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, bitwiseAndExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_bitwiseXor;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node;
-}
-
-NODE *bitwiseAndExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_AMPERSAND)) {
-        return equalityExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_bitwiseAnd;
-    exprNodeAdd(node, equalityExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_AMPERSAND)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, equalityExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_bitwiseAnd;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node;
-}
-
-NODE *equalityExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_RELATIONAL_EQUAL && lookahead->type != TOKEN_RELATIONAL_NOT_EQUAL)) {
-        return relationalExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_equality;
-    exprNodeAdd(node, relationalExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_RELATIONAL_EQUAL) || is(TOKEN_RELATIONAL_NOT_EQUAL)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, relationalExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_equality;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node; 
-}
-
-NODE *relationalExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_RELATIONAL_LESS && lookahead->type != TOKEN_RELATIONAL_LESS_OR_EQUAL && 
-                lookahead->type != TOKEN_RELATIONAL_GREATER && lookahead->type != TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
-        return shiftExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_relational;
-    exprNodeAdd(node, shiftExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_RELATIONAL_LESS) || is(TOKEN_RELATIONAL_LESS_OR_EQUAL) || is(TOKEN_RELATIONAL_GREATER) || is(TOKEN_RELATIONAL_GREATER_OR_EQUAL)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, shiftExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_relational;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node;
-}
-
-NODE *shiftExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_BITWISE_LEFT_SHIFT && lookahead->type != TOKEN_BITWISE_RIGHT_SHIFT)) {
-        return additiveExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_shift;
-    exprNodeAdd(node, additiveExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_BITWISE_LEFT_SHIFT) || is(TOKEN_BITWISE_RIGHT_SHIFT)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, additiveExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_shift;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node;
-}
-
-NODE *additiveExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_PLUS && lookahead->type != TOKEN_MINUS)) {
-        // to simplify the parsetree
-        return multiplicativeExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_additive;
-    exprNodeAdd(node, multiplicativeExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, multiplicativeExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_additive;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-
-    return node;
-}
-
-NODE *multiplicativeExpr() {
-    if (lookahead == NULL || (lookahead->type != TOKEN_ASTERISK && lookahead->type != TOKEN_SLASH && lookahead->type != TOKEN_MOD)) {
-        return unaryExpr();
-    }
-
-    NODE *node = createNode();
-    node->type = expr_multiplicative;
-    exprNodeAdd(node, unaryExpr());
-    NODE *temp = node;
-
-    while(is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_MOD)) {
-        exprNodeAdd(temp, tokenToNode(current));
-        next();
-        exprNodeAdd(temp, unaryExpr());
-        node = temp;
-        temp = createNode();
-        temp->type = expr_multiplicative;
-        exprNodeAdd(temp, node);
-    }
-    temp = NULL;
-    free(temp);
-    
-    return node;
-}
-
-NODE *unaryExpr() {
-    // TODO: implement unary expression parsing
-    return postfixExpr();
-}
-
-NODE *postfixExpr() {
-    NODE *node = createNode();
-    node->type = expr_postfix;
-    exprNodeAdd(node, primaryExpr());
-
-    if (is(TOKEN_LPAREN)) {
-        // function call expression
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, expression());
-        expect(TOKEN_RPAREN);
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-    } else if (is(TOKEN_LBRACKET)) {
-        // indexing expression
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-        exprNodeAdd(node, expression());
-        expect(TOKEN_RBRACKET);
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-    } else if (is(TOKEN_INCREMENT) || is(TOKEN_DECREMENT)) {
-        // postfix increment/decrement
-        exprNodeAdd(node, tokenToNode(current));
-        next();
-    }
-    return node;
-}
-
-NODE *primaryExpr() {
-    expr_node_t *primary_node = createNode();
-    primary_node->type = expr_primary;
-    if (is(TOKEN_LPAREN)) {
-        // '(' expression ')'
-        exprNodeAdd(primary_node, tokenToNode(current));
-        next();
-        exprNodeAdd(primary_node, expression(primary_node));
-        expect(TOKEN_RPAREN);
-        exprNodeAdd(primary_node, tokenToNode(current));
-    } else if (is(TOKEN_IDENDIFIER) || is(TOKEN_NUMBER) || is(TOKEN_STRING)) {
-        // exprNodeAdd(primary_node, tokenToNode(current));
-        free(primary_node);
-        primary_node = tokenToNode(current);
-        primary_node->type = expr_primary;
-    } else {
-        error("Expected literal or nested expression!");
-    }
+void eat(TokenType type) {
+    expect(type);
     next();
-    return primary_node;
 }
 
-// ------------------------ utility methods ------------------------
-
-void exprNodeAdd(expr_node_t *parent, expr_node_t *node) {
-    parent->childrenCount++;
-    parent->children = realloc(parent->children, sizeof(expr_node_t) * parent->childrenCount);
-    parent->children[parent->childrenCount - 1] = node;
-}
-
-NODE *tokenToNode(Token *t) {
-    expr_node_t *node = createNode();
-    node->type = token;
-    node->value = malloc(strlen(t->data));
-    strcpy(node->value, t->data);
-    return node;
-}
-
-NODE *createNode() {
-    NODE *node = malloc(sizeof(NODE));
-    node->childrenCount = 0;
-    node->children = malloc(sizeof(NODE));
-    node->value = NULL;
-    node->type = 0;
-    return node;
-}
-
-void printNode(NODE *node) {
-    if (node == NULL) {
-        printf("NULL\n");
-        return;
-    }
-    printf("{\"type\": \"%s\"", types[node->type]);
-    if (node->value != NULL) {
-        printf(",\"value\": \"%s\"", node->value);
-    }
-    if (node->childrenCount > 0) {
-        printf(",\"children\": [");
-    }
-    for (int i = 0; i < node->childrenCount; i++) {
-        printNode(node->children[i]);
-        if (i +1 < node->childrenCount) {
-            printf(",");
-        }
-    }
-    if (node->childrenCount > 0) {
-        printf("]");
-    }
-    printf("}");
+void error(const char *msg) {
+    log_error("an exception occured during parsing: %s\n", msg);
+    exit(1);
 }
 
 int isAssignmentOperator(Token *t) {
@@ -768,85 +68,231 @@ int isUnaryOperator(Token *t) {
     }
 }
 
-char *token_type_names[] = {
-    "TOKEN_KEYWORD",
-    "TOKEN_IDENDIFIER",
-    "TOKEN_NUMBER",
-    "TOKEN_STRING",
-    "TOKEN_PLUS",
-    "TOKEN_MINUS",
-    "TOKEN_ASTERISK",
-    "TOKEN_SLASH",
-    "TOKEN_MOD",
-    "TOKEN_AMPERSAND",
-    "TOKEN_VERTICAL_BAR",
-    "TOKEN_POWER",
-    "TOKEN_CIRCUMFLEX",
-    "TOKEN_COLON",
-    "TOKEN_SEMICOLON",
-    "TOKEN_DOT",
-    "TOKEN_COMMA",
-    "TOKEN_LPAREN",
-    "TOKEN_RPAREN",
-    "TOKEN_LBRACKET",
-    "TOKEN_RBRACKET",
-    "TOKEN_LBRACE",
-    "TOKEN_RBRACE",
-    "TOKEN_INCREMENT",
-    "TOKEN_DECREMENT",
-    "TOKEN_BITWISE_LEFT_SHIFT",
-    "TOKEN_BITWISE_RIGHT_SHIFT",
-    "TOKEN_RELATIONAL_LESS",
-    "TOKEN_RELATIONAL_LESS_OR_EQUAL",
-    "TOKEN_RELATIONAL_GREATER",
-    "TOKEN_RELATIONAL_GREATER_OR_EQUAL",
-    "TOKEN_RELATIONAL_EQUAL",
-    "TOKEN_RELATIONAL_NOT_EQUAL",
-    "TOKEN_LOGICAL_AND",
-    "TOKEN_LOGICAL_OR",
-    "TOKEN_TILDE",
-    "TOKEN_NOT",
-    "TOKEN_QUESTION_MARK",
-    "TOKEN_ASSIGNMENT_SIMPLE",
-    "TOKEN_ASSIGNMENT_SUM",
-    "TOKEN_ASSIGNMENT_DIFFERENCE",
-    "TOKEN_ASSIGNMENT_PRODUCT",
-    "TOKEN_ASSIGNMENT_QUOTIENT",
-    "TOKEN_ASSIGNMENT_REMAINDER",
-    "TOKEN_ASSIGNMENT_BITWISE_LEFT_SHIFT",
-    "TOKEN_ASSIGNMENT_BITWISE_RIGHT_SHIFT",
-    "TOKEN_ASSIGNMENT_BITWISE_AND",
-    "TOKEN_ASSIGNMENT_BITWISE_XOR",
-    "TOKEN_ASSIGNMENT_BITWISE_OR"
-};
+AST *parse(ArrayList *token_list) {
+    tokens = token_list;
+    _index = 0;
 
-int expect(TokenType type) {
-    if (current->type != type) {
-        // printf("ERROR: Expected %s at [%d:%d]\n", token_type_names[type], current->line, current->pos);
-        log_error("Expected %s at [%d:%d]\n", token_type_names[type], current->line, current->pos);
+    // load tokens into 'current' and 'lookahead'
+    next();
+
+    AST *root = calloc(1, sizeof(AST));
+
+    Statement *stmt = expectStatement();
+    if (stmt == NULL) {
+        free(root);
+        error("expected expression");
+    }
+
+    root->statement = stmt;
+
+    return root;
+}
+
+Statement *expectStatement() {
+    Statement *statement;
+
+    if (is(TOKEN_LBRACE)) {
+        statement = expectCompoundStatement();
+    } else if (is(TOKEN_KEYWORD)) {
+        statement = expectJumpStatement();
+    } else {
+        statement = expectExpressionStatement();
+    }
+
+    return statement; 
+}
+
+Statement *expectCompoundStatement() {
+    expect(TOKEN_LBRACE);
+    next();
+
+    Statement *statement = calloc(1, sizeof(Statement));
+    CompoundStatement *compund_statement = calloc(1, sizeof(CompoundStatement));
+
+    ArrayList *statements_array = arraylist_create();
+
+    while (!is(TOKEN_RBRACE)) {
+        arraylist_add(statements_array, expectStatement());
+    }
+
+    expect(TOKEN_RBRACE);
+    next();
+
+    compund_statement->nested_statements = statements_array;
+    statement->type = STATEMENT_COMPOUND;
+    statement->stmt.compound_statement = compund_statement;
+
+    return statement;
+}
+
+Statement *expectExpressionStatement() {
+    Statement *statement = calloc(1, sizeof(Statement));
+
+    statement->type = STATEMENT_EXPRESSION;
+
+    ExpressionStatement *expr_stmt = calloc(1, sizeof(ExpressionStatement));
+    expr_stmt->expression = expectExpression();
+
+    if (expr_stmt == NULL) {
+        free(statement);
+        error("expectExpression() returned NULL");
+    }
+
+    statement->stmt.expression_statement = expr_stmt;
+
+    return statement;
+}
+
+Statement *expectJumpStatement() {
+    expect(TOKEN_KEYWORD);
+
+    Statement *statement = calloc(1, sizeof(Statement));
+
+    if (strcmp(current->data, "return") == 0) {
+        next();
+        statement->type = STATEMENT_RETURN;
+        ReturnStatement *ret_stmt = calloc(1, sizeof(ReturnStatement));
+        ret_stmt->return_expression = expectExpression();
+        statement->stmt.return_statement = ret_stmt;
+        eat(TOKEN_SEMICOLON);
+    } else {
+        free(statement);
+        error("unexpected keyword at [line:column]");
+    }
+
+    return statement;
+}
+
+// expressions
+// ArrayList *expectExpressionList() {}
+
+Expression_T *expectExpression() {
+    return expectAdditiveExpression();
+}
+
+// Expression_T *expectAssignmentExpression() {}
+// Expression_T *expectConditionalExpression() {}
+// Expression_T *expectLogicalOrExpression() {}
+// Expression_T *expectLogicalAndExpression() {}
+// Expression_T *expectBitwiseorExpression() {}
+// Expression_T *expectBitwiseXorExpression() {}
+// Expression_T *expectBitwiseAndExpression() {}
+// Expression_T *expectEqualitiyExpression() {}
+// Expression_T *expectRelationalExpression() {}
+// Expression_T *expectShiftExpression() {}
+
+Expression_T *expectAdditiveExpression() {
+    Expression_T *expr = expectMultiplicativeExpression();
+
+    if (!is(TOKEN_PLUS) && !is(TOKEN_MINUS)) {
+        // log_debug("current token type: %s\n", current->data);
+        return expr;
+    }
+
+    BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
+    binary_expression->expression_left = expr;
+    BinaryExpression_T *temp = binary_expression;
+    Expression_T *temp_expr;
+
+    while (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
+        temp->operator = is(TOKEN_PLUS) ? BINARY_OPERATOR_PLUS : BINARY_OPERATOR_MINUS;
+        next();
+        temp->expression_right = expectMultiplicativeExpression();
+        binary_expression = temp;
+        temp = calloc(1, sizeof(BinaryExpression_T));
+        temp_expr = calloc(1, sizeof(Expression_T));
+        temp_expr->type = EXPRESSION_BINARY;
+        temp_expr->expr.binary_expr = binary_expression;
+        temp->expression_left = temp_expr;
+    }
+
+    free(temp_expr);
+
+    Expression_T *expression = calloc(1, sizeof(Expression_T));
+    expression->type = EXPRESSION_BINARY;
+    expression->expr.binary_expr = binary_expression;
+
+    return expression;
+}
+
+Expression_T *expectMultiplicativeExpression() {
+    Expression_T *expr = expectUnaryExpression();
+
+    if (!is(TOKEN_ASTERISK) && !is(TOKEN_SLASH)) {
+        // log_debug("current token type: %s\n", current->data);
+        return expr;
+    }
+
+    BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
+    binary_expression->expression_left = expr;
+    BinaryExpression_T *temp = binary_expression;
+    Expression_T *temp_expr;
+
+    while (is(TOKEN_ASTERISK) || is(TOKEN_SLASH)) {
+        temp->operator = is(TOKEN_ASTERISK) ? BINARY_OPERATOR_MULTIPLY : BINARY_OPERATOR_DIVIDE;
+        next();
+        temp->expression_right = expectUnaryExpression();
+        binary_expression = temp;
+        temp = calloc(1, sizeof(BinaryExpression_T));
+        temp_expr = calloc(1, sizeof(Expression_T));
+        temp_expr->type = EXPRESSION_BINARY;
+        temp_expr->expr.binary_expr = binary_expression;
+        temp->expression_left = temp_expr;
+    }
+
+    free(temp_expr);
+
+    Expression_T *expression = calloc(1, sizeof(Expression_T));
+    expression->type = EXPRESSION_BINARY;
+    expression->expr.binary_expr = binary_expression;
+
+    return expression;
+}
+
+Expression_T *expectUnaryExpression() {
+    return expectPostfixExpression();
+}
+Expression_T *expectPostfixExpression() {
+    return expectPrimaryExpression();
+}
+
+Expression_T *expectPrimaryExpression() {
+    Expression_T *expression = calloc(1, sizeof(Expression_T));
+    if (is(TOKEN_LPAREN)) {
+        eat(TOKEN_LPAREN);
+        expression->type = EXPRESSION_NESTED;
+        Expression_T *expr = expectExpression();
+        NestedExpression_T *nested_expression = calloc(1, sizeof(NestedExpression_T));
+        nested_expression->expression = expr;
+        expression->expr.nested_expr = nested_expression;
+        eat(TOKEN_RPAREN);
+    } else if (is(TOKEN_IDENDIFIER) || is(TOKEN_NUMBER) || is(TOKEN_STRING)) {
+        expression->type = EXPRESSION_LITERAL;
+        Literal_T *literal = calloc(1, sizeof(Literal_T));
+        switch (current->type) {
+            case TOKEN_IDENDIFIER: {
+                literal->type = LITERAL_IDENTIFIER;
+                break;
+            }
+            case TOKEN_STRING: {
+                literal->type = LITERAL_STRING;
+                break;
+            }
+            case TOKEN_NUMBER: {
+                literal->type = LITERAL_NUMBER;
+                break;
+            }
+            default: {
+                error("unknown error occured in parser.c#expectPrimaryExpression()");
+            }
+        }
+        literal->value = calloc(strlen(current->data), sizeof(char));
+        strcpy(literal->value, current->data);
+        next();
+        expression->expr.literal_expr = literal;
+    } else {
+        log_error("expected nested expression or literal but got %d\n", current);
         exit(1);
     }
-    return 1;
-}
-
-int is(TokenType type) {
-    if (current != NULL) {
-        return current->type == type;
-    } else {
-        return 0;
-    }
-}
-
-void next() {
-    current = arraylist_get(tokens, index++);
-    if (index < tokens->size) {
-        lookahead = arraylist_get(tokens, index);
-    } else {
-        lookahead = NULL;
-    }
-}
-
-void error(const char *msg) {
-    log_error("an exception occured during parsing: %s\n", msg);
-    exit(1);
+    return expression;
 }
