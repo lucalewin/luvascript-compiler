@@ -8,7 +8,7 @@ typedef struct _VariableDecl VariableDecl;
 struct _VariableDecl {
     int is_constant;
     char *identifier;
-    Expr *value;
+    Expression_T *value;
 };
 
 #endif

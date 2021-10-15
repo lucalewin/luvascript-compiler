@@ -12,4 +12,6 @@ typedef struct Literal {
     char *value;
 } Literal_T;
 
+extern const char *LITERAL_TYPES[];
+
 #endif

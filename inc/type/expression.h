@@ -43,4 +43,6 @@ struct NestedExpression {
     Expression_T *expression;
 };
 
+extern const char *EXPRESSION_TYPES[];
+
 #endif // LUVA_EXPRESSION_H

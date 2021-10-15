@@ -2,7 +2,9 @@
 #define LUVA_OPERATOR_H
 
 typedef enum UnaryOperator {
-    // TODO: add unary operator types
+    UNARY_OPERATOR_PRE_INCREMENT,
+    // ...
+    // TODO: add missing unary operator types
 } UnaryOperator_T;
 
 typedef enum BinaryOperator {
