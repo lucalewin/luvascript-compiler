@@ -19,7 +19,7 @@ void log_info(const char *message, ...) {
     va_list args;
     /* Initialise the va_list variable with the ... after message */
     va_start(args, message);
-    priv_print("[INFO]:", message, args);
+    priv_print("[" GREEN "INFO" RESET "]:", message, args);
     /* Clean up the va_list */
     va_end(args);
 }
@@ -33,7 +33,7 @@ void log_warning(const char *message, ...) {
     va_start(args, message);
 
     /* Forward the '...' to vprintf */
-    priv_print("[WARNING]:", message, args);
+    priv_print("[" YELLOW "WARNING" RESET "]:", message, args);
 
     /* Clean up the va_list */
     va_end(args);
@@ -48,7 +48,7 @@ void log_error(const char *message, ...) {
     va_start(args, message);
 
     /* Forward the '...' to vprintf */
-    priv_print("[ERROR]:", message, args);
+    priv_print("[" RED "ERROR" RESET "]:", message, args);
 
     /* Clean up the va_list */
     va_end(args);
@@ -63,7 +63,7 @@ void log_debug(const char *message, ...) {
     va_start(args, message);
 
     /* Forward the '...' to vprintf */
-    priv_print("[DEBUG]:", message, args);
+    priv_print("[" BLUE "DEBUG" RESET "]:", message, args);
 
     /* Clean up the va_list */
     va_end(args);
@@ -78,7 +78,7 @@ void log_cmd(const char *message, ...) {
     va_start(args, message);
 
     /* Forward the '...' to vprintf */
-    priv_print("[CMD]:", message, args);
+    priv_print("[" MAGMA "CMD" RESET "]:", message, args);
 
     /* Clean up the va_list */
     va_end(args);
