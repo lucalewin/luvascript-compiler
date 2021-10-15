@@ -1,5 +1,0 @@
-// const EXIT_SUCCESS: int = 0;
-
-function main(): int = 1 {
-    return EXIT_SUCCESS;
-}
