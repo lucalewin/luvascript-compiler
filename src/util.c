@@ -1,14 +1,13 @@
-//#include "include/util.h"
-
 #include <util.h>
 #include <logger.h>
+#include <stdarg.h>
 
 // ----------------------------------------------------------
 
 char *read_file(const char* path) {
     FILE *file = fopen(path, "r");
     if (!file) {
-        printf("Could not open file '%s'\n", path);
+        log_error("could not open file '%s'\n", path);
         return NULL;
     }
 
@@ -31,7 +30,7 @@ char *read_file(const char* path) {
 void write_file(const char* path, char *text) {
     FILE *file = fopen(path, "w");
     if (!file) {
-        printf("Could not open file '%s'\n", path);
+        log_error("write_file(): could not open file '%s'\n", path);
         return;
     }
     fputs(text, file);
@@ -48,18 +47,30 @@ void substring(char *source, char *target, int offset) {
         index++;
     }
     destination[index] = '\0';
-    // return destination;
 }
 
-void stradd(char *src, char *str) {
-    char *temp = realloc(str, sizeof(char) * (strlen(src) + strlen(str)));
-    if (temp == NULL) {
-        log_error("[stradd]: an exception occurred reallocating memory");
-        free(src);
-        exit(1);
+char *stradd(char *s1, char *s2) {
+    const size_t a = strlen(s1);
+    const size_t b = strlen(s2);
+    const size_t size_ab = a + b + 1;
+
+    s1 = realloc(s1, size_ab);
+
+    memcpy(s1 + a, s2, b + 1);
+
+    return s1;
+}
+
+void straddall(char *src, ...) {
+    va_list args;
+    va_start(args, src);
+
+    char *str;
+    while ((str = va_arg(args, char *)) != NULL) {
+        src = stradd(src, str);
     }
-    src = temp;
-    strcat(src, str);
+
+    va_end(args);
 }
 
 // ----------------------------------------------------------
