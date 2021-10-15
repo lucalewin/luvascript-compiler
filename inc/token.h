@@ -95,4 +95,6 @@ typedef struct _Token Token;
 Token* token_create(char* data, TokenType type, int line, int pos);
 void token_free(Token* t);
 
+extern const char *TOKEN_TYPE_NAMES[];
+
 #endif // LUVA_TOKEN_H

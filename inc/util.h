@@ -31,7 +31,8 @@ void write_file(const char* path, char *text);
 //char *_substring(char *source, char *target, int from, int to);
 void substring(char *source, char *target, int offset); 
 
-void stradd(char *src, char *str);
+char *stradd(char *s1, char *s2);
+void straddall(char *src, ...);
 
 int str_last_index_of(char *str, char x);
 

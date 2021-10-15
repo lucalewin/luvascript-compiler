@@ -3,40 +3,45 @@
 
 // ---------------------------------
 
-#include "expression.h"
-#include "arraylist.h"
+#include <expression.h>
+#include <arraylist.h>
 
 // ---------------------------------
 
-typedef enum _StatementType StatementType;
-typedef struct _Statement Statement;
-typedef struct _BlockStatement BlockStatement;
-typedef struct _ExprStatement ExprStatement;
-typedef struct _ReturnStatement ReturnStatement;
+typedef struct CompoundStatement CompoundStatement;
+typedef struct ExpressionStatement ExpressionStatement;
+typedef struct ReturnStatement ReturnStatement;
 
 // ---------------------------------
 
-enum _StatementType {
-    STATEMENT_BLOCK,
-    STATEMENT_EXPR,
+typedef enum {
+    STATEMENT_COMPOUND,
+    STATEMENT_EXPRESSION,
     STATEMENT_RETURN
+} statement_type;
+
+typedef struct statement {
+    statement_type type;
+
+    union {
+        CompoundStatement *compound_statement;
+        ExpressionStatement *expression_statement;
+        ReturnStatement *return_statement;
+    } stmt;
+} Statement;
+
+struct CompoundStatement {
+    ArrayList *nested_statements;
 };
 
-struct _Statement {
-    StatementType type;
-    void *statement;
+struct ExpressionStatement {
+    Expression_T *expression;
 };
 
-struct _BlockStatement {
-    ArrayList *stmts;
+struct ReturnStatement {
+    Expression_T *return_expression;
 };
 
-struct _ExprStatement {
-    Expr *expr;
-};
-
-struct _ReturnStatement {
-    Expr *expr;
-};
+extern const char* STATEMENT_TYPES[];
 
 #endif // LUVA_STATEMENT_H
