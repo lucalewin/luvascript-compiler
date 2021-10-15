@@ -1,5 +1,1 @@
-//const EXIT_SUCCESS: int = 0;
-
-function main(): int {
-    return EXIT_SUCCESS;
-}
+return 2 + 3 * 5 + 120 / (8 * 5) - 6;
