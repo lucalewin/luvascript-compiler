@@ -5,7 +5,7 @@ BIN_DIR		:= bin
 
 TARGET		:= $(BIN_DIR)/lvc
 
-SOURCES		:= $(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c)
+SOURCES		:= $(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c $(SRC_DIR)/*/*/*.c)
 OBJECTS		:= $(subst src/,obj/,$(SOURCES:.c=.o))
 INC_DIRS	:= -I$(INC_DIR) $(addprefix -I,$(dir $(wildcard $(INC_DIR)/*/.)))
 

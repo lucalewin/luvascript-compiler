@@ -2,8 +2,12 @@
 #define LUVA_PARSER_H
 
 #include <arraylist.h>
-#include <ast.h>
 #include <token.h>
+
+#include <types/literal.h>
+#include <types/expression.h>
+#include <types/statement.h>
+#include <types/ast.h>
 
 /**
  * 

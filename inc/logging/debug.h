@@ -1,9 +1,9 @@
 #ifndef LUVA_DEBUG_H
 #define LUVA_DEBUG_H
 
-#include <literal.h>
-#include <expression.h>
-#include <statement.h>
+#include <types/literal.h>
+#include <types/expression.h>
+#include <types/statement.h>
 
 void print_literal(Literal_T *literal);
 void print_expression(Expression_T *expression);

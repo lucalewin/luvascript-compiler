@@ -1,10 +1,12 @@
 #ifndef LUVA_COMPILER_H
 #define LUVA_COMPILER_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <types/ast.h>
 
-void compile_asm(char *src_file, char *out_file);
+char *compile_to_x86_64_assembly(AST *ast);
+// char *compile_to_arm32_assembly(AST *ast);
+// char *compile_to_arm64_assembly(AST *ast);
 
-#endif // LUVA_COMPILER_H
+void compile_asm_file(char *src_file, char *out_file);
+
+#endif

@@ -3,8 +3,8 @@
 
 // ---------------------------------
 
-#include <expression.h>
-#include <arraylist.h>
+#include <types/expression.h>
+#include <util/arraylist.h>
 
 // ---------------------------------
 

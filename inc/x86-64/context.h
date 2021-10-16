@@ -1,8 +1,7 @@
 #ifndef LUVA_x68_64_CONTEXT_H
 #define LUVA_x68_64_CONTEXT_H
 
-#include <type.h>
-#include <arraylist.h>
+#include <util/arraylist.h>
 
 typedef struct CONTEXT {
     ArrayList *global_variables;

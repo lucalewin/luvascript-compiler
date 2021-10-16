@@ -1,4 +1,0 @@
-#ifndef LUVA_FUNCTION_H
-#define LUVA_FUNCTION_H
-
-#endif // LUVA_FUNCTION_H

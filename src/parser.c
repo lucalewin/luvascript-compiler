@@ -3,7 +3,6 @@
 
 int expect(TokenType type) {
     if (current->type != type) {
-        // printf("ERROR: Expected %s at [%d:%d]\n", token_type_names[type], current->line, current->pos);
         log_error("Expected token '%s' at [%d:%d]\n", TOKEN_TYPE_NAMES[type], current->line, current->pos);
         exit(1);
     }
@@ -80,7 +79,8 @@ AST *parse(ArrayList *token_list) {
     Statement *stmt = expectStatement();
     if (stmt == NULL) {
         free(root);
-        error("expected expression");
+		log_error("expected statement at [%d:%d]\n", current->line, current->pos);
+		exit(1);
     }
 
     root->statement = stmt;
@@ -128,16 +128,30 @@ Statement *expectCompoundStatement() {
 Statement *expectExpressionStatement() {
     Statement *statement = calloc(1, sizeof(Statement));
 
+	if (statement == NULL) {
+		log_error("expectExpressionStatement(): calloc failed\n");
+		exit(1);
+	}
+
     statement->type = STATEMENT_EXPRESSION;
 
     ExpressionStatement *expr_stmt = calloc(1, sizeof(ExpressionStatement));
-    expr_stmt->expression = expectExpression();
-
     if (expr_stmt == NULL) {
+		free(statement);
+		log_error("expectExpressionStatement(): calloc failed\n");
+		exit(1);
+	}
+	
+	Expression_T *expr = expectExpression();
+
+    if (expr == NULL) {
         free(statement);
-        error("expectExpression() returned NULL");
+		free(expr_stmt);
+        log_error("expectExpressionStatement(): expectExpression() returned NULL\n");
+		exit(1);
     }
 
+	expr_stmt->expression = expr;
     statement->stmt.expression_statement = expr_stmt;
 
     return statement;

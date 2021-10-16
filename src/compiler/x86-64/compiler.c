@@ -1,9 +1,22 @@
-#include <parser.h>
-#include <util.h>
-#include <logger.h>
-#include <statement.h>
+// standart libraries
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+// utility libraries
+#include <util/util.h>
+#include <util/cmd.h>
+#include <logging/logger.h>
+
+// types
+#include <types/operator.h>
+#include <types/literal.h>
+#include <types/expression.h>
+#include <types/statement.h>
+
+// headers to be implemented
+#include <compiler.h>
+#include <x86-64/optimizer.h>
 
 // ------------------------ string templates ------------------------
 
@@ -16,22 +29,36 @@ char *exit_template =
 "mov rax, 60\n"
 "syscall\n";
 
-// ------------------------ function prototypes ------------------------
+// ----------------------- function prototypes -------------------------
 
-char *parse_statement(Statement *stmt);
-char *parse_return_statement(ReturnStatement *ret_stmt);
-char *parse_expression(Expression_T *expr);
-char *parse_binary_expression(BinaryExpression_T *bin_expr);
+char *compile_statement(Statement *stmt);
+char *compile_return_statement(ReturnStatement *ret_stmt);
+char *compile_expression(Expression_T *expr);
+char *compile_binary_expression(BinaryExpression_T *bin_expr);
 
+// --------------------- function implementations ----------------------
 
-FILE *stream;
-char *stream_buffer;
-size_t buffer_length;
+char *assembler = "nasm";
+char *file_format = "-f elf64";
+char *linker = "ld";
 
+void compile_asm_file(char *src_file, char *out_file) {
+    // get temp object file name
+    char *obj_file = malloc(sizeof(char) * (strlen(src_file) + 2));
+    strcpy(obj_file, src_file);
+    strcat(obj_file, ".o");
 
-char *parse_ast_to_x86_64_asm(AST *root) {
-    log_debug("parsing to x68_64 assembly\n");
-    char *stmt_code = parse_statement(root->statement);
+    // compile .asm file using nasm and elf64 format
+    exec(assembler, file_format, src_file, "-o", obj_file, NULL);
+    
+    // link .o file and create binary file
+    exec(linker, "-g", obj_file, out_file);
+}
+
+char *compile_to_x86_64_assembly(AST *root) {
+
+    log_debug("compiling to x68_64 assembly\n");
+    char *stmt_code = compile_statement(root->statement);
     char *asm_code = calloc(1, sizeof(char));
 
     asm_code = stradd(asm_code, header_template);
@@ -41,31 +68,30 @@ char *parse_ast_to_x86_64_asm(AST *root) {
     return asm_code;
 }
 
-char *parse_statement(Statement *stmt) {
+char *compile_statement(Statement *stmt) {
     switch(stmt->type) {
         case STATEMENT_RETURN: {
-            return parse_return_statement(stmt->stmt.return_statement);
+            return compile_return_statement(stmt->stmt.return_statement);
         }
         default: {
-            log_error("parsing for statement type '%d' not implemented yet\n", stmt->type);
+            log_error("compile_statement(): unexpected statement type '%d'\n", STATEMENT_TYPES[stmt->type]);
             exit(1);
         }
     }
 }
 
-char *parse_return_statement(ReturnStatement *ret_stmt) {
+char *compile_return_statement(ReturnStatement *ret_stmt) {
     char *ret_stmt_code = calloc(1, sizeof(char));
-    char *expr_code = parse_expression(ret_stmt->return_expression);
+    char *expr_code = compile_expression(ret_stmt->return_expression);
     ret_stmt_code = stradd(ret_stmt_code, expr_code);
     return stradd(ret_stmt_code, "mov rdi, rax\n");
 }
 
-char *parse_expression(Expression_T *expr) {
+char *compile_expression(Expression_T *expr) {
     char *expr_code;
     switch(expr->type) {
         case EXPRESSION_BINARY:
-            expr_code = parse_binary_expression(expr->expr.binary_expr);
-            // log_info("expr: %s\n", expr_code);
+            expr_code = compile_binary_expression(expr->expr.binary_expr);
             break;
         default:
             log_error("parsing for expression type '%d' is not implemented yet\n", expr->type);
@@ -74,7 +100,7 @@ char *parse_expression(Expression_T *expr) {
     return expr_code;
 }
 
-char *parse_binary_expression(BinaryExpression_T *bin_expr) {
+char *compile_binary_expression(BinaryExpression_T *bin_expr) {
     char *bin_expr_code = calloc(1, sizeof(char));
 
     switch(bin_expr->expression_left->type) {
@@ -82,7 +108,7 @@ char *parse_binary_expression(BinaryExpression_T *bin_expr) {
             Literal_T *literal = bin_expr->expression_left->expr.literal_expr;
 
             if (literal->type != LITERAL_NUMBER) {
-                log_error("[1] parse_binary_expression(): literal type '%d' is not supported yet\n", literal->type);
+                log_error("[1] compile_binary_expression(): literal type '%d' is not supported yet\n", literal->type);
             }
 
             bin_expr_code = stradd(bin_expr_code, "mov rax, ");
@@ -94,14 +120,14 @@ char *parse_binary_expression(BinaryExpression_T *bin_expr) {
         case EXPRESSION_BINARY: {
             BinaryExpression_T *nested_bin_expr = bin_expr->expression_left->expr.binary_expr;
 
-            char *nested_bin_expr_code = parse_binary_expression(nested_bin_expr);
+            char *nested_bin_expr_code = compile_binary_expression(nested_bin_expr);
 
             bin_expr_code = stradd(bin_expr_code, nested_bin_expr_code);
 
             break;
         }
         default:
-            log_error("[2] parse_binary_expression(): parsing for expression-type '%d' is not implemented yet\n", bin_expr->expression_left->type);
+            log_error("[2] compile_binary_expression(): parsing for expression-type '%d' is not implemented yet\n", bin_expr->expression_left->type);
             exit(1);
     }
 
@@ -112,7 +138,7 @@ char *parse_binary_expression(BinaryExpression_T *bin_expr) {
             Literal_T *literal = bin_expr->expression_right->expr.literal_expr;
 
             if (literal->type != LITERAL_NUMBER) {
-                log_error("[3] parse_binary_expression(): literal type '%d' is not supported yet\n", literal->type);
+                log_error("[3] compile_binary_expression(): literal type '%d' is not supported yet\n", literal->type);
             }
 
             if (bin_expr->operator == BINARY_OPERATOR_PLUS) {
@@ -134,7 +160,7 @@ char *parse_binary_expression(BinaryExpression_T *bin_expr) {
                 bin_expr_code = stradd(bin_expr_code, "\n");
                 bin_expr_code = stradd(bin_expr_code, "idiv ebx\n");
             } else {
-                log_error("[4] parse_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+                log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
                 exit(1);
             }
 
@@ -143,7 +169,7 @@ char *parse_binary_expression(BinaryExpression_T *bin_expr) {
         case EXPRESSION_BINARY: {
             BinaryExpression_T *nested_bin_expr = bin_expr->expression_right->expr.binary_expr;
 
-            char *nested_bin_expr_code = parse_binary_expression(nested_bin_expr);
+            char *nested_bin_expr_code = compile_binary_expression(nested_bin_expr);
 
             bin_expr_code = stradd(bin_expr_code, "push rax\n");
             bin_expr_code = stradd(bin_expr_code, nested_bin_expr_code);
@@ -159,7 +185,7 @@ char *parse_binary_expression(BinaryExpression_T *bin_expr) {
             } else if (bin_expr->operator == BINARY_OPERATOR_DIVIDE) {
                 bin_expr_code = stradd(bin_expr_code, "idiv rbx\n");
             } else {
-                log_error("[4] parse_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+                log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
                 exit(1);
             }
 
@@ -167,7 +193,7 @@ char *parse_binary_expression(BinaryExpression_T *bin_expr) {
         }
         case EXPRESSION_NESTED: {
             NestedExpression_T *nested_expr = bin_expr->expression_right->expr.nested_expr;
-            char *nested_expr_code = parse_expression(nested_expr->expression);
+            char *nested_expr_code = compile_expression(nested_expr->expression);
 
             bin_expr_code = stradd(bin_expr_code, "push rax\n");
             bin_expr_code = stradd(bin_expr_code, nested_expr_code);
@@ -183,13 +209,13 @@ char *parse_binary_expression(BinaryExpression_T *bin_expr) {
             } else if (bin_expr->operator == BINARY_OPERATOR_DIVIDE) {
                 bin_expr_code = stradd(bin_expr_code, "idiv rbx\n");
             } else {
-                log_error("[5] parse_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+                log_error("[5] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
                 exit(1);
             }
             break;
         }
         default:
-            log_error("[6] parse_binary_expression(): parsing for expression-type '%d' is not implemented yet\n", bin_expr->expression_right->type);
+            log_error("[6] compile_binary_expression(): parsing for expression-type '%d' is not implemented yet\n", bin_expr->expression_right->type);
             exit(1);
     }
 

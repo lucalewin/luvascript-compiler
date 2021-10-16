@@ -1,5 +1,10 @@
 #include <lexer.h>
 
+#include <stdio.h>
+
+#include <util.h>
+#include <token.h>
+
 #define keywords_length 14
 
 char *keywords[keywords_length] = {
@@ -298,11 +303,6 @@ ArrayList *tokenize(char *code) {
         index++;
         pos++;
     }
-
-    // for (int i = 0; i < list->size; i++) {
-    //     Token *t = arraylist_get(list, i);
-    //     printf("TOKEN: %s\t\t\tTYPE: %d\t\tLINE: %d\t\tPOS: %d\n", t->data, t->type, t->line, t->pos);
-    // }
 
     return list;
 }

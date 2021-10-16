@@ -14,21 +14,11 @@
 
 // ----------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-// ----------------------------------------------------------------
-
 typedef signed int int32_t;
 typedef signed long int64_t;
 
 // ----------------------------------------------------------------
 
-char *read_file(const char* path);
-void write_file(const char* path, char *text);
-
-//char *_substring(char *source, char *target, int from, int to);
 void substring(char *source, char *target, int offset); 
 
 char *stradd(char *s1, char *s2);

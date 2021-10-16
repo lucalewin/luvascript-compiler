@@ -1,8 +1,8 @@
 #ifndef LUVA_EXPRESSION_H
 #define LUVA_EXPRESSION_H
 
-#include <operator.h>
-#include <literal.h>
+#include <types/operator.h>
+#include <types/literal.h>
 
 typedef enum ExpressionType ExpressionType;
 typedef struct Expression Expression_T;
