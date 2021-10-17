@@ -89,7 +89,17 @@ char *compile_return_statement(ReturnStatement *ret_stmt) {
 
 char *compile_expression(Expression_T *expr) {
     char *expr_code;
+
+	expr = simplify_expression(expr);
+
     switch(expr->type) {
+		case EXPRESSION_LITERAL: {
+			expr_code = calloc(1, sizeof(char));
+			expr_code = stradd(expr_code, "mov rax, ");
+			expr_code = stradd(expr_code, expr->expr.literal_expr->value);
+			expr_code = stradd(expr_code, "\n");
+			break;
+		}
         case EXPRESSION_BINARY:
             expr_code = compile_binary_expression(expr->expr.binary_expr);
             break;
