@@ -305,7 +305,7 @@ Expression_T *expectPrimaryExpression() {
         next();
         expression->expr.literal_expr = literal;
     } else {
-        log_error("expected nested expression or literal but got %d\n", current);
+        log_error("expectPrimaryExpression(): expected nested expression or literal but got %d\n", current);
         exit(1);
     }
     return expression;
