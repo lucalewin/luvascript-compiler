@@ -73,8 +73,19 @@ char *compile_statement(Statement *stmt) {
         case STATEMENT_RETURN: {
             return compile_return_statement(stmt->stmt.return_statement);
         }
+		case STATEMENT_COMPOUND: {
+			CompoundStatement *compound_statement = stmt->stmt.compound_statement;
+			
+			char *compound_stmt_code = calloc(1, sizeof(char));
+
+			for (int i = 0; i < compound_statement->nested_statements->size; i++) {
+				compound_stmt_code = stradd(compound_stmt_code, compile_statement(arraylist_get(compound_statement->nested_statements, i)));
+			}
+
+			break;
+		}
         default: {
-            log_error("compile_statement(): unexpected statement type '%d'\n", STATEMENT_TYPES[stmt->type]);
+            log_error("compile_statement(): unexpected statement type '%s'\n", STATEMENT_TYPES[stmt->type]);
             exit(1);
         }
     }
