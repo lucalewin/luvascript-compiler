@@ -89,17 +89,20 @@ AST *parse(ArrayList *token_list) {
 }
 
 Statement *expectStatement() {
-    Statement *statement;
-
     if (is(TOKEN_LBRACE)) {
-        statement = expectCompoundStatement();
+        return expectCompoundStatement();
     } else if (is(TOKEN_KEYWORD)) {
-        statement = expectJumpStatement();
+		if (strcmp(current->data, "return") == 0) {
+        	return expectJumpStatement();
+		} else if (strcmp(current->data, "var") == 0) {
+			return expectVariableDeclarationStatement();
+		} else {
+			log_error("unexpected keyword at [%d:%d]\n", current->line, current->pos);
+			exit(1);
+		}
     } else {
-        statement = expectExpressionStatement();
+        return expectExpressionStatement();
     }
-
-    return statement; 
 }
 
 Statement *expectCompoundStatement() {
@@ -176,6 +179,118 @@ Statement *expectJumpStatement() {
 
     return statement;
 }
+
+Statement *expectVariableDeclarationStatement() {
+	Statement *statement = calloc(1, sizeof(Statement));
+	if (statement == NULL) {
+		log_error("unable to allocate memory for Statement\n");
+		exit(1);
+	}
+
+	VariableDeclarationStatement *var_decl_stmt = calloc(1, sizeof(VariableDeclarationStatement));
+	if (var_decl_stmt == NULL) {
+		free(statement);
+		log_error("unable to allocate memory for VariableDeclarationStatement\n");
+		exit(1);
+	}
+
+	statement->stmt.variable_decl = var_decl_stmt;
+	statement->type = STATEMENT_VARIABLE_DECLARATION;
+
+	Variable *variable = calloc(1, sizeof(Variable));
+	if (variable == NULL) {
+		free(statement);
+		free(var_decl_stmt);
+		log_error("unable to allocate memory for Variable\n");
+		exit(1);
+	}
+
+	var_decl_stmt->var = variable;
+
+	eat(TOKEN_KEYWORD); // 'var' keyword
+	expect(TOKEN_IDENDIFIER); // the identifier of the variable
+	// save identifier for later
+	Literal_T *identifier = calloc(1, sizeof(Literal_T));
+	if (identifier == NULL) {
+		free(statement);
+		free(var_decl_stmt);
+		free(variable);
+		log_error("unable to allocate memory for Literal_T\n");
+		exit(1);
+	}
+
+	identifier->type = LITERAL_IDENTIFIER;
+	identifier->value = calloc(strlen(current->data), sizeof(char));
+    strcpy(identifier->value, current->data);
+
+	variable->identifier = identifier;
+
+	next();
+	eat(TOKEN_COLON);
+
+	// expect type identifier
+	// this could be a keyword, aka. a primitive type
+	// or an identifier
+	if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
+		log_error("expectVariableDeclarationStatement(): expected type identifier at [%d:%d]", current->line, current->pos);
+		exit(1);
+	}
+
+	if (strcmp(current->data, "int") == 0) {
+		variable->datatype = 32;
+	} else {
+		log_error("expectVariableDeclarationStatement(): unexpected type identifier at [%d:%d]", current->line, current->pos);
+		exit(1);
+	}
+
+	next();
+
+	if (is(TOKEN_SEMICOLON)) {
+		eat(TOKEN_SEMICOLON);
+		Literal_T *default_value = calloc(1, sizeof(Literal_T));
+		if (default_value == NULL) {
+			free(statement);
+			free(var_decl_stmt);
+			free(variable);
+			free(identifier);
+			log_error("expectVariableDeclarationStatement(): cannot allocate memory for default_value\n");
+			exit(1);
+		}
+
+		default_value->type = LITERAL_NUMBER;
+		default_value->value = "0";
+
+		Expression_T *default_value_expr = calloc(1, sizeof(Expression_T));
+		if (default_value_expr == NULL) {
+			free(statement);
+			free(var_decl_stmt);
+			free(variable);
+			free(identifier);
+			free(default_value);
+			log_error("expectVariableDeclarationStatement(): cannot allocate memory for default_value_expr\n");
+			exit(1);
+		}
+
+		default_value_expr->type = EXPRESSION_LITERAL;
+		default_value_expr->expr.literal_expr = default_value;
+
+		variable->default_value = default_value_expr;
+
+		return statement;
+	} else if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
+		// default value assignment
+		eat(TOKEN_ASSIGNMENT_SIMPLE);
+
+		Expression_T *default_value = expectExpression();
+		variable->default_value = default_value;
+	}
+
+	eat(TOKEN_SEMICOLON);
+
+	return statement;
+}
+
+// -----------------------------------------------------------------------------------
 
 // expressions
 // ArrayList *expectExpressionList() {}
