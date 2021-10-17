@@ -82,8 +82,8 @@ if failed_tests == 0 and failed_builds == 0:
 else:
 	print('Stats:')
 	print(' * successfull tests: ', colored(0, 255, 0, successfull_tests))
-	print(' * failed tests:      ', colored(255, 0, 0, failed_tests))
-	print(' * failed builds:     ', colored(255, 0, 0, failed_builds))
+	print(' * failed tests:      ', colored(255, 0, 0, failed_tests) if failed_tests != 0 else colored(0, 255, 0, failed_tests))
+	print(' * failed builds:     ', colored(255, 0, 0, failed_builds) if failed_builds != 0 else colored(0, 255, 0, failed_builds))
 	# print(failed_tests, 'out of', len(expected_outputs), 'tests failed')
 	
 print('\n')
