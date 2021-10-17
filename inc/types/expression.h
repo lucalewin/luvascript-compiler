@@ -30,7 +30,7 @@ struct Expression {
 
 struct UnaryExpression {
     Literal_T *identifier;
-    UnaryOperator_T *operator;
+    UnaryOperator_T operator;
 };
 
 struct BinaryExpression {
