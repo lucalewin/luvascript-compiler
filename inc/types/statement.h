@@ -3,21 +3,25 @@
 
 // ---------------------------------
 
-#include <types/expression.h>
 #include <util/arraylist.h>
+
+#include <types/expression.h>
+#include <types/variable.h>
 
 // ---------------------------------
 
 typedef struct CompoundStatement CompoundStatement;
 typedef struct ExpressionStatement ExpressionStatement;
 typedef struct ReturnStatement ReturnStatement;
+typedef struct VariableDeclarationStatement VariableDeclarationStatement;
 
 // ---------------------------------
 
 typedef enum {
     STATEMENT_COMPOUND,
     STATEMENT_EXPRESSION,
-    STATEMENT_RETURN
+    STATEMENT_RETURN,
+	STATEMENT_VARIABLE_DECLARATION
 } statement_type;
 
 typedef struct statement {
@@ -27,6 +31,7 @@ typedef struct statement {
         CompoundStatement *compound_statement;
         ExpressionStatement *expression_statement;
         ReturnStatement *return_statement;
+		VariableDeclarationStatement *variable_decl;
     } stmt;
 } Statement;
 
@@ -40,6 +45,10 @@ struct ExpressionStatement {
 
 struct ReturnStatement {
     Expression_T *return_expression;
+};
+
+struct VariableDeclarationStatement {
+	Variable *var;
 };
 
 extern const char* STATEMENT_TYPES[];

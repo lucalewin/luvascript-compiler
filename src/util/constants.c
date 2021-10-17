@@ -71,5 +71,6 @@ const char *EXPRESSION_TYPES[] = {
 const char* STATEMENT_TYPES[] = {
     [STATEMENT_COMPOUND] = "compound_statement",
     [STATEMENT_EXPRESSION] = "expression_statement",
-    [STATEMENT_RETURN] = "return_expression"
+    [STATEMENT_RETURN] = "return_expression",
+	[STATEMENT_VARIABLE_DECLARATION] = "variable_declaration_statement"
 };
