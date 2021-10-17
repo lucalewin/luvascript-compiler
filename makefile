@@ -21,6 +21,9 @@ build: dirs $(TARGET)
 
 rebuild: clean build
 
+test: build
+	@python3 test.py
+
 dirs:
 	@mkdir -p $(OBJ_DIR)
 	@mkdir -p $(BIN_DIR)
