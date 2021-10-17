@@ -2,7 +2,7 @@
 #include <logger.h>
 #include <debug.h>
 #include <util.h>
-#include <literal.h>
+#include <types/literal.h>
 
 void print_literal(Literal_T *literal) {
     printf("{\"type\":\"%s\",\"value\":", LITERAL_TYPES[literal->type]);
@@ -29,7 +29,7 @@ void print_expression(Expression_T *expression) {
             print_literal(expression->expr.literal_expr);
             break;
         case EXPRESSION_UNARY: {
-            log_warning("TODO: printing of unary expression is not implemented yet\n");
+			printf("{\"operator\":%d,\"value\":\"%s\"}", expression->expr.unary_expr->operator, expression->expr.unary_expr->identifier->value);
             break;
         }
         case EXPRESSION_BINARY: {
