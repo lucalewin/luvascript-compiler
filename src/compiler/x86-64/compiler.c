@@ -127,7 +127,8 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr) {
             
             break;
         }
-        case EXPRESSION_BINARY: {
+        
+		case EXPRESSION_BINARY: {
             BinaryExpression_T *nested_bin_expr = bin_expr->expression_left->expr.binary_expr;
 
             char *nested_bin_expr_code = compile_binary_expression(nested_bin_expr);
@@ -136,6 +137,31 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr) {
 
             break;
         }
+
+		case EXPRESSION_UNARY: {
+			UnaryExpression_T *unary_expr = bin_expr->expression_left->expr.unary_expr;
+
+			switch (unary_expr->operator) {
+				case UNARY_OPERATOR_NEGATE: {
+					if (unary_expr->identifier->type == LITERAL_NUMBER) {
+						bin_expr_code = stradd(bin_expr_code, "mov rax, ");
+						bin_expr_code = stradd(bin_expr_code, unary_expr->identifier->value);
+						bin_expr_code = stradd(bin_expr_code, "\nneg rax\n");
+					} else {
+						log_error("compiling with identifier is not supported\n");
+						exit(1);
+					}
+					break;
+				}
+
+				default:
+					log_error("compiling for unary operator %d is not supported\n", unary_expr->operator);
+					exit(1);
+			}
+
+			break;
+		}
+
         default:
             log_error("[2] compile_binary_expression(): parsing for expression-type '%d' is not implemented yet\n", bin_expr->expression_left->type);
             exit(1);
