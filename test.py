@@ -1,6 +1,7 @@
 #!/bin/python3
 
 import os
+import sys
 import glob
 import subprocess
 
@@ -17,7 +18,7 @@ expected_outputs = [
 	["Test 1", [], 55], 
 	["Test 2", [], 26], 
 	["Test 3", [], 14],
-	["Test 4", [], 32],
+	["Test 4", [], 5],
 	["Test 5", [], 69]]
 
 index = 0
@@ -33,11 +34,21 @@ os.chdir(test_dir)
 
 for test in test_files:
 	# compile test
-	compile_result = subprocess.run(['../bin/lvc', test], stdout=subprocess.PIPE, text=True)
-	if compile_result.returncode != 0:
+	compile_proc = subprocess.Popen(['../bin/lvc', test], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+	stdout, stderr = compile_proc.communicate()
+
+	if compile_proc.returncode != 0:
 		print(f'{expected_outputs[index][0]}:', colored(255, 0, 0, 'build failed'))
-		print('build output:\n\n', compile_result.stdout, '\n')
+		print('build output:\n')
+		print(stdout if stdout != '' else colored(255, 0, 0, 'process was aborted\n'))
+		if stderr is not None and stderr != '':
+			print(f'stderr:\n{stderr}')
+		print('[==============================]\n')
+
 		failed_builds += 1
+		index += 1
+		
 		continue
 
 	result = subprocess.run(['./a.out'], capture_output=True, text=True)
@@ -52,6 +63,7 @@ for test in test_files:
 		print()
 		failed_tests += 1
 
+	print('\n[==============================]\n')
 	index += 1
 
 # remove generated binary files
