@@ -1,0 +1,4 @@
+var x: int = 6;
+var y: int = 9;
+
+return x + y * x + y;
