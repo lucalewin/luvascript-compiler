@@ -264,7 +264,70 @@ Expression_T *expectMultiplicativeExpression() {
 }
 
 Expression_T *expectUnaryExpression() {
-    return expectPostfixExpression();
+	switch (current->type) {
+		case TOKEN_MINUS: {
+			log_debug("token minus\n");
+			UnaryExpression_T *unary_expr = calloc(1, sizeof(UnaryExpression_T));
+			if (unary_expr == NULL) {
+				log_error("expectExpressionStatement(): calloc failed\n");
+				exit(1);
+			}
+
+			unary_expr->operator = UNARY_OPERATOR_NEGATE;
+			next();
+
+			log_debug("expectExpressionStatement(): current token type: %d | value: %s\n", current->type, current->data);
+
+			if (!is(TOKEN_NUMBER) && !is(TOKEN_IDENDIFIER)) {
+				log_error("expectUnaryExpression(): Unexpected Token: expected number or identifier but got '%s' instead\n", TOKEN_TYPE_NAMES[current->type]);
+				exit(1);
+			}
+
+			Literal_T *literal = calloc(1, sizeof(Literal_T));
+			if (literal == NULL) {
+				free(unary_expr);
+				log_error("expectExpressionStatement(): calloc failed\n");
+				exit(1);
+			}
+
+			switch (current->type) {
+				case TOKEN_IDENDIFIER: {
+					literal->type = LITERAL_IDENTIFIER;
+					break;
+				}
+				case TOKEN_NUMBER: {
+					literal->type = LITERAL_NUMBER;
+					break;
+				}
+				default: {
+					log_error("expectUnaryExpression(): an unexpected error occurred");
+					log_error("please create an issue here: https://github.com/lucr4ft/luvascript-compiler/issues");
+					exit(1);
+				}
+			}
+			literal->value = calloc(strlen(current->data), sizeof(char));
+			strcpy(literal->value, current->data);
+			next();
+
+			unary_expr->identifier = literal;
+
+			Expression_T *expr = calloc(1, sizeof(Expression_T));
+			if (expr == NULL) {
+				free(unary_expr);
+				free(literal);
+				log_error("expectExpressionStatement(): calloc failed\n");
+				exit(1);
+			}
+
+			expr->type = EXPRESSION_UNARY;
+			expr->expr.unary_expr = unary_expr;
+
+			return expr;
+		}
+
+		default:
+			return expectPostfixExpression();
+	}
 }
 Expression_T *expectPostfixExpression() {
     return expectPrimaryExpression();
