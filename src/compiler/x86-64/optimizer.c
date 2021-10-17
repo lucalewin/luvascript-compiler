@@ -34,7 +34,7 @@ Expression_T *simplify_expression(Expression_T *expr) {
 			}
 
 			if (left->type != EXPRESSION_LITERAL || right->type != EXPRESSION_LITERAL) {
-				log_debug("simplify_expression(): could not simplify expression: \n\ttype 1: %d\n\ttype 2: %d\n", left->type, right->type);
+				// log_debug("simplify_expression(): could not simplify expression: \n\ttype 1: %d\n\ttype 2: %d\n", left->type, right->type);
 				return expr;
 			}
 
@@ -89,8 +89,14 @@ Expression_T *simplify_expression(Expression_T *expr) {
 			return simplify_expression(expr->expr.nested_expr->expression);
 		}
 
+		case EXPRESSION_UNARY: {
+
+			log_warning("simplify_expression(): simplification for unary expressions is not implemented yet\n");
+			
+		}
+
 		default:
-			log_error("simplify_expression(): unexpected expression type %d", expr->type);
-			return NULL;
+			log_error("simplify_expression(): unexpected expression type %d\n", expr->type);
+			return expr;
 	}
 }
