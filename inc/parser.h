@@ -1,23 +1,13 @@
 #ifndef LUVA_PARSER_H
 #define LUVA_PARSER_H
 
-#include <arraylist.h>
+#include <util/arraylist.h>
 #include <token.h>
 
 #include <types/literal.h>
 #include <types/expression.h>
 #include <types/statement.h>
 #include <types/ast.h>
-
-/**
- * 
- * global variables used by the expression parser
- * 
- */
-int _index;
-ArrayList *tokens;
-Token *current;
-Token *lookahead;
 
 // helper functions
 
@@ -113,8 +103,5 @@ Expression_T *expectPrimaryExpression();
 
 // literals
 Literal_T *expectLiteral();
-
-// parse ast to x86_64 assembly code
-char *parse_ast_to_x86_64_asm(AST *root);
 
 #endif

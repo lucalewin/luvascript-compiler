@@ -1,5 +1,20 @@
 #include <parser.h>
-#include <logger.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <logging/logger.h>
+
+/**
+ * 
+ * global variables used by the expression parser
+ * 
+ */
+int _index;
+ArrayList *tokens;
+Token *current;
+Token *lookahead;
 
 int expect(TokenType type) {
     if (current->type != type) {
@@ -381,17 +396,17 @@ Expression_T *expectMultiplicativeExpression() {
 Expression_T *expectUnaryExpression() {
 	switch (current->type) {
 		case TOKEN_MINUS: {
-			log_debug("token minus\n");
+			// log_debug("token minus\n");
 			UnaryExpression_T *unary_expr = calloc(1, sizeof(UnaryExpression_T));
 			if (unary_expr == NULL) {
-				log_error("expectExpressionStatement(): calloc failed\n");
+				log_error("expectUnaryExpression(): calloc failed\n");
 				exit(1);
 			}
 
 			unary_expr->operator = UNARY_OPERATOR_NEGATE;
 			next();
 
-			log_debug("expectExpressionStatement(): current token type: %d | value: %s\n", current->type, current->data);
+			// log_debug("expectUnaryExpression(): current token type: %d | value: %s\n", current->type, current->data);
 
 			if (!is(TOKEN_NUMBER) && !is(TOKEN_IDENDIFIER)) {
 				log_error("expectUnaryExpression(): Unexpected Token: expected number or identifier but got '%s' instead\n", TOKEN_TYPE_NAMES[current->type]);
@@ -401,7 +416,7 @@ Expression_T *expectUnaryExpression() {
 			Literal_T *literal = calloc(1, sizeof(Literal_T));
 			if (literal == NULL) {
 				free(unary_expr);
-				log_error("expectExpressionStatement(): calloc failed\n");
+				log_error("expectUnaryExpression(): calloc failed\n");
 				exit(1);
 			}
 
@@ -430,7 +445,7 @@ Expression_T *expectUnaryExpression() {
 			if (expr == NULL) {
 				free(unary_expr);
 				free(literal);
-				log_error("expectExpressionStatement(): calloc failed\n");
+				log_error("expectUnaryExpression(): calloc failed\n");
 				exit(1);
 			}
 
