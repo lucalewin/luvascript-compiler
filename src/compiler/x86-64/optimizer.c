@@ -6,7 +6,6 @@
 #include <types/expression.h>
 #include <util/util.h>
 #include <logging/logger.h>
-#include <logging/debug.h>
 
 Expression_T *simplify_expression(Expression_T *expr) {
 	switch (expr->type) {
@@ -37,6 +36,12 @@ Expression_T *simplify_expression(Expression_T *expr) {
 				// log_debug("simplify_expression(): could not simplify expression: \n\ttype 1: %d\n\ttype 2: %d\n", left->type, right->type);
 				return expr;
 			}
+
+			if (left->expr.literal_expr->type != LITERAL_NUMBER || right->expr.literal_expr->type != LITERAL_NUMBER) {
+				return expr;
+			}
+
+			// both literals are numbers -> evaluate the expression
 
 			int32_t num_left = get_int(left->expr.literal_expr->value);
 			int32_t num_right = get_int(right->expr.literal_expr->value);
