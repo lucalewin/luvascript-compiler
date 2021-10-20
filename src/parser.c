@@ -6,6 +6,8 @@
 
 #include <logging/logger.h>
 
+#include <scope_impl.h>
+
 /**
  * 
  * global variables used by the expression parser
@@ -99,6 +101,8 @@ AST *parse(ArrayList *token_list) {
     }
 
     root->statement = stmt;
+
+	eval_ast(root);
 
     return root;
 }
