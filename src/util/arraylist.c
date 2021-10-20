@@ -1,5 +1,8 @@
 #include <arraylist.h>
 
+#include <string.h>
+#include <logging/logger.h>
+
 ArrayListPtr arraylist_create() {
     ArrayList *list = malloc(sizeof *list);
     if (list == NULL) {
@@ -80,6 +83,19 @@ void arraylist_remove_at_index(ArrayList *arr, int index) {
         }
     }
     arr->size--;
+}
+
+// ---------------------------------------------------------------------
+
+ArrayList *arraylist_copy(ArrayList *src) {
+	if (src == NULL) {
+		log_warning("arraylist is NULL, not cloning arraylist!\n");
+		return NULL;
+	}
+	ArrayList *copy = arraylist_create();
+	copy->capacity = src->capacity;
+	copy->size = src->size;
+	memcpy(copy->data, src->data, sizeof(void *) * src->capacity);
 }
 
 // ---------------------------------------------------------------------
