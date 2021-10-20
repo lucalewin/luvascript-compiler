@@ -1,5 +1,6 @@
 #include <util.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -93,4 +94,11 @@ int32_t get_int(char *c) {
         num = num * 10 + (*c++ - '0');
     }
     return num;
+}
+
+char *int_to_string(int i) {
+	int length = snprintf(NULL, 0, "%d", i);
+	char* str = malloc(length + 1);
+	snprintf(str, length + 1, "%d", i);
+	return str;
 }
