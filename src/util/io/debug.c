@@ -53,21 +53,45 @@ void print_expression(Expression_T *expression) {
 }
 
 void print_statement(Statement *statement) {
-    printf("\"type\":\"%s\",\"expression\":{", STATEMENT_TYPES[statement->type]);
+    printf("\"type\":\"%s\",", STATEMENT_TYPES[statement->type]);
     switch (statement->type) {
-        case STATEMENT_COMPOUND:
+        case STATEMENT_COMPOUND: {
             // TODO
-            log_warning("TODO: implement debug printing for compound statements\n");
+            // log_warning("TODO: implement debug printing for compound statements\n");
+			CompoundStatement *compound_stmt = statement->stmt.compound_statement;
+
+			printf("\"statements\":[");
+			for (int i = 0; i < compound_stmt->nested_statements->size; i++) {
+				printf("{");
+				Statement *stmt = arraylist_get(compound_stmt->nested_statements, i);
+				print_statement(stmt);
+				printf("}");
+				if (i + 1 < compound_stmt->nested_statements->size) {
+					printf(",");
+				}
+			}
+			printf("]");
             break;
+		}
         case STATEMENT_EXPRESSION:
+			printf("\"expression\":{");
             print_expression(statement->stmt.expression_statement->expression);
+			printf("}");
             break;
         case STATEMENT_RETURN:
+			printf("\"expression\":{");
             print_expression(statement->stmt.return_statement->return_expression);
+			printf("}");
             break;
+		case STATEMENT_VARIABLE_DECLARATION: {
+			Variable *var = statement->stmt.variable_decl->var;
+			printf("\"identifier\":\"%s\",\"type\":%d,\"default_value\":{", var->identifier->value, var->datatype);
+			print_expression(var->default_value);
+			printf("}");
+			break;
+		}
         default:
             log_error("unknown statement type: %d", statement->type);
             break;
     }
-    printf("}");
 }
