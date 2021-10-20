@@ -90,9 +90,8 @@ Expression_T *simplify_expression(Expression_T *expr) {
 		}
 
 		case EXPRESSION_UNARY: {
-
 			log_warning("simplify_expression(): simplification for unary expressions is not implemented yet\n");
-			
+			return expr;
 		}
 
 		default:
