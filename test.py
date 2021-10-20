@@ -6,7 +6,7 @@ import glob
 import subprocess
 
 def colored(r, g, b, text):
-    return "\033[38;2;{};{};{}m{} \x1B[0m".format(r, g, b, text)
+    return "\033[38;2;{};{};{}m{}\x1B[0m".format(r, g, b, text)
 
 test_dir = "./tests"
 
@@ -38,13 +38,13 @@ for test in test_files:
 
 	stdout, stderr = compile_proc.communicate()
 
-	if compile_proc.returncode != 0:
+	if compile_proc.returncode != 0 or not os.path.exists('./a.out'):
 		print(f'{expected_outputs[index][0]}:', colored(255, 0, 0, 'build failed'))
 		print('build output:\n')
 		print(stdout if stdout != '' else colored(255, 0, 0, 'process was aborted\n'))
 		if stderr is not None and stderr != '':
 			print(f'stderr:\n{stderr}')
-		print('[==============================]\n')
+		print('[================================]\n')
 
 		failed_builds += 1
 		index += 1
@@ -63,7 +63,7 @@ for test in test_files:
 		print()
 		failed_tests += 1
 
-	print('\n[==============================]\n')
+	print('\n[================================]\n')
 	index += 1
 
 # remove generated binary files
@@ -75,15 +75,14 @@ generated_binary_files = glob.glob(os.path.join('./*.out'))
 for file in generated_binary_files:
 	os.remove(file)
 
+print('Stats:')
+print(' * successfull tests: ', colored(0, 255, 0, successfull_tests))
+print(' * failed tests:      ', colored(255, 0, 0, failed_tests) if failed_tests != 0 else colored(0, 255, 0, failed_tests))
+print(' * failed builds:     ', colored(255, 0, 0, failed_builds) if failed_builds != 0 else colored(0, 255, 0, failed_builds))
+
 print()
 
 if failed_tests == 0 and failed_builds == 0:
-	print('All tests finshed successfully')
-else:
-	print('Stats:')
-	print(' * successfull tests: ', colored(0, 255, 0, successfull_tests))
-	print(' * failed tests:      ', colored(255, 0, 0, failed_tests) if failed_tests != 0 else colored(0, 255, 0, failed_tests))
-	print(' * failed builds:     ', colored(255, 0, 0, failed_builds) if failed_builds != 0 else colored(0, 255, 0, failed_builds))
-	# print(failed_tests, 'out of', len(expected_outputs), 'tests failed')
-	
-print('\n')
+	print('[', colored(0, 255, 0, 'All tests finshed successfully'), ']')
+
+print()
