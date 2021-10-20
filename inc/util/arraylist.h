@@ -14,9 +14,9 @@ typedef ArrayList* ArrayListPtr;
 // -----------------------------------------
 
 struct _ArrayList {
-    int capacity;
-    size_t size;
-    void **data;
+	int capacity;
+	size_t size;
+	void **data;
 };
 
 // -----------------------------------------
@@ -27,6 +27,7 @@ void *arraylist_get(ArrayList *arr, int index);
 int arraylist_getindexof(ArrayList *arr, void *item);
 void arraylist_set_at_index(ArrayList *list, int index, void *item, int _free);
 void arraylist_remove_at_index(ArrayList *arr, int index);
+ArrayList *arraylist_copy(ArrayList *src);
 void arraylist_clear(ArrayList *arr);
 void arraylist_shrink_capacity_to_size(ArrayList *arr);
 void arraylist_free(ArrayList *list);
