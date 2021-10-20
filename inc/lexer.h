@@ -1,7 +1,7 @@
 #ifndef LUVA_LEXER_H
 #define LUVA_LEXER_H
 
-#include <arraylist.h>
+#include <util/arraylist.h>
 
 /**
  * @author Luca Lewin
