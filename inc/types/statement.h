@@ -8,6 +8,8 @@
 #include <types/expression.h>
 #include <types/variable.h>
 
+#include <scope.h>
+
 // ---------------------------------
 
 typedef struct CompoundStatement CompoundStatement;
@@ -18,33 +20,36 @@ typedef struct VariableDeclarationStatement VariableDeclarationStatement;
 // ---------------------------------
 
 typedef enum {
-    STATEMENT_COMPOUND,
-    STATEMENT_EXPRESSION,
-    STATEMENT_RETURN,
+	STATEMENT_COMPOUND,
+	STATEMENT_EXPRESSION,
+	STATEMENT_RETURN,
 	STATEMENT_VARIABLE_DECLARATION
 } statement_type;
 
 typedef struct statement {
-    statement_type type;
+	statement_type type;
 
-    union {
-        CompoundStatement *compound_statement;
-        ExpressionStatement *expression_statement;
-        ReturnStatement *return_statement;
+	Scope *parent_scope;
+	Scope *local_scope;
+
+	union {
+		CompoundStatement *compound_statement;
+		ExpressionStatement *expression_statement;
+		ReturnStatement *return_statement;
 		VariableDeclarationStatement *variable_decl;
-    } stmt;
+	} stmt;
 } Statement;
 
 struct CompoundStatement {
-    ArrayList *nested_statements;
+	ArrayList *nested_statements;
 };
 
 struct ExpressionStatement {
-    Expression_T *expression;
+	Expression_T *expression;
 };
 
 struct ReturnStatement {
-    Expression_T *return_expression;
+	Expression_T *return_expression;
 };
 
 struct VariableDeclarationStatement {
