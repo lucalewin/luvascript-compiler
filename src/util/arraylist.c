@@ -96,6 +96,7 @@ ArrayList *arraylist_copy(ArrayList *src) {
 	copy->capacity = src->capacity;
 	copy->size = src->size;
 	memcpy(copy->data, src->data, sizeof(void *) * src->capacity);
+	return copy;
 }
 
 // ---------------------------------------------------------------------
