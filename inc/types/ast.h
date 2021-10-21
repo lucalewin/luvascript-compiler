@@ -8,7 +8,7 @@ typedef struct _ast AST;
 
 struct _ast {
 	Scope *global_scope;
-	Statement *statement;
+	ArrayList *functions;
 };
 
 #endif // LUVA_AST_H
