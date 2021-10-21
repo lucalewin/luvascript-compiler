@@ -93,18 +93,130 @@ AST *parse(ArrayList *token_list) {
 
     AST *root = calloc(1, sizeof(AST));
 
-    Statement *stmt = expectStatement();
-    if (stmt == NULL) {
-        free(root);
-		log_error("expected statement at [%d:%d]\n", current->line, current->pos);
-		exit(1);
-    }
+	root->functions = arraylist_create();
 
-    root->statement = stmt;
+	while (_index < tokens->size) {
+		Function *func = expectFunction();
+		arraylist_add(root->functions, func);
+	}
 
 	eval_ast(root);
 
     return root;
+}
+
+Function *expectFunction() {
+	if (!is(TOKEN_KEYWORD) && strcmp(current->data, "function") != 0) {
+		log_error("expected function declaration at [%d:%d] but got '%s' instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
+		exit(1);
+	}
+
+	next();
+
+	// expecting function name
+	expect(TOKEN_IDENDIFIER);
+
+	Function *function = calloc(1, sizeof(Function));
+	if (function == NULL) {
+		log_error("unable to allocate memory for function\n");
+		exit(1);
+	}
+
+	function->identifier = calloc(strlen(current->data), sizeof(char));
+	if (function->identifier == NULL) {
+		free(function);
+		log_error("calloc failed: unable to allocate memory for function identifier\n");
+		exit(1);
+	}
+    strcpy(function->identifier, current->data);
+	next();
+
+	// function paramerter
+	eat(TOKEN_LPAREN);
+
+	function->parameter = arraylist_create();
+
+	if (!is(TOKEN_RPAREN)) {
+		// TODO: implement parameter parsing
+
+		while(1) {
+			Variable *parameter = calloc(1, sizeof(Variable));
+			
+			if (!is(TOKEN_IDENDIFIER)) {
+				expect(TOKEN_IDENDIFIER);
+			}
+
+			parameter->identifier = calloc(1, sizeof(Literal_T));
+			parameter->identifier->type = LITERAL_IDENTIFIER;
+			parameter->identifier->value = calloc(strlen(current->data), sizeof(char));
+			// TODO: add NULL checks
+
+			strcpy(parameter->identifier->value, current->data);
+			next();
+
+			// `:`
+			expect(TOKEN_COLON);
+			next();
+
+			if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
+				free(function->identifier);
+				free(function);
+				free(parameter->identifier->value);
+				free(parameter);
+				log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
+				exit(1);
+			}
+
+			if (strcmp(current->data, "int") == 0) {
+				parameter->datatype = 32;
+			} else {
+				free(function->identifier);
+				free(function);
+				free(parameter->identifier->value);
+				free(parameter);
+				log_error("unexpected type identifier at [%d:%d]: %s\n", current->line, current->pos, current->data);
+				exit(1);
+			}
+
+			next();
+
+			parameter->default_value = NULL;
+
+			arraylist_add(function->parameter, parameter);
+
+			if (!is(TOKEN_COMMA)) {
+				break;
+			}
+
+			next();
+		}
+	}
+
+	eat(TOKEN_RPAREN);
+
+	// colon + return type
+	eat(TOKEN_COLON);
+
+	if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
+		free(function->identifier);
+		free(function);
+		log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
+		exit(1);
+	}
+
+	if (strcmp(current->data, "int") == 0) {
+		function->return_type = 32;
+	} else {
+		free(function->identifier);
+		free(function);
+		log_error("unexpected type identifier at [%d:%d]: %s\n", current->line, current->pos, current->data);
+		exit(1);
+	}
+	next();
+
+	function->body = expectCompoundStatement();
+
+	return function;
 }
 
 Statement *expectStatement() {
@@ -312,7 +424,18 @@ Statement *expectVariableDeclarationStatement() {
 // -----------------------------------------------------------------------------------
 
 // expressions
-// ArrayList *expectExpressionList() {}
+ArrayList *expectExpressionList() {
+	ArrayList *expressions = arraylist_create();
+
+	arraylist_add(expressions, expectExpression());
+
+	while (is(TOKEN_COMMA)) {
+		next();
+		arraylist_add(expressions, expectExpression());
+	}
+
+	return expressions;
+}
 
 Expression_T *expectExpression() {
     return expectAdditiveExpression();
@@ -464,7 +587,43 @@ Expression_T *expectUnaryExpression() {
 	}
 }
 Expression_T *expectPostfixExpression() {
-    return expectPrimaryExpression();
+	if (!is(TOKEN_IDENDIFIER) || lookahead->type != TOKEN_LPAREN) {
+		return expectPrimaryExpression();
+	}
+
+	Expression_T *expr = calloc(1, sizeof(Expression_T));
+	if (expr == NULL) {
+		log_error("calloc failed: unable to allocate memory for Expression_T\n");
+		exit(1);
+	}
+
+	FunctionCallExpression_T *func_call_expr = calloc(1, sizeof(FunctionCallExpression_T));
+	if (func_call_expr == NULL) {
+		free(expr);
+		log_error("calloc failed: unable to allocate memory for FunctionCallExpression_T\n");
+		exit(1);
+	}
+
+	expr->type = EXPRESSION_FUNCTION_CALL;
+	expr->expr.func_call_expr = func_call_expr;
+
+	func_call_expr->function_identifier = calloc(strlen(current->data), sizeof(char));
+	strcpy(func_call_expr->function_identifier, current->data);
+	next();
+
+	eat(TOKEN_LPAREN);
+
+	if (is(TOKEN_RPAREN)) {
+		// no arguments specified
+		func_call_expr->argument_expression_list = arraylist_create();
+	} else {
+		// arguments specified
+		func_call_expr->argument_expression_list = expectExpressionList();
+	}
+
+	eat(TOKEN_RPAREN);
+
+	return expr;
 }
 
 Expression_T *expectPrimaryExpression() {
