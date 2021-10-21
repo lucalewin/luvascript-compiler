@@ -1,0 +1,7 @@
+function main(): int {
+	return add(5, 7);
+}
+
+function add(x: int, y: int): int {
+	return x + y;
+}
