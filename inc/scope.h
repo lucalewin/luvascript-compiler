@@ -6,6 +6,7 @@
 
 typedef struct _scope {
 	ArrayList *variables;
+	ArrayList *functions;
 } Scope;
 
 /**
@@ -31,6 +32,15 @@ Scope *scope_copy(Scope *scope);
  * @return int 1 (true) if the variable is in the scope, otherwise 0 (false)
  */
 int scope_contains_variable_name(Scope *scope, char *name);
+
+/**
+ * @brief check if the scope contains the function
+ * 
+ * @param scope the scope
+ * @param name the name of the function
+ * @return int 1 (true) if the function is in the scope, otherwise 0 (false)
+ */
+int scope_contains_function_name(Scope *scope, char *func_name);
 
 /**
  * @brief add a variable to the scope
