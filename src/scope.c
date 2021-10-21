@@ -7,12 +7,21 @@
 
 #include <logging/logger.h>
 
+#include <types/variable.h>
+#include <types/statement.h>
+#include <types/function.h>
+
 void eval_ast(AST *ast) {
 	// initialize a empty global scope
 	ast->global_scope = scope_new();
 
-	// evaluate statement scopes
-	eval_statement(ast->statement, ast->global_scope);
+	for (int i = 0; i < ast->functions->size; i++) {
+		Function *func = arraylist_get(ast->functions, i);
+
+		eval_statement(func->body, ast->global_scope);
+
+		arraylist_add(ast->global_scope->functions, func);
+	}
 }
 
 void eval_statement(Statement *stmt, Scope *parent_scope) {
@@ -70,6 +79,7 @@ void eval_statement(Statement *stmt, Scope *parent_scope) {
 Scope *scope_new() {
 	Scope *scope = calloc(1, sizeof(Scope));
 	scope->variables = arraylist_create();
+	scope->functions = arraylist_create();
 	return scope;
 }
 
@@ -83,6 +93,16 @@ int scope_contains_variable_name(Scope *scope, char *name) {
 	for (int i = 0; i < scope->variables->size; i++) {
 		Variable *var = arraylist_get(scope->variables, i);
 		if (strcmp(name, var->identifier->value) == 0) {
+			return 1; // true
+		}
+	}
+	return 0; // false
+}
+
+int scope_contains_function_name(Scope *scope, char *func_name) {
+	for (int i = 0; i < scope->functions->size; i++) {
+		Function *function = arraylist_get(scope->functions, i);
+		if (strcmp(func_name, function->identifier) == 0) {
 			return 1; // true
 		}
 	}
