@@ -22,7 +22,7 @@ typedef signed long int64_t;
 void substring(char *source, char *target, int offset); 
 
 char *stradd(char *s1, char *s2);
-void straddall(char *src, ...);
+char *straddall(char *src, ...);
 
 int str_last_index_of(char *str, char x);
 

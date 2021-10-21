@@ -33,7 +33,7 @@ char *stradd(char *s1, char *s2) {
     return s1;
 }
 
-void straddall(char *src, ...) {
+char *straddall(char *src, ...) {
     va_list args;
     va_start(args, src);
 
@@ -43,6 +43,8 @@ void straddall(char *src, ...) {
     }
 
     va_end(args);
+
+	return src;
 }
 
 // ----------------------------------------------------------
