@@ -1,4 +1,4 @@
-{
+function main(): int {
 	var x: int = 6;
 	var y: int = 9;
 
