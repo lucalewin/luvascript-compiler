@@ -10,7 +10,7 @@ OBJECTS		:= $(subst src/,obj/,$(SOURCES:.c=.o))
 INC_DIRS	:= -I$(INC_DIR) $(addprefix -I,$(dir $(wildcard $(INC_DIR)/*/.)))
 
 CC			:= gcc
-CFLAGS		:= -g -c -std=c17
+CFLAGS		:= -g -c -std=c17 -Wall -Werror
 LDFLAGS		:= -g
 
 # ------------------------------------
