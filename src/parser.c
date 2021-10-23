@@ -100,7 +100,7 @@ AST *parse(ArrayList *token_list) {
 		arraylist_add(root->functions, func);
 	}
 
-	eval_ast(root);
+	scope_evaluate_ast(root);
 
     return root;
 }
@@ -134,7 +134,7 @@ Function *expectFunction() {
 	// function paramerter
 	eat(TOKEN_LPAREN);
 
-	function->parameter = arraylist_create();
+	function->parameters = arraylist_create();
 
 	if (!is(TOKEN_RPAREN)) {
 		// TODO: implement parameter parsing
@@ -182,7 +182,7 @@ Function *expectFunction() {
 
 			parameter->default_value = NULL;
 
-			arraylist_add(function->parameter, parameter);
+			arraylist_add(function->parameters, parameter);
 
 			if (!is(TOKEN_COMMA)) {
 				break;
@@ -214,7 +214,17 @@ Function *expectFunction() {
 	}
 	next();
 
-	function->body = expectCompoundStatement();
+	eat(TOKEN_LBRACE);
+
+	ArrayList *statements_array = arraylist_create();
+
+    while (!is(TOKEN_RBRACE)) {
+        arraylist_add(statements_array, expectStatement());
+    }	
+
+	function->body_statements = statements_array;
+
+	eat(TOKEN_RBRACE);
 
 	return function;
 }
