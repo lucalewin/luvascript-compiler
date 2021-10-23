@@ -3,7 +3,9 @@ INC_DIR		:= inc
 OBJ_DIR		:= obj
 BIN_DIR		:= bin
 
-TARGET		:= $(BIN_DIR)/lvc
+BIN_NAME	:= lvc
+
+TARGET		:= $(BIN_DIR)/$(BIN_NAME)
 
 SOURCES		:= $(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c $(SRC_DIR)/*/*/*.c)
 OBJECTS		:= $(subst src/,obj/,$(SOURCES:.c=.o))
@@ -27,6 +29,12 @@ test: build
 dirs:
 	@mkdir -p $(OBJ_DIR)
 	@mkdir -p $(BIN_DIR)
+
+install: build
+	mv $(TARGET) /usr/bin/$(BIN_NAME)
+
+uninstall:
+	rm /usr/bin/$(BIN_NAME)
 
 $(OBJECTS): obj/%.o : src/%.c
 	@mkdir -p $(@D)
