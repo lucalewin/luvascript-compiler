@@ -88,5 +88,6 @@ print()
 
 if failed_tests == 0 and failed_builds == 0:
 	print('[', colored(0, 255, 0, 'All tests finshed successfully'), ']')
-
-print()
+	print()
+else:
+	exit(1)
