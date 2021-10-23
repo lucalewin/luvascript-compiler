@@ -58,9 +58,7 @@ int main(int argc, char **argv) {
 	free(root);
 
 	// create filename of the assembly file
-	char *asm_file_name = calloc(strlen(argv[1]), sizeof (char));
-	stradd(asm_file_name, argv[1]);
-	stradd(asm_file_name, ".asm");
+	char *asm_file_name = stradd(argv[1], ".asm");
 
 	// create / write asm file
 	write_file(asm_file_name, asm_code);
