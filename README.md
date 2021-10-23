@@ -5,3 +5,22 @@
 
 ## LuvaScript Docs
 <a href="docs/">Take a look at the LuvaScript Documentation</a>
+
+## How to install
+
+Clone the repo and run
+
+```shell
+$ sudo make install
+```
+
+## How to compile a file
+
+```shell
+$ lvc [filename]
+```
+
+<br>
+
+---
+**DISCLAIMER**: This project is still in **early development** and should **not** yet be used in any application!
