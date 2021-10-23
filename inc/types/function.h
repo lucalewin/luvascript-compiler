@@ -4,13 +4,13 @@
 #include <util/arraylist.h>
 #include <types/statement.h>
 
-// TODO: add parameters to function
-
 typedef struct _function {
 	char *identifier;
-	ArrayList *parameter;
+	ArrayList *parameters;
 	int return_type;
-	Statement *body;
+	Scope *global_scope;
+	Scope *local_scope;
+	ArrayList *body_statements;
 } Function;
 
 #endif // LUVA_TYPES_FUNCTION_H
