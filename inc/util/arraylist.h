@@ -23,6 +23,7 @@ struct _ArrayList {
 
 ArrayList *arraylist_create();
 void arraylist_add(ArrayList *arr, void *item);
+void arraylist_addall(ArrayList *arr, ArrayList *other);
 void *arraylist_get(ArrayList *arr, int index);
 int arraylist_getindexof(ArrayList *arr, void *item);
 void arraylist_set_at_index(ArrayList *list, int index, void *item, int _free);

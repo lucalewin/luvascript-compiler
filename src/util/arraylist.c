@@ -33,6 +33,16 @@ void arraylist_add(ArrayList *arr, void *item) {
 
 // ---------------------------------------------------------------------
 
+void arraylist_addall(ArrayList *arr, ArrayList *other) {
+	// TODO: optimize with memcpy or something similar
+	// for now this is good enough
+	for (size_t i = 0; i < other->size; i++) {
+		arraylist_add(arr, arraylist_get(other, i));
+	}
+}
+
+// ---------------------------------------------------------------------
+
 void *arraylist_get(ArrayList *arr, int index) {
     return arr->data[index];
 }
