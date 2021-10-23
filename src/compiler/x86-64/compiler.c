@@ -8,6 +8,8 @@
 #include <util/cmd.h>
 #include <logging/logger.h>
 
+#include <scope_impl.h>
+
 // types
 #include <types/operator.h>
 #include <types/literal.h>
@@ -47,14 +49,14 @@ char *compile_expression(Expression_T *expr, Scope *scope);
 char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope);
 char *compile_literal_expression(Literal_T *literal, Scope *scope);
 char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope);
+char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr, Scope *scope);
 
 // --------------------- function implementations ----------------------
 
 void compile_asm_file(char *src_file, char *out_file) {
 	// get temp object file name
-	char *obj_file = malloc(sizeof(char) * (strlen(src_file) + 2));
-	strcpy(obj_file, src_file);
-	strcat(obj_file, ".o");
+	char *obj_file = calloc(1, sizeof(char));
+	obj_file = straddall(obj_file, src_file, ".o", NULL);
 
 	// compile .asm file using nasm and elf64 format
 	exec(assembler, file_format, src_file, "-o", obj_file, NULL);
@@ -70,13 +72,16 @@ char *compile_to_x86_64_assembly(AST *root) {
 	char *asm_code = calloc(1, sizeof(char));
 
 	// check if main method is defined
-	if (scope_contains_function_name(root->global_scope, "main")) {
-		// main function is defined
-		asm_code = stradd(asm_code, header_template);
-		asm_code = stradd(asm_code, "call function_main\n");
-		asm_code = stradd(asm_code, "mov rdi, rax\n");
-		asm_code = stradd(asm_code, exit_template);
+	if (!scope_contains_function_name(root->global_scope, "main")) {
+		// main function is not defined
+		log_error("main method is not defined\n");
+		exit(1);
 	}
+
+	asm_code = stradd(asm_code, header_template);
+	asm_code = stradd(asm_code, "call function_main\n");
+	asm_code = stradd(asm_code, "mov rdi, rax\n");
+	asm_code = stradd(asm_code, exit_template);
 
 	for (int i = 0; i < root->functions->size; i++) {
 		asm_code = stradd(asm_code, compile_function(arraylist_get(root->functions, i)));
@@ -88,18 +93,87 @@ char *compile_to_x86_64_assembly(AST *root) {
 char *compile_function(Function *function) {
 	char *function_code = calloc(1, sizeof(char));
 
-	// log_debug("compile_function(): compiling function '%s'\n", function->identifier);
+	log_debug("compile_function(): compiling function '%s'\n", function->identifier);
 
 	function_code = straddall(function_code,
 	"global function_", function->identifier,
-	"\nfunction_", function->identifier, ":\n",
-	compile_compound_statement(function->body->stmt.compound_statement, function->body->local_scope),
-	"ret\n", NULL);
+	"\nfunction_", function->identifier, ":\n", NULL);
+
+	// align stack
+
+	size_t size_for_stack_align = 0;
+	for (int i = 0; i < function->local_scope->variables->size; i++) {
+		Variable *var = arraylist_get(function->local_scope->variables, i);
+		size_for_stack_align += var->datatype / 8; // 8 -> size of a byte (8 bits)
+	}
+
+	if (size_for_stack_align != 0) {
+		function_code = stradd(function_code, "push rbp\n"); // save old value of RBP
+		function_code = stradd(function_code, "mov rbp, rsp\n");
+		function_code = stradd(function_code, "sub rsp, "); // align stack
+		function_code = stradd(function_code, int_to_string(size_for_stack_align + 8)); // size in bytes
+		function_code = stradd(function_code, "\n");
+		log_debug("aligning stack by %d bytes\n", size_for_stack_align);
+	}
+
+	// compile args
+
+	switch (function->parameters->size) {
+		case 6: {
+			Variable *param = arraylist_get(function->parameters, 5);
+			function_code = stradd(function_code, "mov DWORD[rbp-");
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, "], r9\n");
+		}
+		case 5: {
+			Variable *param = arraylist_get(function->parameters, 4);
+			function_code = stradd(function_code, "mov DWORD[rbp-");
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, "], r8\n");
+		}
+		case 4: {
+			Variable *param = arraylist_get(function->parameters, 3);
+			function_code = stradd(function_code, "mov DWORD[rbp-");
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, "], ecx\n");
+		}
+		case 3: {
+			Variable *param = arraylist_get(function->parameters, 2);
+			function_code = stradd(function_code, "mov DWORD[rbp-");
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, "], edx\n");
+		}
+		case 2: {
+			Variable *param = arraylist_get(function->parameters, 1);
+			function_code = stradd(function_code, "mov DWORD[rbp-");
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, "], esi\n");
+		}
+		case 1: {
+			Variable *param = arraylist_get(function->parameters, 0);
+			function_code = stradd(function_code, "mov DWORD[rbp-");
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, "], edi\n");
+		}
+		case 0:
+			break;
+		default:
+			break;
+	}
+
+	// compile statements
+	char *stmts_code = calloc(1, sizeof(char));
+	for (size_t i = 0; i < function->body_statements->size; i++) {
+		Statement *stmt = arraylist_get(function->body_statements, i);
+		stmts_code = stradd(stmts_code, compile_statement(stmt));
+	}
+	function_code = stradd(function_code, stmts_code);
 
 	return function_code;
 }
 
 char *compile_statement(Statement *stmt) {
+	log_debug("compile_statement():\n");
 	switch(stmt->type) {
 		case STATEMENT_RETURN:
 			return compile_return_statement(stmt->stmt.return_statement, stmt->parent_scope);
@@ -110,10 +184,10 @@ char *compile_statement(Statement *stmt) {
 		case STATEMENT_VARIABLE_DECLARATION:
 			return compile_variable_declaration_statement(stmt->stmt.variable_decl, stmt->parent_scope);
 
-        default:
-            log_error("compile_statement(): unexpected statement type '%s'\n", STATEMENT_TYPES[stmt->type]);
-            exit(1);
-    }
+		default:
+			log_error("compile_statement(): unexpected statement type '%s'\n", STATEMENT_TYPES[stmt->type]);
+			exit(1);
+	}
 }
 
 char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope) {
@@ -150,15 +224,37 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 }
 
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
-    char *ret_stmt_code = calloc(1, sizeof(char));
-    char *expr_code = compile_expression(ret_stmt->return_expression, scope);
-    ret_stmt_code = stradd(ret_stmt_code, expr_code);
+	log_debug("compile_return_statement():\n");
+	
+	char *ret_stmt_code = compile_expression(ret_stmt->return_expression, scope);
+
+	// reset base pointer
+	size_t size_for_stack_align = 0;
+	for (int i = 0; i < scope->variables->size; i++) {
+		Variable *var = arraylist_get(scope->variables, i);
+		size_for_stack_align += var->datatype / 8; // 8 -> size of a byte (8 bits)
+	}
+
+	log_debug("size for stack align = %d\n", size_for_stack_align);
+
+	if (size_for_stack_align != 0) {
+		log_debug("reseting base pointer: %d\n", size_for_stack_align);
+		// ret_stmt_code = straddall(ret_stmt_code, "add rsp, ", int_to_string(size_for_stack_align), "\npop rbp\n", NULL);
+		ret_stmt_code = straddall(ret_stmt_code, "mov rsp, rbp\npop rbp\n");
+		// ret_stmt_code = straddall(ret_stmt_code, "leave\n");
+	}
+	
+	log_debug("before 'ret' appending\n");
+
+	ret_stmt_code = stradd(ret_stmt_code, "ret\n");
+
+	log_debug("after 'ret' appending\n");
+
 	return ret_stmt_code;
-	// TODO: reset stack base pointer then `ret`
-    // return stradd(ret_stmt_code, "ret\n");
 }
 
 char *compile_variable_declaration_statement(VariableDeclarationStatement *var_decl_stmt, Scope *scope) {
+	log_debug("compile_variable_declaration_statement():\n");
 	char *var_decl_code = calloc(1, sizeof(char));
 
 	Variable *var = var_decl_stmt->var;	
@@ -190,31 +286,37 @@ char *compile_expression(Expression_T *expr, Scope *scope) {
 	// try to simplify the expression
 	expr = simplify_expression(expr);
 
-    switch(expr->type) {
+	log_debug("compile_expression(): expr->type = '%s'\n", EXPRESSION_TYPES[expr->type]);
+
+	switch(expr->type) {
 		case EXPRESSION_LITERAL:
 			return compile_literal_expression(expr->expr.literal_expr, scope);
 
-        case EXPRESSION_BINARY:
-            return compile_binary_expression(expr->expr.binary_expr, scope);
+		case EXPRESSION_BINARY:
+			return compile_binary_expression(expr->expr.binary_expr, scope);
 
 		case EXPRESSION_UNARY:
 			return compile_unary_expression(expr->expr.unary_expr, scope);
 
-        default:
-            log_error("parsing for expression type '%d' is not implemented yet\n", expr->type);
-            exit(1);
-    }
-    return NULL;
+		case EXPRESSION_FUNCTION_CALL:
+			return compile_function_call_expression(expr->expr.func_call_expr, scope);
+
+		default:
+			log_error("parsing for expression type '%d' is not implemented yet\n", expr->type);
+			exit(1);
+	}
+	log_error("compile_expression(): returning NULL\n");
+	return NULL;
 }
 
 char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
-    char *bin_expr_code = calloc(1, sizeof(char));
+	char *bin_expr_code = calloc(1, sizeof(char));
 
 	bin_expr_code = stradd(bin_expr_code, compile_expression(bin_expr->expression_left, scope));
 
-    switch(bin_expr->expression_right->type) {
-        case EXPRESSION_LITERAL: {
-            Literal_T *literal = bin_expr->expression_right->expr.literal_expr;
+	switch(bin_expr->expression_right->type) {
+		case EXPRESSION_LITERAL: {
+			Literal_T *literal = bin_expr->expression_right->expr.literal_expr;
 
 			switch (literal->type) {
 				case LITERAL_NUMBER: {
@@ -279,22 +381,39 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					log_error("[4] compile_binary_expression(): literal type '%d' is not supported yet\n", literal->type);
 					exit(1);
 			}
-            break;
-        }
+			break;
+ 		}
 
 		case EXPRESSION_BINARY:
-		case EXPRESSION_NESTED: {
-            char *nested_bin_expr_code = compile_expression(bin_expr->expression_right, scope);
+		case EXPRESSION_NESTED: 
+		case EXPRESSION_FUNCTION_CALL: {
+			log_warning("expression type: %s\n", EXPRESSION_TYPES[bin_expr->expression_right->type]);
 
-			bin_expr_code = straddall(bin_expr_code, "push rax\n", nested_bin_expr_code, "mov rbx, rax\n", "pop rax\n", NULL);
+			char *right_expr_code = compile_expression(bin_expr->expression_right, scope);
+
+			log_warning("right_expr_code = %s\n", right_expr_code);
+
+			bin_expr_code = straddall(bin_expr_code, 
+					"push rax\n",
+					right_expr_code,
+					"mov rbx, rax\n",
+					"pop rax\n", NULL);
+
+			log_warning("after straddall\n");
+
+			log_debug("bin expr operator type: %d\n", bin_expr->operator);
 
 			switch (bin_expr->operator) {
 				case BINARY_OPERATOR_PLUS:
+					log_debug("before stradd\n");
 					bin_expr_code = stradd(bin_expr_code, "add rax, rbx\n");
+					log_debug("after stradd\n");
 					break;
 
 				case BINARY_OPERATOR_MINUS:
+					log_debug("before stradd\n");
 					bin_expr_code = stradd(bin_expr_code, "sub rax, rbx\n");
+					log_debug("after stradd\n");
 					break;
 
 				case BINARY_OPERATOR_MULTIPLY:
@@ -307,16 +426,18 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 
 				default:
 					log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-                	exit(1);
+					exit(1);
 			}
-            break;
+			break;
 		}
 
-        default:
-            log_error("[6] compile_binary_expression(): parsing for expression-type '%d' is not implemented yet\n", bin_expr->expression_right->type);
-            exit(1);
-    }
-    return bin_expr_code;
+		default:
+			log_error("[6] compile_binary_expression(): parsing for expression-type '%d' is not implemented yet\n", bin_expr->expression_right->type);
+			exit(1);
+	}
+
+	log_warning("before returning bin_expr_code\n");
+	return bin_expr_code;
 }
 
 char *compile_literal_expression(Literal_T *literal, Scope *scope) {
@@ -399,4 +520,62 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 	}
 
 	return unary_expr_code;
+}
+
+char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr, Scope *scope) {
+	char *func_call_expr_code = calloc(1, sizeof(char));
+
+	log_debug("compile_function_call_expression(): args.count = %d\n", func_call_expr->argument_expression_list->size);
+
+	switch (func_call_expr->argument_expression_list->size) {
+		case 6: {
+			func_call_expr_code = straddall(func_call_expr_code, 
+					"push rax\n", 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 5), scope), 
+					"mov r9, rax\n"
+					"pop rax\n", NULL);
+		}
+		case 5: {
+			func_call_expr_code = straddall(func_call_expr_code, 
+					"push rax\n", 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 4), scope), 
+					"mov r8, rax\n"
+					"pop rax\n", NULL);
+		}
+		case 4: {
+			func_call_expr_code = straddall(func_call_expr_code, 
+					"push rax\n", 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 3), scope), 
+					"mov rcx, rax\n"
+					"pop rax\n", NULL);
+		}
+		case 3: {
+			func_call_expr_code = straddall(func_call_expr_code,
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 2), scope), 
+					"mov rdx, rax\n", NULL);
+		}
+		case 2: {
+			func_call_expr_code = straddall(func_call_expr_code,
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 1), scope), 
+					"mov rsi, rax\n", NULL);
+		}
+		case 1: {
+			func_call_expr_code = straddall(func_call_expr_code,
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 0), scope), 
+					"mov rdi, rax\n", NULL);
+			break;
+		}
+		case 0:
+			break;
+
+		default: // more than 6
+			log_error("compiling for function call expressions with more than 6 arguments is not supported yet!\n");
+			exit(1);
+	}
+
+	func_call_expr_code = straddall(func_call_expr_code, "call function_", func_call_expr->function_identifier, "\n", NULL);
+
+	log_debug("compile_function_call_expression(): func_call_expr_code = %s\n", func_call_expr_code);
+
+	return func_call_expr_code;
 }
