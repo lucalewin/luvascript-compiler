@@ -20,17 +20,10 @@ void substring(char *source, char *target, int offset) {
 }
 
 char *stradd(char *s1, char *s2) {
-    const size_t a = strlen(s1);
-    const size_t b = strlen(s2);
-    const size_t size_ab = a + b + 1;
-
-    s1 = realloc(s1, size_ab);
-
-    memcpy(s1 + a, s2, b + 1);
-
-	s1[size_ab - 1] = '\0';
-
-    return s1;
+	int length = snprintf(NULL, 0, "%s%s", s1, s2);
+	char* str = calloc(length + 1, sizeof(char));
+	snprintf(str, length + 1, "%s%s", s1, s2);
+	return str;
 }
 
 char *straddall(char *src, ...) {
