@@ -11,13 +11,13 @@
 Clone the repo and run
 
 ```shell
-$ sudo make install
+sudo make install
 ```
 
 ## How to compile a file
 
 ```shell
-$ lvc [filename]
+lvc [filename]
 ```
 
 <br>
