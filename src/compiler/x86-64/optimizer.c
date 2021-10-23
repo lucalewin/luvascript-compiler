@@ -90,12 +90,16 @@ Expression_T *simplify_expression(Expression_T *expr) {
 
 		case EXPRESSION_NESTED: {
 			// log_warning("simplify_expression(): simplification for nested expression is not implemented yet\n");
-
 			return simplify_expression(expr->expr.nested_expr->expression);
 		}
 
 		case EXPRESSION_UNARY: {
-			log_warning("simplify_expression(): simplification for unary expressions is not implemented yet\n");
+			// log_warning("simplify_expression(): simplification for unary expressions is not implemented yet\n");
+			return expr;
+		}
+
+		case EXPRESSION_FUNCTION_CALL: {
+			// log_warning("simplify_expression(): simplification for function call expressions is not implemented yet\n");
 			return expr;
 		}
 
