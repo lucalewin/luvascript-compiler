@@ -1,0 +1,12 @@
+
+function main(): int {
+	return one() + two();
+}
+
+function one(): int {
+	return 1;
+}
+
+function two(): int {
+	return 2;
+}
