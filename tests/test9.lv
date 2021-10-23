@@ -1,0 +1,19 @@
+
+function main(): int {
+	var x: int = 20;
+	var y: int = 2;
+	var z: int = 7;
+	var w: int =  two(x, y) - one(x, y, z);
+
+	return w + two(y, z);
+}
+
+function one(a: int, b: int, c: int): int {
+	var d: int = 20;
+
+	return a - b * c + d;
+}
+
+function two(a: int, b: int): int {
+	return a * b + a;
+}
