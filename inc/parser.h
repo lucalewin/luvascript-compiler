@@ -75,6 +75,7 @@ void error(const char *msg);
 
 AST *parse(ArrayList *tokens);
 
+FunctionTemplate *expectExternFunctionTemplate();
 Function *expectFunction();
 
 // statements

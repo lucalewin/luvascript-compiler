@@ -8,11 +8,9 @@
 
 #include <scope_impl.h>
 
-/**
- * 
- * global variables used by the expression parser
- * 
- */
+#include <datatypes.h>
+
+// global variables used by the parser
 int _index;
 ArrayList *tokens;
 Token *current;
@@ -20,7 +18,12 @@ Token *lookahead;
 
 int expect(TokenType type) {
     if (current->type != type) {
-        log_error("Expected token '%s' at [%d:%d]\n", TOKEN_TYPE_NAMES[type], current->line, current->pos);
+        log_error("Expected token '%s' at [%d:%d] but got '%s' with value '%s' instead\n",
+				TOKEN_TYPE_NAMES[type],
+				current->line,
+				current->pos,
+				TOKEN_TYPE_NAMES[current->type],
+				current->data);
         exit(1);
     }
     return 1;
@@ -84,6 +87,8 @@ int isUnaryOperator(Token *t) {
     }
 }
 
+// -----------------------------------------------------------------------------------
+
 AST *parse(ArrayList *token_list) {
     tokens = token_list;
     _index = 0;
@@ -94,10 +99,32 @@ AST *parse(ArrayList *token_list) {
     AST *root = calloc(1, sizeof(AST));
 
 	root->functions = arraylist_create();
+	root->extern_functions = arraylist_create();
 
 	while (_index < tokens->size) {
-		Function *func = expectFunction();
-		arraylist_add(root->functions, func);
+		if (strcmp(current->data, "function") == 0) {
+			Function *func = expectFunction();
+			arraylist_add(root->functions, func);
+		} else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
+			// expect global variable/constant declaration
+			log_error("global variables are not supported yet\n");
+			exit(1);
+		} else if (strcmp(current->data, "extern") == 0) {
+			// expect extern function declaration
+			FunctionTemplate *extern_func_template = expectExternFunctionTemplate();
+			arraylist_add(root->extern_functions, extern_func_template);
+		} else {
+			log_error("unexpected token '%s' with value '%s' at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->data, current->line, current->pos);
+			arraylist_free(root->functions);
+			free(root);
+			// TODO: implement freeing of tokenlist in caller method
+			// for (size_t i = token_list->size - 1; i >= 0; i--) {
+			// 	Token *token = arraylist_get(token_list, i);
+			// 	token_free(token);
+			// }
+			// arraylist_free(token_list);
+			return NULL;
+		}
 	}
 
 	scope_evaluate_ast(root);
@@ -105,9 +132,76 @@ AST *parse(ArrayList *token_list) {
     return root;
 }
 
+FunctionTemplate *expectExternFunctionTemplate() {
+	eat(TOKEN_KEYWORD);
+	expect(TOKEN_KEYWORD); // 'function'
+	if (strcmp(current->data, "function") != 0) {
+		log_error("expected keyword 'function' at [%d:%d] but got '%s' with value '%s' instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type], current->data);
+		exit(1);
+	}
+	next();
+
+	// function identifier
+	expect(TOKEN_IDENDIFIER);
+
+	FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));
+	if (func_template == NULL) {
+		log_error("unable to allocate memory for FunctionTemplate\n");
+		exit(1);
+	}
+
+	func_template->identifier = calloc(strlen(current->data), sizeof(char));
+	if (func_template->identifier == NULL) {
+		free(func_template);
+		log_error("calloc failed: unable to allocate memory for function identifier\n");
+		exit(1);
+	}
+    strcpy(func_template->identifier, current->data);
+	next();
+
+	eat(TOKEN_LPAREN);
+
+	// parse argument types (if any are defined)
+
+	func_template->param_datatypes = arraylist_create();
+
+	if (!is(TOKEN_RPAREN)) {
+		while (1) {
+			if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
+				log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
+			}
+
+			Datatype *type = parse_datatype(current->data);
+			arraylist_add(func_template->param_datatypes, type);
+
+			next();
+
+			if (!is(TOKEN_COMMA)) {
+				break;
+			}
+
+			next();
+		}
+	}
+
+	eat(TOKEN_RPAREN);
+
+	eat(TOKEN_COLON);
+
+	Datatype *return_type = parse_datatype(current->data);
+
+	func_template->return_type = return_type;
+
+	next();
+
+	eat(TOKEN_SEMICOLON);
+
+	return func_template;
+}
+
 Function *expectFunction() {
-	if (!is(TOKEN_KEYWORD) && strcmp(current->data, "function") != 0) {
-		log_error("expected function declaration at [%d:%d] but got '%s' instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
+	if (!is(TOKEN_KEYWORD) && strcmp(current->data, "function") != 0) {	
+		log_error("expected function declaration at [%d:%d] but got '%s' with value '%s' instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type], current->data);
 		exit(1);
 	}
 
@@ -167,17 +261,7 @@ Function *expectFunction() {
 				exit(1);
 			}
 
-			if (strcmp(current->data, "int") == 0) {
-				parameter->datatype = 32;
-			} else {
-				free(function->identifier);
-				free(function);
-				free(parameter->identifier->value);
-				free(parameter);
-				log_error("unexpected type identifier at [%d:%d]: %s\n", current->line, current->pos, current->data);
-				exit(1);
-			}
-
+			parameter->datatype = parse_datatype(current->data);
 			next();
 
 			parameter->default_value = NULL;
@@ -205,7 +289,7 @@ Function *expectFunction() {
 	}
 
 	if (strcmp(current->data, "int") == 0) {
-		function->return_type = 32;
+		function->return_type_old = 32;
 	} else {
 		free(function->identifier);
 		free(function);
@@ -377,12 +461,7 @@ Statement *expectVariableDeclarationStatement() {
 		exit(1);
 	}
 
-	if (strcmp(current->data, "int") == 0) {
-		variable->datatype = 32;
-	} else {
-		log_error("expectVariableDeclarationStatement(): unexpected type identifier at [%d:%d]", current->line, current->pos);
-		exit(1);
-	}
+	variable->datatype = parse_datatype(current->data);
 
 	next();
 
@@ -433,7 +512,6 @@ Statement *expectVariableDeclarationStatement() {
 
 // -----------------------------------------------------------------------------------
 
-// expressions
 ArrayList *expectExpressionList() {
 	ArrayList *expressions = arraylist_create();
 
@@ -596,6 +674,7 @@ Expression_T *expectUnaryExpression() {
 			return expectPostfixExpression();
 	}
 }
+
 Expression_T *expectPostfixExpression() {
 	if (!is(TOKEN_IDENDIFIER) || lookahead->type != TOKEN_LPAREN) {
 		return expectPrimaryExpression();
