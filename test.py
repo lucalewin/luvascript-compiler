@@ -1,7 +1,6 @@
 #!/bin/python3
 
 import os
-import sys
 import glob
 import subprocess
 
@@ -15,8 +14,8 @@ test_files = [file for root, dirs, files in os.walk(test_dir) for file in files 
 
 # format: 'test-name', ['test-output', ...], exitcode
 expected_outputs = [
-	["Test 1", [], 55], 
-	["Test 2", [], 26], 
+	["Test 1", [], 55],
+	["Test 2", [], 26],
 	["Test 3", [], 14],
 	["Test 4", [], 5],
 	["Test 5", [], 69],
@@ -38,16 +37,16 @@ os.chdir(test_dir)
 
 for test in test_files:
 	# compile test
-	compile_proc = subprocess.Popen(['../bin/lvc', test], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+	compile_proc = subprocess.Popen(['../bin/lvc', test], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 	stdout, stderr = compile_proc.communicate()
 
 	if compile_proc.returncode != 0 or not os.path.exists('./a.out'):
 		print(f'{expected_outputs[index][0]}:', colored(255, 0, 0, 'build failed'))
 		print('build output:\n')
-		print(stdout if stdout != '' else colored(255, 0, 0, 'process was aborted\n'))
-		if stderr is not None and stderr != '':
-			print(f'stderr:\n{stderr}')
+		print(stdout.decode() if stdout.decode() != '' else colored(255, 0, 0, 'process was aborted\n'))
+		if stderr is not None and stderr.decode() != '':
+			print(f'stderr:\n{stderr.decode()}')
 		print('[================================]\n')
 
 		failed_builds += 1
