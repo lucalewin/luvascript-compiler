@@ -6,6 +6,7 @@
 typedef struct _scope {
 	ArrayList *variables;
 	ArrayList *functions;
+	ArrayList *function_templates;
 } Scope;
 
 #endif
