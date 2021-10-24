@@ -16,6 +16,7 @@
 #include <types/expression.h>
 #include <types/statement.h>
 #include <types/function.h>
+#include <types/datatypes.h>
 
 // headers to be implemented
 #include <compiler.h>
@@ -38,6 +39,7 @@ char *linker = "ld";
 
 // ----------------------- function prototypes -------------------------
 
+char *compile_extern_function_templates(FunctionTemplate *func_template);
 char *compile_function(Function *function);
 
 char *compile_statement(Statement *stmt);
@@ -72,22 +74,31 @@ char *compile_to_x86_64_assembly(AST *root) {
 	char *asm_code = calloc(1, sizeof(char));
 
 	// check if main method is defined
-	if (!scope_contains_function_name(root->global_scope, "main")) {
-		// main function is not defined
-		log_error("main method is not defined\n");
-		exit(1);
+	if (scope_contains_function_name(root->global_scope, "main")) {
+		// main function is defined
+		asm_code = stradd(asm_code, header_template);
+		asm_code = stradd(asm_code, "call main\n");
+		asm_code = stradd(asm_code, "mov rdi, rax\n");
+		asm_code = stradd(asm_code, exit_template);
+	} else {
+		asm_code = stradd(asm_code, "section .text\n");
 	}
 
-	asm_code = stradd(asm_code, header_template);
-	asm_code = stradd(asm_code, "call function_main\n");
-	asm_code = stradd(asm_code, "mov rdi, rax\n");
-	asm_code = stradd(asm_code, exit_template);
-
+	// compile functions
 	for (int i = 0; i < root->functions->size; i++) {
 		asm_code = stradd(asm_code, compile_function(arraylist_get(root->functions, i)));
 	}
 
+	// define external functions
+	for (size_t i = 0; i < root->extern_functions->size; i++) {
+		asm_code = stradd(asm_code, compile_extern_function_templates(arraylist_get(root->extern_functions, i)));
+	}
+
 	return asm_code;
+}
+
+char *compile_extern_function_templates(FunctionTemplate *func_template) {
+	return straddall("extern ", func_template->identifier, "\n", NULL);
 }
 
 char *compile_function(Function *function) {
@@ -96,15 +107,15 @@ char *compile_function(Function *function) {
 	log_debug("compile_function(): compiling function '%s'\n", function->identifier);
 
 	function_code = straddall(function_code,
-	"global function_", function->identifier,
-	"\nfunction_", function->identifier, ":\n", NULL);
+	"global ", function->identifier,
+	"\n", function->identifier, ":\n", NULL);
 
 	// align stack
 
 	size_t size_for_stack_align = 0;
 	for (int i = 0; i < function->local_scope->variables->size; i++) {
 		Variable *var = arraylist_get(function->local_scope->variables, i);
-		size_for_stack_align += var->datatype / 8; // 8 -> size of a byte (8 bits)
+		size_for_stack_align += var->datatype->size;
 	}
 
 	if (size_for_stack_align != 0) {
@@ -173,7 +184,7 @@ char *compile_function(Function *function) {
 }
 
 char *compile_statement(Statement *stmt) {
-	log_debug("compile_statement():\n");
+	// log_debug("compile_statement(): statement type = %s\n", STATEMENT_TYPES[stmt->type]);
 	switch(stmt->type) {
 		case STATEMENT_RETURN:
 			return compile_return_statement(stmt->stmt.return_statement, stmt->parent_scope);
@@ -191,13 +202,11 @@ char *compile_statement(Statement *stmt) {
 }
 
 char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope) {
-	// log_debug("scope: %s\n", scope);
-
 	// calculate size for stack align
 	size_t size_for_stack_align = 0;
 	for (int i = 0; i < scope->variables->size; i++) {
 		Variable *var = arraylist_get(scope->variables, i);
-		size_for_stack_align += var->datatype / 8; // 8 -> size of a byte (8 bits)
+		size_for_stack_align += var->datatype->size;
 	}
 
 	// compile to assembly
@@ -207,7 +216,7 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 		compound_stmt_code = stradd(compound_stmt_code, "push rbp\n"); // save old value of RBP
 		compound_stmt_code = stradd(compound_stmt_code, "mov rbp, rsp\n");
 		compound_stmt_code = stradd(compound_stmt_code, "sub rsp, "); // align stack
-		compound_stmt_code = stradd(compound_stmt_code, int_to_string(size_for_stack_align)); // size in bytes
+		compound_stmt_code = stradd(compound_stmt_code, int_to_string(size_for_stack_align + 8)); // size in bytes
 		compound_stmt_code = stradd(compound_stmt_code, "\n");
 	}
 
@@ -224,7 +233,7 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 }
 
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
-	log_debug("compile_return_statement():\n");
+	// log_debug("compile_return_statement():\n");
 	
 	char *ret_stmt_code = compile_expression(ret_stmt->return_expression, scope);
 
@@ -232,61 +241,55 @@ char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
 	size_t size_for_stack_align = 0;
 	for (int i = 0; i < scope->variables->size; i++) {
 		Variable *var = arraylist_get(scope->variables, i);
-		size_for_stack_align += var->datatype / 8; // 8 -> size of a byte (8 bits)
+		size_for_stack_align += var->datatype->size;
 	}
-
-	log_debug("size for stack align = %d\n", size_for_stack_align);
 
 	if (size_for_stack_align != 0) {
-		log_debug("reseting base pointer: %d\n", size_for_stack_align);
-		// ret_stmt_code = straddall(ret_stmt_code, "add rsp, ", int_to_string(size_for_stack_align), "\npop rbp\n", NULL);
-		ret_stmt_code = straddall(ret_stmt_code, "mov rsp, rbp\npop rbp\n");
-		// ret_stmt_code = straddall(ret_stmt_code, "leave\n");
+		ret_stmt_code = stradd(ret_stmt_code, "mov rsp, rbp\npop rbp\n");
 	}
-	
-	log_debug("before 'ret' appending\n");
 
 	ret_stmt_code = stradd(ret_stmt_code, "ret\n");
-
-	log_debug("after 'ret' appending\n");
 
 	return ret_stmt_code;
 }
 
 char *compile_variable_declaration_statement(VariableDeclarationStatement *var_decl_stmt, Scope *scope) {
 	log_debug("compile_variable_declaration_statement():\n");
-	char *var_decl_code = calloc(1, sizeof(char));
 
 	Variable *var = var_decl_stmt->var;	
+
 	// compile default expression
 	// TODO: simplify default value assignment
 	// if (var->default_value->type == EXPRESSION_LITERAL) {}
-	var_decl_code = stradd(var_decl_code, compile_expression(var->default_value, scope));	
-	switch (var->datatype) {
-		case 8: // BYTE
+
+	char *var_decl_code = compile_expression(var->default_value, scope);
+	char *rbp_offset = int_to_string(scope_get_variable_rbp_offset(scope, var->identifier->value));
+
+	switch (var->datatype->size) {
+		case 1: // BYTE
+			var_decl_code = straddall(var_decl_code, "mov BYTE[rbp-", rbp_offset, "], al\n");
 			break;
-		case 16: // WORD
+		case 2: // WORD
+			var_decl_code = straddall(var_decl_code, "mov WORD[rbp-", rbp_offset, "], ax\n");
 			break;
-		case 32: // DWORD
-			var_decl_code = stradd(var_decl_code, "mov DWORD[rbp-");
-			var_decl_code = stradd(var_decl_code, int_to_string(scope_get_variable_rbp_offset(scope, var->identifier->value)));
-			var_decl_code = stradd(var_decl_code, "], eax\n");
+		case 4: // DWORD
+			var_decl_code = straddall(var_decl_code, "mov DWORD[rbp-", rbp_offset, "], eax\n");
 			break;
-		case 64: // QWORD
-			break;	
+		case 8: // QWORD
+			var_decl_code = straddall(var_decl_code, "mov QWORD[rbp-", rbp_offset, "], rax\n");
+			break;
 		default:
-			log_error("unknown datatype: %d\n", var->datatype);
+			log_error("unexpected datatype size: %d\n", var->datatype->size);
 			exit(1);
 			break;
-	}	
+	}
+
 	return var_decl_code;
 }
 
 char *compile_expression(Expression_T *expr, Scope *scope) {
 	// try to simplify the expression
 	expr = simplify_expression(expr);
-
-	log_debug("compile_expression(): expr->type = '%s'\n", EXPRESSION_TYPES[expr->type]);
 
 	switch(expr->type) {
 		case EXPRESSION_LITERAL:
@@ -305,6 +308,7 @@ char *compile_expression(Expression_T *expr, Scope *scope) {
 			log_error("parsing for expression type '%d' is not implemented yet\n", expr->type);
 			exit(1);
 	}
+
 	log_error("compile_expression(): returning NULL\n");
 	return NULL;
 }
@@ -337,12 +341,12 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 				case LITERAL_IDENTIFIER: {
 					Variable *var = scope_get_variable_by_name(scope, literal->value);
 
-					switch (var->datatype) {
-						case 8: // BYTE
+					switch (var->datatype->size) {
+						case 1: // BYTE
 							break;
-						case 16: // WORD
+						case 2: // WORD
 							break;
-						case 32: { // DWORD
+						case 4: { // DWORD
 							if (bin_expr->operator == BINARY_OPERATOR_PLUS) {
 								bin_expr_code = stradd(bin_expr_code, "add eax, DWORD[rbp-");
 								bin_expr_code = stradd(bin_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, literal->value)));
@@ -367,11 +371,11 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 							}
 							break;
 						}
-						case 64: // QWORD
+						case 8: // QWORD
 							break;
 
 						default:
-							log_error("unknown datatype: %d\n", var->datatype);
+							log_error("unknown datatype size: %d\n", var->datatype->size);
 							exit(1);
 							break;
 					}
@@ -387,11 +391,11 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 		case EXPRESSION_BINARY:
 		case EXPRESSION_NESTED: 
 		case EXPRESSION_FUNCTION_CALL: {
-			log_warning("expression type: %s\n", EXPRESSION_TYPES[bin_expr->expression_right->type]);
+			// log_warning("expression type: %s\n", EXPRESSION_TYPES[bin_expr->expression_right->type]);
 
 			char *right_expr_code = compile_expression(bin_expr->expression_right, scope);
 
-			log_warning("right_expr_code = %s\n", right_expr_code);
+			// log_warning("right_expr_code = %s\n", right_expr_code);
 
 			bin_expr_code = straddall(bin_expr_code, 
 					"push rax\n",
@@ -399,21 +403,21 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					"mov rbx, rax\n",
 					"pop rax\n", NULL);
 
-			log_warning("after straddall\n");
+			// log_warning("after straddall\n");
 
-			log_debug("bin expr operator type: %d\n", bin_expr->operator);
+			// log_debug("bin expr operator type: %d\n", bin_expr->operator);
 
 			switch (bin_expr->operator) {
 				case BINARY_OPERATOR_PLUS:
-					log_debug("before stradd\n");
+					// log_debug("before stradd\n");
 					bin_expr_code = stradd(bin_expr_code, "add rax, rbx\n");
-					log_debug("after stradd\n");
+					// log_debug("after stradd\n");
 					break;
 
 				case BINARY_OPERATOR_MINUS:
-					log_debug("before stradd\n");
+					// log_debug("before stradd\n");
 					bin_expr_code = stradd(bin_expr_code, "sub rax, rbx\n");
-					log_debug("after stradd\n");
+					// log_debug("after stradd\n");
 					break;
 
 				case BINARY_OPERATOR_MULTIPLY:
@@ -436,7 +440,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 			exit(1);
 	}
 
-	log_warning("before returning bin_expr_code\n");
+	// log_warning("before returning bin_expr_code\n");
 	return bin_expr_code;
 }
 
@@ -452,20 +456,20 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 		}
 		case LITERAL_IDENTIFIER: {
 			Variable *var = scope_get_variable_by_name(scope, literal->value);
-			switch (var->datatype) {
-				case 8: // BYTE
+			switch (var->datatype->size) {
+				case 1: // BYTE
 					break;
-				case 16: // WORD
+				case 2: // WORD
 					break;
-				case 32: // DWORD
+				case 4: // DWORD
 					literal_expr_code = stradd(literal_expr_code, "mov eax, DWORD[rbp-");
 					literal_expr_code = stradd(literal_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, literal->value)));
 					literal_expr_code = stradd(literal_expr_code, "]\n");
 					break;
-				case 64: // QWORD
+				case 8: // QWORD
 					break;
 				default:
-					log_error("unknown datatype: %d\n", var->datatype);
+					log_error("unknown datatype size: %d\n", var->datatype->size);
 					exit(1);
 					break;
 			}
@@ -490,20 +494,20 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 				unary_expr_code = stradd(unary_expr_code, "\n");
 			} else if (unary_expr->identifier->type == LITERAL_IDENTIFIER) {
 				Variable *var = scope_get_variable_by_name(scope, unary_expr->identifier->value);
-				switch (var->datatype) {
-					case 8: // BYTE
+				switch (var->datatype->size) {
+					case 1: // BYTE
 						break;
-					case 16: // WORD
+					case 2: // WORD
 						break;
-					case 32: // DWORD
+					case 4: // DWORD
 						unary_expr_code = stradd(unary_expr_code, "mov eax, DWORD[rbp-");
 						unary_expr_code = stradd(unary_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, var->identifier->value)));
 						unary_expr_code = stradd(unary_expr_code, "]\n");
 						break;
-					case 64: // QWORD
+					case 5: // QWORD
 						break;	
 					default:
-						log_error("unknown datatype: %d\n", var->datatype);
+						log_error("unknown datatype size: %d\n", var->datatype->size);
 						exit(1);
 						break;
 				}
@@ -525,7 +529,7 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr, Scope *scope) {
 	char *func_call_expr_code = calloc(1, sizeof(char));
 
-	log_debug("compile_function_call_expression(): args.count = %d\n", func_call_expr->argument_expression_list->size);
+	// log_debug("compile_function_call_expression(): args.count = %d\n", func_call_expr->argument_expression_list->size);
 
 	switch (func_call_expr->argument_expression_list->size) {
 		case 6: {
@@ -573,9 +577,9 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 			exit(1);
 	}
 
-	func_call_expr_code = straddall(func_call_expr_code, "call function_", func_call_expr->function_identifier, "\n", NULL);
+	func_call_expr_code = straddall(func_call_expr_code, "call ", func_call_expr->function_identifier, "\n", NULL);
 
-	log_debug("compile_function_call_expression(): func_call_expr_code = %s\n", func_call_expr_code);
+	// log_debug("compile_function_call_expression(): func_call_expr_code = %s\n", func_call_expr_code);
 
 	return func_call_expr_code;
 }
