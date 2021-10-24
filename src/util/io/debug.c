@@ -85,7 +85,7 @@ void print_statement(Statement *statement) {
             break;
 		case STATEMENT_VARIABLE_DECLARATION: {
 			Variable *var = statement->stmt.variable_decl->var;
-			printf("\"identifier\":\"%s\",\"type\":%d,\"default_value\":{", var->identifier->value, var->datatype);
+			printf("\"identifier\":\"%s\",\"type\":%s,\"default_value\":{", var->identifier->value, var->datatype->type_identifier);
 			print_expression(var->default_value);
 			printf("}");
 			break;
