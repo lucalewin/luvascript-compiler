@@ -1,0 +1,5 @@
+extern function add(int, int): int;
+
+function main(): int {
+	return add(5, 7) - add(3, 5);
+}
