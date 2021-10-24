@@ -28,7 +28,7 @@ void scope_evaluate_ast(AST *ast) {
 }
 
 void scope_evaluate_function(Function *function) {
-	log_debug("scope_evaluate_function(): evaluating scope of function '%s'\n", function->identifier);
+	// log_debug("scope_evaluate_function(): evaluating scope of function '%s'\n", function->identifier);
 
 	function->local_scope = scope_new();
 
@@ -61,7 +61,7 @@ void scope_evaluate_function(Function *function) {
 		scope_evaluate_statement(stmt);
 	}
 
-	log_debug("scope_evaluate_function(): finished scope evaluation of function '%s'\n", function->identifier);
+	// log_debug("scope_evaluate_function(): finished scope evaluation of function '%s'\n", function->identifier);
 }
 
 void scope_evaluate_statement(Statement *stmt) {
@@ -77,7 +77,7 @@ void scope_evaluate_statement(Statement *stmt) {
 			break;
 
 		case STATEMENT_VARIABLE_DECLARATION: {
-			log_debug("scope_evaluate_statement(): evaluating variable declaration statement\n");
+			// log_debug("scope_evaluate_statement(): evaluating variable declaration statement\n");
 
 			Variable *var = stmt->stmt.variable_decl->var;
 
@@ -98,62 +98,13 @@ void scope_evaluate_statement(Statement *stmt) {
 	}
 }
 
-void scope_evaluate_statement_old(Statement *stmt, Scope *parent_scope) {
-	stmt->parent_scope = scope_copy(parent_scope);
-
-	stmt->local_scope = scope_new();
-
-	switch (stmt->type) {
-		case STATEMENT_COMPOUND: {
-			CompoundStatement *compound_stmt = stmt->stmt.compound_statement;
-			
-			for (int i = 0; i < compound_stmt->nested_statements->size; i++) {
-				Statement *nested_stmt = arraylist_get(compound_stmt->nested_statements, i);
-
-				nested_stmt->parent_scope = stmt->local_scope;
-				nested_stmt->local_scope = scope_new();
-
-				switch (nested_stmt->type) {
-					case STATEMENT_VARIABLE_DECLARATION: {
-						Variable *var = nested_stmt->stmt.variable_decl->var;
-
-						if (scope_contains_variable_name(stmt->local_scope, var->identifier->value)) {
-							log_error("variable '%s' is already defined!\n", var->identifier->value);
-							// TODO: free memory
-							exit(1);
-						}
-
-						// TODO: if variable name exists in parent_scope overwrite it in local_scope
-						scope_add_variable(stmt->local_scope, var);
-
-						break;
-					}
-
-					case STATEMENT_RETURN:
-					case STATEMENT_EXPRESSION:
-					case STATEMENT_COMPOUND: {
-						break;
-					}
-
-					default:
-						log_error("unknown statement type '%d'", nested_stmt->type);
-						break;
-				}
-			}
-			break;
-		}
-
-		default:
-			break;
-	}
-}
-
 // -----------------------------------------------------------
 
 Scope *scope_new() {
 	Scope *scope = calloc(1, sizeof(Scope));
 	scope->variables = arraylist_create();
 	scope->functions = arraylist_create();
+	scope->function_templates = arraylist_create();
 	return scope;
 }
 
@@ -228,7 +179,9 @@ int scope_get_variable_rbp_offset(Scope *scope, char *var_name) {
 		if (strcmp(var_name, var->identifier->value) == 0) {
 			break;
 		}
-		offset += var->datatype / 8;
+		// offset += var->datatype_old / 8;
+		offset += var->datatype->size;
 	}
+	// in bytes 0..7 the old value of rbp is store -> add 8 bytes to avoid overwriting old value of rbp
 	return offset + 8;
 }

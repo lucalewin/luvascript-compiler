@@ -26,14 +26,6 @@ void scope_evaluate_function(Function *function);
 void scope_evaluate_statement(Statement *stmt);
 
 /**
- * @brief 
- * 
- * @param stmt 
- * @param global_scope 
- */
-void scope_evaluate_statement_old(Statement *stmt, Scope *global_scope);
-
-/**
  * @brief create/allocate memory for a new Scope pointer
  * 
  * @return Scope* the newly allocated Scope pointer
