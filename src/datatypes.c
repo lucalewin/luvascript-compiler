@@ -28,6 +28,7 @@ Datatype *parse_datatype(char *type) {
 		dt->size = 1; // 1 byte
 	} else {
 		log_error("unknown datatype: '%s'\n", type);
+		free(dt);
 		return NULL;
 	}
 
