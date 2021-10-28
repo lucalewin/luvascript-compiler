@@ -319,7 +319,7 @@ Statement *expectStatement() {
     } else if (is(TOKEN_KEYWORD)) {
 		if (strcmp(current->data, "return") == 0) {
         	return expectJumpStatement();
-		} else if (strcmp(current->data, "var") == 0) {
+		} else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
 			return expectVariableDeclarationStatement();
 		} else {
 			log_error("unexpected keyword at [%d:%d]\n", current->line, current->pos);
@@ -382,6 +382,8 @@ Statement *expectExpressionStatement() {
 	expr_stmt->expression = expr;
     statement->stmt.expression_statement = expr_stmt;
 
+	eat(TOKEN_SEMICOLON);
+
     return statement;
 }
 
@@ -431,6 +433,13 @@ Statement *expectVariableDeclarationStatement() {
 	}
 
 	var_decl_stmt->var = variable;
+
+	if (strcmp(current->data, "var") == 0) {
+		variable->is_constant = 0;
+	} else {
+		// it's `const`
+		variable->is_constant = 1;
+	}
 
 	eat(TOKEN_KEYWORD); // 'var' keyword
 	expect(TOKEN_IDENDIFIER); // the identifier of the variable
@@ -526,10 +535,95 @@ ArrayList *expectExpressionList() {
 }
 
 Expression_T *expectExpression() {
-    return expectAdditiveExpression();
+	return expectAssignmentExpression();
+    // return expectAdditiveExpression();
 }
 
-// Expression_T *expectAssignmentExpression() {}
+Expression_T *expectAssignmentExpression() {
+
+	if (!isAssignmentOperator(lookahead)) {
+		return expectAdditiveExpression();
+	}
+
+	Expression_T *identifier_expr = expectUnaryExpression();
+
+	if (!isAssignmentOperator(current)) {
+		return identifier_expr;
+	}
+
+	switch (identifier_expr->type) {
+		case EXPRESSION_UNARY: // all unary expressions are valid (for now [lvc version 0.1.0-alpha])
+			break;
+		case EXPRESSION_LITERAL:
+			if (identifier_expr->expr.literal_expr->type != LITERAL_IDENTIFIER) {
+				log_error("expected identifier but got '%s' instead\n", LITERAL_TYPES[identifier_expr->expr.literal_expr->type]);
+				exit(1);
+			}
+			break;
+		
+		default:
+			log_error("expected unary expression or identifier\n");
+			exit(1);
+	}
+
+	Expression_T *expr = calloc(1, sizeof(Expression_T));
+	AssignmentExpression_T *assignment_expr = calloc(1, sizeof(AssignmentExpression_T));
+
+	if (expr == NULL || assignment_expr == NULL) {
+		free(expr);
+		free(assignment_expr);
+		log_error("unable to allocate memory for assignment expression\n");
+		return NULL;
+	}
+
+	expr->type = EXPRESSION_ASSIGNMENT;
+	expr->expr.assignment_expr = assignment_expr;
+
+	assignment_expr->identifier = identifier_expr;
+
+	// assignment_expr->identifier = calloc(strlen(current->data) + 1, sizeof(char));
+	// if (assignment_expr->identifier == NULL) {
+	// 	free(expr);
+	// 	free(assignment_expr->identifier);
+	// 	free(assignment_expr);
+	// 	log_error("unable to allocate memory for assignment expression\n");
+	// 	return NULL;
+	// }
+
+	// strcpy(assignment_expr->identifier, current->data);
+	// next();
+
+	switch (current->type) {
+		case TOKEN_ASSIGNMENT_SIMPLE: 
+			assignment_expr->operator = ASSIGNMENT_OPERATOR_DEFAULT;
+			break;
+		case TOKEN_ASSIGNMENT_SUM:
+			assignment_expr->operator = ASSIGNMENT_OPERATOR_ADD;
+			break;
+		case TOKEN_ASSIGNMENT_DIFFERENCE:
+			assignment_expr->operator = ASSIGNMENT_OPERATOR_SUBTRACT;
+			break;
+		case TOKEN_ASSIGNMENT_PRODUCT:
+			assignment_expr->operator = ASSIGNMENT_OPERATOR_MULTIPLY;
+			break;
+		case TOKEN_ASSIGNMENT_QUOTIENT:
+			assignment_expr->operator = ASSIGNMENT_OPERATOR_DIVIDE;
+			break;
+		default:
+			log_error("unknown assignment operator '%s' at [%d:%d]\n", current->data, current->line, current->pos);
+			free(expr);
+			free(assignment_expr->identifier);
+			free(assignment_expr);
+			return NULL;
+	}
+
+	next();
+
+	assignment_expr->assignment_value = expectExpression();
+
+	return expr;
+}
+
 // Expression_T *expectConditionalExpression() {}
 // Expression_T *expectLogicalOrExpression() {}
 // Expression_T *expectLogicalAndExpression() {}
@@ -750,7 +844,7 @@ Expression_T *expectPrimaryExpression() {
         next();
         expression->expr.literal_expr = literal;
     } else {
-        log_error("expectPrimaryExpression(): expected nested expression or literal but got %d\n", current);
+        log_error("expectPrimaryExpression(): expected nested expression or literal but got %s at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->line, current->pos);
         exit(1);
     }
     return expression;
