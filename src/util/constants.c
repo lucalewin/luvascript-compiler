@@ -66,7 +66,8 @@ const char *EXPRESSION_TYPES[] = {
 	[EXPRESSION_UNARY] = "unary_expression",
 	[EXPRESSION_BINARY] = "binary_expression",
 	[EXPRESSION_NESTED] = "nested_expression",
-	[EXPRESSION_FUNCTION_CALL] = "function_call_expression"
+	[EXPRESSION_FUNCTION_CALL] = "function_call_expression",
+	[EXPRESSION_ASSIGNMENT] = "assignment_expression"
 };
 
 const char* STATEMENT_TYPES[] = {
