@@ -103,6 +103,9 @@ Expression_T *simplify_expression(Expression_T *expr) {
 			return expr;
 		}
 
+		case EXPRESSION_ASSIGNMENT:
+			return expr;
+
 		default:
 			log_error("simplify_expression(): unexpected expression type %d\n", expr->type);
 			return expr;
