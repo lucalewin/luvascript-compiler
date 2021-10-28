@@ -11,13 +11,15 @@ typedef struct UnaryExpression UnaryExpression_T;
 typedef struct BinaryExpression BinaryExpression_T;
 typedef struct NestedExpression NestedExpression_T;
 typedef struct FunctionCallExpression FunctionCallExpression_T;
+typedef struct AssignmentExpression AssignmentExpression_T;
 
 enum ExpressionType {
     EXPRESSION_LITERAL,
     EXPRESSION_UNARY,
     EXPRESSION_BINARY,
     EXPRESSION_NESTED,
-	EXPRESSION_FUNCTION_CALL
+	EXPRESSION_FUNCTION_CALL,
+	EXPRESSION_ASSIGNMENT
 };
 
 struct Expression {
@@ -29,6 +31,7 @@ struct Expression {
         BinaryExpression_T *binary_expr;
         NestedExpression_T *nested_expr;
 		FunctionCallExpression_T *func_call_expr;
+		AssignmentExpression_T *assignment_expr;
     } expr;
 };
 
@@ -50,6 +53,12 @@ struct NestedExpression {
 struct FunctionCallExpression {
 	char *function_identifier;
 	ArrayList *argument_expression_list;
+};
+
+struct AssignmentExpression {
+	Expression_T *identifier;
+	AssignmentOperator_T operator;
+	Expression_T *assignment_value;
 };
 
 extern const char *EXPRESSION_TYPES[];
