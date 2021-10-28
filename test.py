@@ -22,7 +22,8 @@ expected_outputs = [
 	["Test 6", [], 18],
 	["Test 7", [], 12],
 	["Test 8", [], 3],
-	["Test 9", [], 50]]
+	["Test 9", [], 50],
+	["Test 10", [], 3]]
 
 index = 0
 

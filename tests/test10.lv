@@ -1,5 +1,13 @@
-extern function add(int, int): int;
 
 function main(): int {
-	return add(5, 7) - add(3, 5);
+	const x: int = 6;
+	var y: int = 10;
+
+	y = x + y;
+	y *= x / 2;
+	y += x;
+	y -= x;
+	y /= 16;
+
+	return y;
 }
