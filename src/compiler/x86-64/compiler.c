@@ -46,12 +46,14 @@ char *compile_statement(Statement *stmt);
 char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope);
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope);
 char *compile_variable_declaration_statement(VariableDeclarationStatement *var_decl_stmt, Scope *scope);
+char *compile_expression_statement(ExpressionStatement *expr_stmt, Scope *scope);
 
 char *compile_expression(Expression_T *expr, Scope *scope);
 char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope);
 char *compile_literal_expression(Literal_T *literal, Scope *scope);
 char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope);
 char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr, Scope *scope);
+char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope);
 
 // --------------------- function implementations ----------------------
 
@@ -104,7 +106,7 @@ char *compile_extern_function_templates(FunctionTemplate *func_template) {
 char *compile_function(Function *function) {
 	char *function_code = calloc(1, sizeof(char));
 
-	log_debug("compile_function(): compiling function '%s'\n", function->identifier);
+	// log_debug("compile_function(): compiling function '%s'\n", function->identifier);
 
 	function_code = straddall(function_code,
 	"global ", function->identifier,
@@ -124,7 +126,7 @@ char *compile_function(Function *function) {
 		function_code = stradd(function_code, "sub rsp, "); // align stack
 		function_code = stradd(function_code, int_to_string(size_for_stack_align + 8)); // size in bytes
 		function_code = stradd(function_code, "\n");
-		log_debug("aligning stack by %d bytes\n", size_for_stack_align);
+		// log_debug("aligning stack by %d bytes\n", size_for_stack_align);
 	}
 
 	// compile args
@@ -195,6 +197,9 @@ char *compile_statement(Statement *stmt) {
 		case STATEMENT_VARIABLE_DECLARATION:
 			return compile_variable_declaration_statement(stmt->stmt.variable_decl, stmt->parent_scope);
 
+		case STATEMENT_EXPRESSION:
+			return compile_expression_statement(stmt->stmt.expression_statement, stmt->parent_scope);
+
 		default:
 			log_error("compile_statement(): unexpected statement type '%s'\n", STATEMENT_TYPES[stmt->type]);
 			exit(1);
@@ -233,8 +238,6 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 }
 
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
-	// log_debug("compile_return_statement():\n");
-	
 	char *ret_stmt_code = compile_expression(ret_stmt->return_expression, scope);
 
 	// reset base pointer
@@ -254,7 +257,7 @@ char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
 }
 
 char *compile_variable_declaration_statement(VariableDeclarationStatement *var_decl_stmt, Scope *scope) {
-	log_debug("compile_variable_declaration_statement():\n");
+	// log_debug("compile_variable_declaration_statement():\n");
 
 	Variable *var = var_decl_stmt->var;	
 
@@ -287,6 +290,14 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 	return var_decl_code;
 }
 
+char *compile_expression_statement(ExpressionStatement *expr_stmt, Scope *scope) {
+	char *expr_stmt_code = compile_expression(expr_stmt->expression, scope);
+
+	
+
+	return expr_stmt_code;
+}
+
 char *compile_expression(Expression_T *expr, Scope *scope) {
 	// try to simplify the expression
 	expr = simplify_expression(expr);
@@ -303,6 +314,9 @@ char *compile_expression(Expression_T *expr, Scope *scope) {
 
 		case EXPRESSION_FUNCTION_CALL:
 			return compile_function_call_expression(expr->expr.func_call_expr, scope);
+
+		case EXPRESSION_ASSIGNMENT:
+			return compile_assignment_expression(expr->expr.assignment_expr, scope);
 
 		default:
 			log_error("parsing for expression type '%d' is not implemented yet\n", expr->type);
@@ -582,4 +596,73 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 	// log_debug("compile_function_call_expression(): func_call_expr_code = %s\n", func_call_expr_code);
 
 	return func_call_expr_code;
+}
+
+char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope) {
+	// parse expression on the right hand side of the assignment operator
+	char *assignment_expr_code = compile_expression(assignment_expr->assignment_value, scope);
+
+	if (assignment_expr->identifier->type == EXPRESSION_LITERAL) {
+		// check if literal is an identifier
+		// this should always be the case because the parser already checks if this is the case
+		// but for extra savety we also check it here
+		Literal_T *identifier = assignment_expr->identifier->expr.literal_expr;
+
+		if (identifier->type != LITERAL_IDENTIFIER) {
+			log_error("expected identifier but got '%s' instead\n", LITERAL_TYPES[identifier->type]);
+			exit(1);
+		}
+
+		if (!scope_contains_variable_name(scope, identifier->value)) {
+			log_error("variable '%s' is not defined in the current scope\n");
+			exit(1);
+		}
+
+		Variable *var = scope_get_variable_by_name(scope, identifier->value);
+
+		if (var->is_constant) {
+			log_error("cannot assign value to a constant\n");
+			exit(1);
+		}
+
+		char *rbp_offset_str = int_to_string(scope_get_variable_rbp_offset(scope, identifier->value));
+
+		switch (assignment_expr->operator) {
+			case ASSIGNMENT_OPERATOR_DEFAULT:
+				assignment_expr_code = straddall(assignment_expr_code, "mov DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				break;
+
+			case ASSIGNMENT_OPERATOR_ADD:
+				assignment_expr_code = straddall(assignment_expr_code, "add DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				break;
+
+			case ASSIGNMENT_OPERATOR_SUBTRACT:
+				assignment_expr_code = straddall(assignment_expr_code, "sub DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				break;
+
+			case ASSIGNMENT_OPERATOR_MULTIPLY:
+				assignment_expr_code = straddall(assignment_expr_code, "imul DWORD[rbp-", rbp_offset_str, "]\nmov DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				break;
+
+			case ASSIGNMENT_OPERATOR_DIVIDE:
+				assignment_expr_code = straddall(assignment_expr_code, 
+							"mov rbx, rax\n"
+							"mov eax, DWORD[rbp-", rbp_offset_str, "]\n"
+							"idiv ebx\n"
+							"mov DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				break;
+
+			default:
+				log_error("unknown assignment operator: %d\n", assignment_expr->operator);
+				exit(1);
+		}
+	} else if (assignment_expr->identifier->type == EXPRESSION_UNARY) {
+		log_error("assignment expressions with unary expressions as identifier are not implemented yet\n");
+		exit(1);
+	} else {
+		log_error("unexpected expression for assignment expression identifier\n");
+		exit(1);
+	}
+
+	return assignment_expr_code;
 }
