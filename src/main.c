@@ -87,8 +87,13 @@ int main(int argc, char **argv) {
 		exec(assembler, file_format, asm_file_name, "-o", obj_file, NULL);
 		// link to binary file
 		exec(linker, "-g", obj_file, options->output_file_name, NULL);
-		// remove generated object and assembly files
-		exec("rm", asm_file_name, obj_file, NULL);
+		// remove generated assembly file
+		if (!options->generate_assembly) {
+			exec("rm", asm_file_name, NULL);
+		}
+
+		// remove object file
+		exec("rm", obj_file, NULL);
 
 		// free allocated memory for char*
 		free(obj_file);
@@ -97,7 +102,9 @@ int main(int argc, char **argv) {
 		exec(assembler, file_format, asm_file_name, "-o", options->output_file_name, NULL);
 
 		// remove generated assembly file
-		exec("rm", asm_file_name, NULL);
+		if (!options->generate_assembly) {
+			exec("rm", asm_file_name, NULL);
+		}
 	}
 
 	free(asm_file_name);
@@ -121,10 +128,13 @@ CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
 	options->input_file_name = NULL;
 	options->output_file_name = DEFAULT_BINARY_NAME;
 	options->link = 1; // true
+	options->generate_assembly = 0; // false
 
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-c") == 0) { // -c
-			options->link = 0;
+			options->link = 0; // don't link
+		} else if (strcmp(argv[i], "-S") == 0) {
+			options->generate_assembly = 1; // generate assembly file
 		} else if (strcmp(argv[i], "-o") == 0) { // -o
 			if (i + 1 < argc) {
 				options->output_file_name = calloc(strlen(argv[i + 1]), sizeof(char));

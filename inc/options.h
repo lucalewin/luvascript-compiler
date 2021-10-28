@@ -5,6 +5,7 @@ typedef struct commandline_options {
 	char *input_file_name;
 	char *output_file_name;
 	unsigned int link : 1;
+	unsigned int generate_assembly : 1;
 } CommandlineOptions;
 
 CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]);
