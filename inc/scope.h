@@ -4,8 +4,8 @@
 #include <util/arraylist.h>
 
 typedef struct _scope {
-	ArrayList *variables;
-	ArrayList *functions;
+	ArrayList *global_variable_templates;
+	ArrayList *local_variable_templates;
 	ArrayList *function_templates;
 } Scope;
 

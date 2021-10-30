@@ -28,10 +28,7 @@ typedef enum {
 
 typedef struct statement {
 	statement_type type;
-
-	Scope *parent_scope;
-	Scope *local_scope;
-
+	Scope *scope;
 	union {
 		CompoundStatement *compound_statement;
 		ExpressionStatement *expression_statement;
@@ -42,6 +39,7 @@ typedef struct statement {
 
 struct CompoundStatement {
 	ArrayList *nested_statements;
+	Scope *local_scope;
 };
 
 struct ExpressionStatement {

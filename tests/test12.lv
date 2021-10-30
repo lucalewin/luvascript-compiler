@@ -1,0 +1,6 @@
+const EXIT_SUCCESS: int = 0;
+const EXIT_FAILURE: int = 1;
+
+function main(): int {
+	return EXIT_SUCCESS + EXIT_FAILURE;
+}

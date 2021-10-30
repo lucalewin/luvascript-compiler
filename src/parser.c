@@ -245,8 +245,6 @@ Function *expectFunction() {
 	function->parameters = arraylist_create();
 
 	if (!is(TOKEN_RPAREN)) {
-		// TODO: implement parameter parsing
-
 		while(1) {
 			Variable *parameter = calloc(1, sizeof(Variable));
 			
@@ -302,14 +300,7 @@ Function *expectFunction() {
 		exit(1);
 	}
 
-	if (strcmp(current->data, "int") == 0) {
-		function->return_type_old = 32;
-	} else {
-		free(function->identifier);
-		free(function);
-		log_error("unexpected type identifier at [%d:%d]: %s\n", current->line, current->pos, current->data);
-		exit(1);
-	}
+	function->return_type = parse_datatype(current->data);
 	next();
 
 	eat(TOKEN_LBRACE);
