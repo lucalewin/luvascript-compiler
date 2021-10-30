@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <util/util.h>
 #include <logging/logger.h>
 
 #include <types/variable.h>
@@ -15,87 +16,74 @@ void scope_evaluate_ast(AST *ast) {
 	// initialize a empty global scope
 	ast->global_scope = scope_new();
 
+	// convert variables to variable templates + add them to the global scope
 	for (size_t i = 0; i < ast->global_variables->size; i++) {
-		arraylist_add(ast->global_scope->variables, arraylist_get(ast->global_variables, i));
+		Variable *var = arraylist_get(ast->global_variables, i);
+		arraylist_add(ast->global_scope->global_variable_templates, convert_to_variable_template(var));
 	}
 
-	for (int i = 0; i < ast->functions->size; i++) {
+	// convert functions to function templates + add them to the global scope
+	for (size_t i = 0; i < ast->functions->size; i++) {
 		Function *func = arraylist_get(ast->functions, i);
-		arraylist_add(ast->global_scope->functions, func);
+
+		FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));
+		func_template->identifier = func->identifier;
+		func_template->return_type = func->return_type;
+		func_template->param_datatypes = arraylist_create();
+
+		// convert function parameters to variable templates
+		for (size_t j = 0; j < func->parameters->size; j++) {
+			Variable *param = arraylist_get(func->parameters, j);
+			VariableTemplate *var_template = convert_to_variable_template(param);
+			arraylist_add(func_template->param_datatypes, var_template);
+		}
+
+		arraylist_add(ast->global_scope->function_templates, func_template);
 	}
 
-	for (int i = 0; i < ast->functions->size; i++) {
+	// external functions are already function templates -> add them directly to the global scope
+	arraylist_addall(ast->global_scope->function_templates, ast->extern_functions);
+
+	// evaluate scopes for all functions
+	for (size_t i = 0; i < ast->functions->size; i++) {
 		Function *func = arraylist_get(ast->functions, i);
-		func->global_scope = ast->global_scope;
+		func->scope = scope_copy(ast->global_scope);
 		scope_evaluate_function(func);
 	}
-
-	for (size_t i = 0; i < ast->global_scope->variables->size; i++)	{
-		Variable *var = arraylist_get(ast->global_scope->variables, i);
-		log_debug("var: %s\n", var->identifier->value);
-	}
-	
 }
 
 void scope_evaluate_function(Function *function) {
-	// log_debug("scope_evaluate_function(): evaluating scope of function '%s'\n", function->identifier);
+	log_debug("scope_evaluate_function()\n");
 
-	function->local_scope = scope_new();
-
-	// add function params to local scope
+	// add parameter templates to local variables
 	for (size_t i = 0; i < function->parameters->size; i++) {
 		Variable *parameter = arraylist_get(function->parameters, i);
-		
-		if (scope_contains_variable_name(function->local_scope, parameter->identifier->value)) {
+
+		if (scope_contains_local_variable(function->scope, parameter->identifier->value)) {
 			log_error("variable already defined\n");
+			// TODO(lucalewin): free memory
 			exit(1);
 		}
 
-		scope_add_variable(function->local_scope, parameter);
+		arraylist_add(function->scope->local_variable_templates, convert_to_variable_template(parameter));
 	}
 
-	// add global variables to function scope
-	for (size_t i = 0; i < function->global_scope->variables->size; i++) {
-		Variable *global_var = arraylist_get(function->global_scope->variables, i);
-		if (!scope_contains_variable_name(function->local_scope, global_var->identifier->value)) {
-			scope_add_variable(function->local_scope, global_var);
-		}
-	}
-
-	// evaluate scope of statements
+	// evaluate scopes of function statements
 	for (size_t i = 0; i < function->body_statements->size; i++) {
 		Statement *stmt = arraylist_get(function->body_statements, i);
-
-		stmt->parent_scope = function->local_scope;
-
-		Scope *stmt_scope = scope_new();
-		stmt_scope->functions = function->global_scope->functions;
-		stmt_scope->variables = arraylist_create();
-		arraylist_addall(stmt_scope->variables, function->global_scope->variables);
-		arraylist_addall(stmt_scope->variables, function->local_scope->variables);
-
-		stmt->local_scope = stmt_scope;
-
-		scope_evaluate_statement(stmt);
+		stmt->scope = scope_copy(function->scope);
+		scope_evaluate_statement(stmt, function->scope);
 	}
-
-	// log_debug("scope_evaluate_function(): finished scope evaluation of function '%s'\n", function->identifier);
 }
 
-void scope_evaluate_statement(Statement *stmt) {
+// ----------------------------------------------------------------
 
-	for (int i = 0; i < stmt->local_scope->variables->size; i++) {
-		Variable *var = arraylist_get(stmt->local_scope->variables, i);
-		log_debug("stmt_local_scope_var: %s\n", var->identifier->value);
-	}
-	for (int i = 0; i < stmt->parent_scope->variables->size; i++) {
-		Variable *var = arraylist_get(stmt->parent_scope->variables, i);
-		log_debug("stmt_parent_scope_var: %s\n", var->identifier->value);
-	}
+void scope_evaluate_statement(Statement *stmt, Scope *parent_scope) {
+	// log_debug("scope_evaluate_statement()\n");
 
 	switch (stmt->type) {
 		case STATEMENT_COMPOUND:
-			// TODO
+			// TODO(lucalewin)
 			break;
 
 		case STATEMENT_EXPRESSION:
@@ -109,13 +97,13 @@ void scope_evaluate_statement(Statement *stmt) {
 
 			Variable *var = stmt->stmt.variable_decl->var;
 
-			if (scope_contains_variable_name(stmt->local_scope, var->identifier->value)) {
+			if (scope_contains_local_variable(stmt->scope, var->identifier->value)) {
 				log_error("variable '%s' is already defined!\n", var->identifier->value);
-				// TODO: free memory
+				// TODO(lucalewin): free memory
 				exit(1);
 			}
 
-			scope_add_variable(stmt->parent_scope, var);
+			arraylist_add(parent_scope->local_variable_templates, convert_to_variable_template(var));
 
 			break;
 		}
@@ -128,88 +116,128 @@ void scope_evaluate_statement(Statement *stmt) {
 
 // -----------------------------------------------------------
 
+// TODO(lucalewin) add documentation
 Scope *scope_new() {
 	Scope *scope = calloc(1, sizeof(Scope));
-	scope->variables = arraylist_create();
-	scope->functions = arraylist_create();
+	scope->global_variable_templates = arraylist_create();
+	scope->local_variable_templates = arraylist_create();
 	scope->function_templates = arraylist_create();
 	return scope;
 }
 
+// TODO(lucalewin) add documentation
 Scope *scope_copy(Scope *scope) {
 	Scope *copy = calloc(1, sizeof(Scope));
-	copy->variables = arraylist_copy(scope->variables);
+	// copy->variables_old = arraylist_copy(scope->variables_old);
+	copy->global_variable_templates = arraylist_copy(scope->global_variable_templates);
+	copy->local_variable_templates = arraylist_copy(scope->local_variable_templates);
+	copy->function_templates = arraylist_copy(scope->function_templates);
 	return copy;
 }
 
-int scope_contains_variable_name(Scope *scope, char *name) {
-	for (int i = 0; i < scope->variables->size; i++) {
-		Variable *var = arraylist_get(scope->variables, i);
-		if (strcmp(name, var->identifier->value) == 0) {
-			return 1; // true
-		}
-	}
-	return 0; // false
-}
-
-int scope_contains_function_name(Scope *scope, char *func_name) {
-	for (int i = 0; i < scope->functions->size; i++) {
-		Function *function = arraylist_get(scope->functions, i);
-		if (strcmp(func_name, function->identifier) == 0) {
-			return 1; // true
-		}
-	}
-	return 0; // false
-}
-
-void scope_add_variable(Scope *scope, Variable *var) {
-	arraylist_add(scope->variables, var);
-}
-
-void scope_add_function(Scope *scope, Function *function) {
-	arraylist_add(scope->functions, function);
-}
-
-void scope_remove_variable(Scope *scope, char *var_name) {
-	for (int i = 0; i < scope->variables->size; i++) {
-		Variable *var = arraylist_get(scope->variables, i);
-		if (strcmp(var_name, var->identifier->value) == 0) {
-			arraylist_remove_at_index(scope->variables, i);
-			return;
-		}
-	}
-}
-
-Variable *scope_get_variable_by_name(Scope *scope, char *var_name) {
-	for (int i = 0; i < scope->variables->size; i++) {
-		Variable *var = arraylist_get(scope->variables, i);
-		if (strcmp(var_name, var->identifier->value) == 0) {
-			return var;
-		}
-	}
-	return NULL;
-}
-
-Function *scope_get_function_by_name(Scope *scope, char *func_name) {
-	for (int i = 0; i < scope->functions->size; i++) {
-		Function *func = arraylist_get(scope->functions, i);
-		if (strcmp(func_name, func->identifier) == 0) {
-			return func;
-		}
-	}
-	return NULL;
-}
-
+// TODO(lucalewin) add documentation
 int scope_get_variable_rbp_offset(Scope *scope, char *var_name) {
 	int offset = 0;
-	for (int i = 0; i < scope->variables->size; i++) {
-		Variable *var = arraylist_get(scope->variables, i);
-		if (strcmp(var_name, var->identifier->value) == 0) {
+	for (size_t i = 0; i < scope->local_variable_templates->size; i++) {
+		VariableTemplate *var_template = arraylist_get(scope->local_variable_templates, i);
+		if (strcmp(var_name, var_template->identifier) == 0) {
 			break;
 		}
-		// offset += var->datatype_old / 8;
-		offset += var->datatype->size;
+		offset += var_template->datatype->size;
 	}
 	// in bytes 0..7 the old value of rbp is store -> add 8 bytes to avoid overwriting old value of rbp
 	return offset + 8;
+}
+
+// -------------------------------
+
+// TODO(lucalewin) add documentation
+int scope_contains_variable(Scope *scope, char *var_name) {
+	return scope_contains_local_variable(scope, var_name) || scope_contains_global_variable(scope, var_name);
+}
+
+// TODO(lucalewin) add documentation
+int scope_contains_local_variable(Scope *scope, char *var_name) {
+	for (int i = 0; i < scope->local_variable_templates->size; i++) {
+		VariableTemplate *local_variable_template = arraylist_get(scope->local_variable_templates, i);
+		if (strcmp(local_variable_template->identifier, var_name) == 0) {
+			return 1; // true
+		}
+	}
+	return 0; // false
+}
+
+// TODO(lucalewin) add documentation
+int scope_contains_global_variable(Scope *scope, char *var_name) {
+	for (int i = 0; i < scope->global_variable_templates->size; i++) {
+		VariableTemplate *global_variable_template = arraylist_get(scope->global_variable_templates, i);
+		if (strcmp(global_variable_template->identifier, var_name) == 0) {
+			return 1; // true
+		}
+	}
+	return 0; // false
+}
+
+// TODO(lucalewin) add documentation
+char *scope_get_variable_address(Scope *scope, char *var_name) {
+	if (!scope_contains_variable(scope, var_name)) {
+		log_error("undefined variable '%s'\n", var_name);
+		return NULL;
+	}
+
+	char *address;
+
+	if (scope_contains_local_variable(scope, var_name)) {
+		address = straddall("rbp-", int_to_string(scope_get_variable_rbp_offset(scope, var_name)), NULL);
+	} else {
+		// variable is a global variable
+		address = calloc(strlen(var_name) + 1, sizeof(char));
+		address = strcpy(address, var_name);
+	}
+
+	return address;
+}
+
+// TODO(lucalewin) add documentation
+int scope_contains_function(Scope *scope, char *func_name) {
+	for (int i = 0; i < scope->function_templates->size; i++) {
+		FunctionTemplate *func_template = arraylist_get(scope->function_templates, i);
+		if (strcmp(func_template->identifier, func_name) == 0) {
+			return 1; // true
+		}
+	}
+	return 0; // false
+}
+
+// TODO(lucalewin) add documentation
+VariableTemplate *scope_get_variable_by_name(Scope *scope, char *var_name) {
+	for (int i = 0; i < scope->local_variable_templates->size; i++) {
+		VariableTemplate *local_variable_template = arraylist_get(scope->local_variable_templates, i);
+		if (strcmp(local_variable_template->identifier, var_name) == 0) {
+			return local_variable_template;
+		}
+	}
+
+	for (int i = 0; i < scope->global_variable_templates->size; i++) {
+		VariableTemplate *global_variable_template = arraylist_get(scope->global_variable_templates, i);
+		if (strcmp(global_variable_template->identifier, var_name) == 0) {
+			return global_variable_template;
+		}
+	}
+
+	// variable with name $var_name does not exist in the current scope
+	return NULL;
+}
+
+// TODO(lucalewin) add documentation
+FunctionTemplate *scope_get_function_by_name(Scope *scope, char *func_name) {
+	for (int i = 0; i < scope->function_templates->size; i++) {
+		FunctionTemplate *func_template = arraylist_get(scope->function_templates, i);
+		if (strcmp(func_template->identifier, func_name) == 0) {
+			return func_template;
+		}
+	}
+
+	// function with name $func_name does not exist in the current scope
+	return NULL;
 }
