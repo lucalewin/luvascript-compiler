@@ -19,7 +19,7 @@ do
     echo ""
 
 	# compile the test file with the previously built project binary
-    ../bin/lvc "$file"
+    ../bin/lvc -S "$file"
 
 	# execute the generated binary file
     ./a.out
