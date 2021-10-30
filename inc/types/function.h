@@ -8,11 +8,9 @@
 typedef struct _function {
 	char *identifier;
 	ArrayList *parameters;
-	int return_type_old;
 	Datatype *return_type;
-	Scope *global_scope;
-	Scope *local_scope;
 	ArrayList *body_statements;
+	Scope *scope;
 	unsigned int is_extern : 1;
 } Function;
 
