@@ -77,17 +77,15 @@ char *compile_to_x86_64_assembly(AST *root) {
 	char *asm_code = calloc(1, sizeof(char));
 
 	if (root->global_variables->size > 0) {
-
 		asm_code = stradd(asm_code, "section .data\n");
 
 		for (size_t i = 0; i < root->global_variables->size; i++) {
 			asm_code = stradd(asm_code, compile_global_variable(arraylist_get(root->global_variables, i)));
 		}
-
 	}
 
 	// check if main method is defined
-	if (scope_contains_function_name(root->global_scope, "main")) {
+	if (scope_contains_function(root->global_scope, "main")) {
 		// main function is defined
 		asm_code = stradd(asm_code, header_template);
 		asm_code = stradd(asm_code, "call main\n");
@@ -152,9 +150,9 @@ char *compile_function(Function *function) {
 	// align stack
 
 	size_t size_for_stack_align = 0;
-	for (int i = 0; i < function->local_scope->variables->size; i++) {
-		Variable *var = arraylist_get(function->local_scope->variables, i);
-		size_for_stack_align += var->datatype->size;
+	for (int i = 0; i < function->scope->local_variable_templates->size; i++) {
+		VariableTemplate *var_template = arraylist_get(function->scope->local_variable_templates, i);
+		size_for_stack_align += var_template->datatype->size;
 	}
 
 	if (size_for_stack_align != 0) {
@@ -172,37 +170,37 @@ char *compile_function(Function *function) {
 		case 6: {
 			Variable *param = arraylist_get(function->parameters, 5);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
 			function_code = stradd(function_code, "], r9\n");
 		}
 		case 5: {
 			Variable *param = arraylist_get(function->parameters, 4);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
 			function_code = stradd(function_code, "], r8\n");
 		}
 		case 4: {
 			Variable *param = arraylist_get(function->parameters, 3);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
 			function_code = stradd(function_code, "], ecx\n");
 		}
 		case 3: {
 			Variable *param = arraylist_get(function->parameters, 2);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
 			function_code = stradd(function_code, "], edx\n");
 		}
 		case 2: {
 			Variable *param = arraylist_get(function->parameters, 1);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
 			function_code = stradd(function_code, "], esi\n");
 		}
 		case 1: {
 			Variable *param = arraylist_get(function->parameters, 0);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->local_scope, param->identifier->value)));
+			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
 			function_code = stradd(function_code, "], edi\n");
 		}
 		case 0:
@@ -226,16 +224,16 @@ char *compile_statement(Statement *stmt) {
 	// log_debug("compile_statement(): statement type = %s\n", STATEMENT_TYPES[stmt->type]);
 	switch(stmt->type) {
 		case STATEMENT_RETURN:
-			return compile_return_statement(stmt->stmt.return_statement, stmt->parent_scope);
+			return compile_return_statement(stmt->stmt.return_statement, stmt->scope);
 
 		case STATEMENT_COMPOUND:
-			return compile_compound_statement(stmt->stmt.compound_statement, stmt->local_scope);
+			return compile_compound_statement(stmt->stmt.compound_statement, stmt->scope);
 
 		case STATEMENT_VARIABLE_DECLARATION:
-			return compile_variable_declaration_statement(stmt->stmt.variable_decl, stmt->parent_scope);
+			return compile_variable_declaration_statement(stmt->stmt.variable_decl, stmt->scope);
 
 		case STATEMENT_EXPRESSION:
-			return compile_expression_statement(stmt->stmt.expression_statement, stmt->parent_scope);
+			return compile_expression_statement(stmt->stmt.expression_statement, stmt->scope);
 
 		default:
 			log_error("compile_statement(): unexpected statement type '%s'\n", STATEMENT_TYPES[stmt->type]);
@@ -246,9 +244,9 @@ char *compile_statement(Statement *stmt) {
 char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope) {
 	// calculate size for stack align
 	size_t size_for_stack_align = 0;
-	for (int i = 0; i < scope->variables->size; i++) {
-		Variable *var = arraylist_get(scope->variables, i);
-		size_for_stack_align += var->datatype->size;
+	for (int i = 0; i < scope->local_variable_templates->size; i++) {
+		VariableTemplate *var_template = arraylist_get(scope->local_variable_templates, i);
+		size_for_stack_align += var_template->datatype->size;
 	}
 
 	// compile to assembly
@@ -275,17 +273,17 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 }
 
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
-	log_debug("before expression compilation\n");
+	// log_debug("before expression compilation\n");
 
 	char *ret_stmt_code = compile_expression(ret_stmt->return_expression, scope);
 
-	log_debug("after expression compilation\n");
+	// log_debug("after expression compilation\n");
 
 	// reset base pointer
 	size_t size_for_stack_align = 0;
-	for (int i = 0; i < scope->variables->size; i++) {
-		Variable *var = arraylist_get(scope->variables, i);
-		size_for_stack_align += var->datatype->size;
+	for (int i = 0; i < scope->local_variable_templates->size; i++) {
+		VariableTemplate *var_template = arraylist_get(scope->local_variable_templates, i);
+		size_for_stack_align += var_template->datatype->size;
 	}
 
 	if (size_for_stack_align != 0) {
@@ -394,43 +392,116 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					break;
 				}
 				case LITERAL_IDENTIFIER: {
-					Variable *var = scope_get_variable_by_name(scope, literal->value);
+					if (!scope_contains_variable(scope, literal->value)) {
+						log_error("undefined variable '%s'\n", literal->value);
+						free(bin_expr_code);
+						return NULL;
+					}
 
-					switch (var->datatype->size) {
+					VariableTemplate *var_template = scope_get_variable_by_name(scope, literal->value);
+					char *var_address = scope_get_variable_address(scope, literal->value);
+
+					switch (var_template->datatype->size) {
 						case 1: // BYTE
+							switch (bin_expr->operator) {
+								case BINARY_OPERATOR_PLUS:
+									bin_expr_code = straddall(bin_expr_code, "add al, BYTE[", var_address, "]\n", NULL);
+									break;
+								case BINARY_OPERATOR_MINUS:
+									bin_expr_code = straddall(bin_expr_code, "sub al, BYTE[", var_address, "]\n", NULL);
+									break;
+								case BINARY_OPERATOR_MULTIPLY:
+									bin_expr_code = straddall(bin_expr_code, 
+										"mov bl, BYTE[", var_address, "]\n"
+										"imul bl\n", NULL);
+									break;
+								case BINARY_OPERATOR_DIVIDE:
+									bin_expr_code = straddall(bin_expr_code, 
+										"mov bl, BYTE[", var_address, "]\n"
+										"idiv bl\n", NULL);
+									break;
+								default:
+									log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+									free(bin_expr_code);
+									return NULL;
+							}
 							break;
 						case 2: // WORD
+							switch (bin_expr->operator) {
+								case BINARY_OPERATOR_PLUS:
+									bin_expr_code = straddall(bin_expr_code, "add ax, WORD[", var_address, "]\n", NULL);
+									break;
+								case BINARY_OPERATOR_MINUS:
+									bin_expr_code = straddall(bin_expr_code, "sub ax, WORD[", var_address, "]\n", NULL);
+									break;
+								case BINARY_OPERATOR_MULTIPLY:
+									bin_expr_code = straddall(bin_expr_code, 
+										"mov bx, WORD[", var_address, "]\n"
+										"imul bx\n", NULL);
+									break;
+								case BINARY_OPERATOR_DIVIDE:
+									bin_expr_code = straddall(bin_expr_code, 
+										"mov bx, WORD[", var_address, "]\n"
+										"idiv bx\n", NULL);
+									break;
+								default:
+									log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+									free(bin_expr_code);
+									return NULL;
+							}
 							break;
 						case 4: { // DWORD
-							if (bin_expr->operator == BINARY_OPERATOR_PLUS) {
-								bin_expr_code = stradd(bin_expr_code, "add eax, DWORD[rbp-");
-								bin_expr_code = stradd(bin_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, literal->value)));
-								bin_expr_code = stradd(bin_expr_code, "]\n");
-							} else if (bin_expr->operator == BINARY_OPERATOR_MINUS) {
-								bin_expr_code = stradd(bin_expr_code, "sub eax, DWORD[rbp-");
-								bin_expr_code = stradd(bin_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, literal->value)));
-								bin_expr_code = stradd(bin_expr_code, "]\n");
-							} else if (bin_expr->operator == BINARY_OPERATOR_MULTIPLY) {
-								bin_expr_code = stradd(bin_expr_code, "mov ebx, DWORD[rbp-");
-								bin_expr_code = stradd(bin_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, literal->value)));
-								bin_expr_code = stradd(bin_expr_code, "]\n");
-								bin_expr_code = stradd(bin_expr_code, "imul ebx\n");
-							} else if (bin_expr->operator == BINARY_OPERATOR_DIVIDE) {
-								bin_expr_code = stradd(bin_expr_code, "mov ebx, DWORD[rbp-");
-								bin_expr_code = stradd(bin_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, literal->value)));
-								bin_expr_code = stradd(bin_expr_code, "]\n");
-								bin_expr_code = stradd(bin_expr_code, "idiv ebx\n");
-							} else {
-								log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-								exit(1);
+							switch (bin_expr->operator) {
+								case BINARY_OPERATOR_PLUS:
+									bin_expr_code = straddall(bin_expr_code, "add eax, DWORD[", var_address, "]\n", NULL);
+									break;
+								case BINARY_OPERATOR_MINUS:
+									bin_expr_code = straddall(bin_expr_code, "sub eax, DWORD[", var_address, "]\n", NULL);
+									break;
+								case BINARY_OPERATOR_MULTIPLY:
+									bin_expr_code = straddall(bin_expr_code, 
+										"mov ebx, DWORD[", var_address, "]\n"
+										"imul ebx\n", NULL);
+									break;
+								case BINARY_OPERATOR_DIVIDE:
+									bin_expr_code = straddall(bin_expr_code, 
+										"mov ebx, DWORD[", var_address, "]\n"
+										"idiv ebx\n", NULL);
+									break;
+								default:
+									log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+									free(bin_expr_code);
+									return NULL;
 							}
 							break;
 						}
 						case 8: // QWORD
+							switch (bin_expr->operator) {
+								case BINARY_OPERATOR_PLUS:
+									bin_expr_code = straddall(bin_expr_code, "add rax, QWORD[", var_address, "]\n", NULL);
+									break;
+								case BINARY_OPERATOR_MINUS:
+									bin_expr_code = straddall(bin_expr_code, "sub rax, QWORD[", var_address, "]\n", NULL);
+									break;
+								case BINARY_OPERATOR_MULTIPLY:
+									bin_expr_code = straddall(bin_expr_code, 
+										"mov rbx, QWORD[", var_address, "]\n"
+										"imul rbx\n", NULL);
+									break;
+								case BINARY_OPERATOR_DIVIDE:
+									bin_expr_code = straddall(bin_expr_code, 
+										"mov rbx, QWORD[", var_address, "]\n"
+										"idiv rbx\n", NULL);
+									break;
+								default:
+									log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+									free(bin_expr_code);
+									return NULL;
+							}
 							break;
 
 						default:
-							log_error("unknown datatype size: %d\n", var->datatype->size);
+							log_error("unknown datatype size: %d\n", var_template->datatype->size);
 							exit(1);
 							break;
 					}
@@ -446,11 +517,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 		case EXPRESSION_BINARY:
 		case EXPRESSION_NESTED: 
 		case EXPRESSION_FUNCTION_CALL: {
-			// log_warning("expression type: %s\n", EXPRESSION_TYPES[bin_expr->expression_right->type]);
-
 			char *right_expr_code = compile_expression(bin_expr->expression_right, scope);
-
-			// log_warning("right_expr_code = %s\n", right_expr_code);
 
 			bin_expr_code = straddall(bin_expr_code, 
 					"push rax\n",
@@ -458,21 +525,13 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					"mov rbx, rax\n",
 					"pop rax\n", NULL);
 
-			// log_warning("after straddall\n");
-
-			// log_debug("bin expr operator type: %d\n", bin_expr->operator);
-
 			switch (bin_expr->operator) {
 				case BINARY_OPERATOR_PLUS:
-					// log_debug("before stradd\n");
 					bin_expr_code = stradd(bin_expr_code, "add rax, rbx\n");
-					// log_debug("after stradd\n");
 					break;
 
 				case BINARY_OPERATOR_MINUS:
-					// log_debug("before stradd\n");
 					bin_expr_code = stradd(bin_expr_code, "sub rax, rbx\n");
-					// log_debug("after stradd\n");
 					break;
 
 				case BINARY_OPERATOR_MULTIPLY:
@@ -510,23 +569,30 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 			break;
 		}
 		case LITERAL_IDENTIFIER: {
-			Variable *var = scope_get_variable_by_name(scope, literal->value);
+			if (!scope_contains_variable(scope, literal->value)) {
+				log_error("undefined variable '%s'\n", literal->value);
+				free(literal_expr_code);
+				return NULL;
+			}
 
-			log_debug("var: %s\n", var);
-			switch (var->datatype->size) {
+			VariableTemplate *var_template = scope_get_variable_by_name(scope, literal->value);
+			char *var_address = scope_get_variable_address(scope, literal->value);
+
+			switch (var_template->datatype->size) {
 				case 1: // BYTE
+					literal_expr_code = straddall(literal_expr_code, "mov al, BYTE[", var_address, "]\n", NULL);
 					break;
 				case 2: // WORD
+					literal_expr_code = straddall(literal_expr_code, "mov ax, WORD[", var_address, "]\n", NULL);
 					break;
 				case 4: // DWORD
-					literal_expr_code = stradd(literal_expr_code, "mov eax, DWORD[rbp-");
-					literal_expr_code = stradd(literal_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, literal->value)));
-					literal_expr_code = stradd(literal_expr_code, "]\n");
+					literal_expr_code = straddall(literal_expr_code, "mov eax, DWORD[", var_address, "]\n", NULL);
 					break;
 				case 8: // QWORD
+					literal_expr_code = straddall(literal_expr_code, "mov rax, QWORD[", var_address, "]\n", NULL);
 					break;
 				default:
-					log_error("unknown datatype size: %d\n", var->datatype->size);
+					log_error("unknown datatype size: %d\n", var_template->datatype->size);
 					exit(1);
 					break;
 			}
@@ -550,24 +616,9 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 				unary_expr_code = stradd(unary_expr_code, unary_expr->identifier->value);
 				unary_expr_code = stradd(unary_expr_code, "\n");
 			} else if (unary_expr->identifier->type == LITERAL_IDENTIFIER) {
-				Variable *var = scope_get_variable_by_name(scope, unary_expr->identifier->value);
-				switch (var->datatype->size) {
-					case 1: // BYTE
-						break;
-					case 2: // WORD
-						break;
-					case 4: // DWORD
-						unary_expr_code = stradd(unary_expr_code, "mov eax, DWORD[rbp-");
-						unary_expr_code = stradd(unary_expr_code, int_to_string(scope_get_variable_rbp_offset(scope, var->identifier->value)));
-						unary_expr_code = stradd(unary_expr_code, "]\n");
-						break;
-					case 5: // QWORD
-						break;	
-					default:
-						log_error("unknown datatype size: %d\n", var->datatype->size);
-						exit(1);
-						break;
-				}
+
+				unary_expr_code = stradd(unary_expr_code, compile_literal_expression(unary_expr->identifier, scope));
+
 			} else {
 				log_error("unary negation with string-literal is not supported\n");
 				exit(1);
@@ -584,6 +635,23 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 }
 
 char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr, Scope *scope) {
+	// check if function exists in the current scope
+	if (!scope_contains_function(scope, func_call_expr->function_identifier)) {
+		log_error("function '%s' does not exist in the current scope\n", func_call_expr->function_identifier);
+		return NULL;
+	}
+
+	// check if parameter count matches
+	// TODO(lucalewin): check if parameter types match
+	FunctionTemplate *func_template = scope_get_function_by_name(scope, func_call_expr->function_identifier);
+	if (func_template->param_datatypes->size != func_call_expr->argument_expression_list->size) {
+		log_error("expected %d arguments for function '%s' but got %d instead\n", 
+				func_template->param_datatypes->size, 
+				func_template->identifier, 
+				func_call_expr->argument_expression_list->size);
+		return NULL;
+	}
+
 	char *func_call_expr_code = calloc(1, sizeof(char));
 
 	// log_debug("compile_function_call_expression(): args.count = %d\n", func_call_expr->argument_expression_list->size);
@@ -636,8 +704,6 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 
 	func_call_expr_code = straddall(func_call_expr_code, "call ", func_call_expr->function_identifier, "\n", NULL);
 
-	// log_debug("compile_function_call_expression(): func_call_expr_code = %s\n", func_call_expr_code);
-
 	return func_call_expr_code;
 }
 
@@ -656,43 +722,37 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 			exit(1);
 		}
 
-		if (!scope_contains_variable_name(scope, identifier->value)) {
-			log_error("variable '%s' is not defined in the current scope\n");
-			exit(1);
+		if (!scope_contains_variable(scope, identifier->value)) {
+			log_error("undefined variable '%s'\n", identifier->value);
+			free(assignment_expr_code);
+			return NULL;
 		}
 
-		Variable *var = scope_get_variable_by_name(scope, identifier->value);
-
-		if (var->is_constant) {
-			log_error("cannot assign value to a constant\n");
-			exit(1);
-		}
-
-		char *rbp_offset_str = int_to_string(scope_get_variable_rbp_offset(scope, identifier->value));
+		char *var_address = scope_get_variable_address(scope, identifier->value);
 
 		switch (assignment_expr->operator) {
 			case ASSIGNMENT_OPERATOR_DEFAULT:
-				assignment_expr_code = straddall(assignment_expr_code, "mov DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "mov DWORD[", var_address, "], eax\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_ADD:
-				assignment_expr_code = straddall(assignment_expr_code, "add DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "add DWORD[", var_address, "], eax\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_SUBTRACT:
-				assignment_expr_code = straddall(assignment_expr_code, "sub DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "sub DWORD[", var_address, "], eax\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_MULTIPLY:
-				assignment_expr_code = straddall(assignment_expr_code, "imul DWORD[rbp-", rbp_offset_str, "]\nmov DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "imul DWORD[", var_address, "]\nmov DWORD[", var_address, "], eax\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_DIVIDE:
 				assignment_expr_code = straddall(assignment_expr_code, 
 							"mov rbx, rax\n"
-							"mov eax, DWORD[rbp-", rbp_offset_str, "]\n"
+							"mov eax, DWORD[", var_address, "]\n"
 							"idiv ebx\n"
-							"mov DWORD[rbp-", rbp_offset_str, "], eax\n", NULL);
+							"mov DWORD[", var_address, "], eax\n", NULL);
 				break;
 
 			default:
