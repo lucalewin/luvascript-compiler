@@ -1,0 +1,5 @@
+const RETURN_VALUE: int = 40;
+
+function main(): int {
+	return RETURN_VALUE;
+}
