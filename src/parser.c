@@ -89,6 +89,12 @@ int isUnaryOperator(Token *t) {
 
 // -----------------------------------------------------------------------------------
 
+// function prototypes
+
+Variable *parseVariable();
+
+// -----------------------------------------------------------------------------------
+
 AST *parse(ArrayList *token_list) {
     tokens = token_list;
     _index = 0;
@@ -100,6 +106,7 @@ AST *parse(ArrayList *token_list) {
 
 	root->functions = arraylist_create();
 	root->extern_functions = arraylist_create();
+	root->global_variables = arraylist_create();
 
 	while (_index < tokens->size) {
 		if (strcmp(current->data, "function") == 0) {
@@ -107,8 +114,13 @@ AST *parse(ArrayList *token_list) {
 			arraylist_add(root->functions, func);
 		} else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
 			// expect global variable/constant declaration
-			log_error("global variables are not supported yet\n");
-			exit(1);
+			
+			Variable *glob_var = parseVariable();
+
+			arraylist_add(root->global_variables, glob_var);
+
+			// log_error("global variables are not supported yet\n");
+			// exit(1);
 		} else if (strcmp(current->data, "extern") == 0) {
 			// expect extern function declaration
 			FunctionTemplate *extern_func_template = expectExternFunctionTemplate();
@@ -116,6 +128,8 @@ AST *parse(ArrayList *token_list) {
 		} else {
 			log_error("unexpected token '%s' with value '%s' at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->data, current->line, current->pos);
 			arraylist_free(root->functions);
+			arraylist_free(root->extern_functions);
+			arraylist_free(root->global_variables);
 			free(root);
 			// TODO: implement freeing of tokenlist in caller method
 			// for (size_t i = token_list->size - 1; i >= 0; i--) {
@@ -313,6 +327,90 @@ Function *expectFunction() {
 	return function;
 }
 
+Variable *parseVariable() {
+
+	Variable *variable = calloc(1, sizeof(Variable));
+	if (variable == NULL) {
+		log_error("unable to allocate memory for Variable\n");
+		exit(1);
+	}
+
+	if (strcmp(current->data, "var") == 0) {
+		variable->is_constant = 0;
+	} else if (strcmp(current->data, "const") == 0) {
+		variable->is_constant = 1;
+	} else {
+		log_error("unexpected token '%s' at [%d:%d], expected 'var' or 'const' keyword\n", current->data, current->line, current->pos);
+		exit(1);
+	}
+
+	eat(TOKEN_KEYWORD); // 'var' keyword
+	expect(TOKEN_IDENDIFIER); // the identifier of the variable
+	// save identifier for later
+	Literal_T *identifier = calloc(1, sizeof(Literal_T));
+	if (identifier == NULL) {
+		free(variable);
+		log_error("unable to allocate memory for Literal_T\n");
+		exit(1);
+	}
+
+	identifier->type = LITERAL_IDENTIFIER;
+	identifier->value = calloc(strlen(current->data), sizeof(char));
+	strcpy(identifier->value, current->data);
+
+	variable->identifier = identifier;
+
+	next();
+	eat(TOKEN_COLON);
+
+	// expect type identifier
+	// this could be a keyword, aka. a primitive type
+	// or an identifier
+	if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
+		log_error("parseVariable(): expected type identifier at [%d:%d]", current->line, current->pos);
+		exit(1);
+	}
+
+	variable->datatype = parse_datatype(current->data);
+	next();
+
+	if (is(TOKEN_SEMICOLON)) {
+		eat(TOKEN_SEMICOLON);
+		Literal_T *default_value = calloc(1, sizeof(Literal_T));
+		if (default_value == NULL) {
+			free(variable);
+			free(identifier);
+			log_error("parseVariable(): cannot allocate memory for default_value\n");
+			exit(1);
+		}
+
+		default_value->type = LITERAL_NUMBER;
+		default_value->value = "0";
+
+		Expression_T *default_value_expr = calloc(1, sizeof(Expression_T));
+		if (default_value_expr == NULL) {
+			free(variable);
+			free(identifier);
+			free(default_value);
+			log_error("parseVariable(): cannot allocate memory for default_value_expr\n");
+			exit(1);
+		}
+
+		default_value_expr->type = EXPRESSION_LITERAL;
+		default_value_expr->expr.literal_expr = default_value;
+		variable->default_value = default_value_expr;
+	} else if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
+		// default value assignment
+		eat(TOKEN_ASSIGNMENT_SIMPLE);
+
+		Expression_T *default_value = expectExpression();
+		variable->default_value = default_value;
+	}
+	eat(TOKEN_SEMICOLON);
+
+	return variable;
+}
+
 Statement *expectStatement() {
     if (is(TOKEN_LBRACE)) {
         return expectCompoundStatement();
@@ -401,7 +499,9 @@ Statement *expectJumpStatement() {
         eat(TOKEN_SEMICOLON);
     } else {
         free(statement);
-        error("unexpected keyword at [line:column]");
+        // error("unexpected keyword at [line:column]");
+		log_error("unexpected keyword '%s' at [%d:%d]\n", current->data, current->line, current->pos);
+		exit(1);
     }
 
     return statement;
@@ -424,97 +524,7 @@ Statement *expectVariableDeclarationStatement() {
 	statement->stmt.variable_decl = var_decl_stmt;
 	statement->type = STATEMENT_VARIABLE_DECLARATION;
 
-	Variable *variable = calloc(1, sizeof(Variable));
-	if (variable == NULL) {
-		free(statement);
-		free(var_decl_stmt);
-		log_error("unable to allocate memory for Variable\n");
-		exit(1);
-	}
-
-	var_decl_stmt->var = variable;
-
-	if (strcmp(current->data, "var") == 0) {
-		variable->is_constant = 0;
-	} else {
-		// it's `const`
-		variable->is_constant = 1;
-	}
-
-	eat(TOKEN_KEYWORD); // 'var' keyword
-	expect(TOKEN_IDENDIFIER); // the identifier of the variable
-	// save identifier for later
-	Literal_T *identifier = calloc(1, sizeof(Literal_T));
-	if (identifier == NULL) {
-		free(statement);
-		free(var_decl_stmt);
-		free(variable);
-		log_error("unable to allocate memory for Literal_T\n");
-		exit(1);
-	}
-
-	identifier->type = LITERAL_IDENTIFIER;
-	identifier->value = calloc(strlen(current->data), sizeof(char));
-    strcpy(identifier->value, current->data);
-
-	variable->identifier = identifier;
-
-	next();
-	eat(TOKEN_COLON);
-
-	// expect type identifier
-	// this could be a keyword, aka. a primitive type
-	// or an identifier
-	if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
-		log_error("expectVariableDeclarationStatement(): expected type identifier at [%d:%d]", current->line, current->pos);
-		exit(1);
-	}
-
-	variable->datatype = parse_datatype(current->data);
-
-	next();
-
-	if (is(TOKEN_SEMICOLON)) {
-		eat(TOKEN_SEMICOLON);
-		Literal_T *default_value = calloc(1, sizeof(Literal_T));
-		if (default_value == NULL) {
-			free(statement);
-			free(var_decl_stmt);
-			free(variable);
-			free(identifier);
-			log_error("expectVariableDeclarationStatement(): cannot allocate memory for default_value\n");
-			exit(1);
-		}
-
-		default_value->type = LITERAL_NUMBER;
-		default_value->value = "0";
-
-		Expression_T *default_value_expr = calloc(1, sizeof(Expression_T));
-		if (default_value_expr == NULL) {
-			free(statement);
-			free(var_decl_stmt);
-			free(variable);
-			free(identifier);
-			free(default_value);
-			log_error("expectVariableDeclarationStatement(): cannot allocate memory for default_value_expr\n");
-			exit(1);
-		}
-
-		default_value_expr->type = EXPRESSION_LITERAL;
-		default_value_expr->expr.literal_expr = default_value;
-
-		variable->default_value = default_value_expr;
-
-		return statement;
-	} else if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
-		// default value assignment
-		eat(TOKEN_ASSIGNMENT_SIMPLE);
-
-		Expression_T *default_value = expectExpression();
-		variable->default_value = default_value;
-	}
-
-	eat(TOKEN_SEMICOLON);
+	var_decl_stmt->var = parseVariable();
 
 	return statement;
 }

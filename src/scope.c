@@ -15,6 +15,10 @@ void scope_evaluate_ast(AST *ast) {
 	// initialize a empty global scope
 	ast->global_scope = scope_new();
 
+	for (size_t i = 0; i < ast->global_variables->size; i++) {
+		arraylist_add(ast->global_scope->variables, arraylist_get(ast->global_variables, i));
+	}
+
 	for (int i = 0; i < ast->functions->size; i++) {
 		Function *func = arraylist_get(ast->functions, i);
 		arraylist_add(ast->global_scope->functions, func);
@@ -25,6 +29,12 @@ void scope_evaluate_ast(AST *ast) {
 		func->global_scope = ast->global_scope;
 		scope_evaluate_function(func);
 	}
+
+	for (size_t i = 0; i < ast->global_scope->variables->size; i++)	{
+		Variable *var = arraylist_get(ast->global_scope->variables, i);
+		log_debug("var: %s\n", var->identifier->value);
+	}
+	
 }
 
 void scope_evaluate_function(Function *function) {
@@ -42,6 +52,14 @@ void scope_evaluate_function(Function *function) {
 		}
 
 		scope_add_variable(function->local_scope, parameter);
+	}
+
+	// add global variables to function scope
+	for (size_t i = 0; i < function->global_scope->variables->size; i++) {
+		Variable *global_var = arraylist_get(function->global_scope->variables, i);
+		if (!scope_contains_variable_name(function->local_scope, global_var->identifier->value)) {
+			scope_add_variable(function->local_scope, global_var);
+		}
 	}
 
 	// evaluate scope of statements
@@ -65,6 +83,16 @@ void scope_evaluate_function(Function *function) {
 }
 
 void scope_evaluate_statement(Statement *stmt) {
+
+	for (int i = 0; i < stmt->local_scope->variables->size; i++) {
+		Variable *var = arraylist_get(stmt->local_scope->variables, i);
+		log_debug("stmt_local_scope_var: %s\n", var->identifier->value);
+	}
+	for (int i = 0; i < stmt->parent_scope->variables->size; i++) {
+		Variable *var = arraylist_get(stmt->parent_scope->variables, i);
+		log_debug("stmt_parent_scope_var: %s\n", var->identifier->value);
+	}
+
 	switch (stmt->type) {
 		case STATEMENT_COMPOUND:
 			// TODO

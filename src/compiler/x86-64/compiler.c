@@ -39,6 +39,7 @@ char *linker = "ld";
 
 // ----------------------- function prototypes -------------------------
 
+char *compile_global_variable(Variable *glob_var);
 char *compile_extern_function_templates(FunctionTemplate *func_template);
 char *compile_function(Function *function);
 
@@ -75,6 +76,16 @@ char *compile_to_x86_64_assembly(AST *root) {
 	// char *stmt_code = compile_statement(root->statement);
 	char *asm_code = calloc(1, sizeof(char));
 
+	if (root->global_variables->size > 0) {
+
+		asm_code = stradd(asm_code, "section .data\n");
+
+		for (size_t i = 0; i < root->global_variables->size; i++) {
+			asm_code = stradd(asm_code, compile_global_variable(arraylist_get(root->global_variables, i)));
+		}
+
+	}
+
 	// check if main method is defined
 	if (scope_contains_function_name(root->global_scope, "main")) {
 		// main function is defined
@@ -97,6 +108,32 @@ char *compile_to_x86_64_assembly(AST *root) {
 	}
 
 	return asm_code;
+}
+
+char *compile_global_variable(Variable *glob_var) {
+
+	if (glob_var->default_value->type != EXPRESSION_LITERAL) {
+		log_error("only global variables with literal expressions are supported yet\n");
+		exit(1);
+	}
+
+	switch (glob_var->datatype->size) {
+		case 1: // BYTE
+			return straddall(glob_var->identifier->value, " db ", glob_var->default_value->expr.literal_expr->value, "\n", NULL);
+
+		case 2: // WORD
+			return straddall(glob_var->identifier->value, " dw ", glob_var->default_value->expr.literal_expr->value, "\n", NULL);
+
+		case 4: // DWORD
+			return straddall(glob_var->identifier->value, " dd ", glob_var->default_value->expr.literal_expr->value, "\n", NULL);
+
+		case 8: // QWORD
+			return straddall(glob_var->identifier->value, " dq ", glob_var->default_value->expr.literal_expr->value, "\n", NULL);
+			
+		default:
+			log_error("unknown variable size\n");
+			exit(1);
+	}
 }
 
 char *compile_extern_function_templates(FunctionTemplate *func_template) {
@@ -238,7 +275,11 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 }
 
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
+	log_debug("before expression compilation\n");
+
 	char *ret_stmt_code = compile_expression(ret_stmt->return_expression, scope);
+
+	log_debug("after expression compilation\n");
 
 	// reset base pointer
 	size_t size_for_stack_align = 0;
@@ -470,6 +511,8 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 		}
 		case LITERAL_IDENTIFIER: {
 			Variable *var = scope_get_variable_by_name(scope, literal->value);
+
+			log_debug("var: %s\n", var);
 			switch (var->datatype->size) {
 				case 1: // BYTE
 					break;
