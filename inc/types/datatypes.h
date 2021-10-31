@@ -11,5 +11,6 @@ typedef struct _datatype {
 } Datatype;
 
 Datatype *parse_datatype(char *type);
+void datatype_free(Datatype *datatype);
 
 #endif
