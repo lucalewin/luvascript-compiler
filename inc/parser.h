@@ -93,7 +93,7 @@ Expression_T *expectAssignmentExpression();
 Expression_T *expectConditionalExpression();
 Expression_T *expectLogicalOrExpression();
 Expression_T *expectLogicalAndExpression();
-Expression_T *expectBitwiseorExpression();
+Expression_T *expectBitwiseOrExpression();
 Expression_T *expectBitwiseXorExpression();
 Expression_T *expectBitwiseAndExpression();
 Expression_T *expectEqualitiyExpression();
