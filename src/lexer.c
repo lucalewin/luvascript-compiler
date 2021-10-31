@@ -272,7 +272,16 @@ ArrayList *tokenize(char *code) {
                     break;
             }
         } else if (*code == '=') {
-            arraylist_add(list, token_create("=", TOKEN_ASSIGNMENT_SIMPLE, line, pos));
+			switch (*(code + 1)) {
+				case '=': {
+					arraylist_add(list, token_create("==", TOKEN_RELATIONAL_EQUAL, line, pos));
+					code++;
+					break;
+				}
+				default:
+					arraylist_add(list, token_create("=", TOKEN_ASSIGNMENT_SIMPLE, line, pos));
+					break;
+			}
         } else if (*code == '(') {
             arraylist_add(list, token_create("(", TOKEN_LPAREN, line, pos));
         } else if (*code == ')') {
