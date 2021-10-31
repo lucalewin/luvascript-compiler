@@ -37,6 +37,10 @@ char *assembler = "nasm";
 char *file_format = "-f elf64";
 char *linker = "ld";
 
+// ------------------------- global variables --------------------------
+
+int label_counter;
+
 // ----------------------- function prototypes -------------------------
 
 char *compile_global_variable(Variable *glob_var);
@@ -73,6 +77,8 @@ void compile_asm_file(char *src_file, char *out_file) {
 char *compile_to_x86_64_assembly(AST *root) {
 	log_debug("compiling to x68_64 assembly\n");
 	
+	label_counter = 0;
+
 	// char *stmt_code = compile_statement(root->statement);
 	char *asm_code = calloc(1, sizeof(char));
 
@@ -301,7 +307,7 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 	Variable *var = var_decl_stmt->var;	
 
 	// compile default expression
-	// TODO: simplify default value assignment
+	// TODO(lucalewin): simplify default value assignment
 	// if (var->default_value->type == EXPRESSION_LITERAL) {}
 
 	char *var_decl_code = compile_expression(var->default_value, scope);
@@ -376,21 +382,49 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 			Literal_T *literal = bin_expr->expression_right->expr.literal_expr;
 
 			switch (literal->type) {
+				case LITERAL_BOOLEAN: // a boolean is also just a number (0 or 1)
 				case LITERAL_NUMBER: {
-					if (bin_expr->operator == BINARY_OPERATOR_PLUS) {
-						bin_expr_code = straddall(bin_expr_code, "add rax, ", literal->value, "\n", NULL);
-					} else if (bin_expr->operator == BINARY_OPERATOR_MINUS) {
-						bin_expr_code = straddall(bin_expr_code, "sub rax, ", literal->value, "\n", NULL);
-					} else if (bin_expr->operator == BINARY_OPERATOR_MULTIPLY) {
-						bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nimul rbx\n", NULL);
-					} else if (bin_expr->operator == BINARY_OPERATOR_DIVIDE) {
-						bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nidiv rbx\n", NULL);
-					} else {
-						log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-						exit(1);
-					}
+					switch (bin_expr->operator) {
+						case BINARY_OPERATOR_PLUS:
+							bin_expr_code = straddall(bin_expr_code, "add rax, ", literal->value, "\n", NULL);
+							break;
+						case BINARY_OPERATOR_MINUS:
+							bin_expr_code = straddall(bin_expr_code, "sub rax, ", literal->value, "\n", NULL);
+							break;
+						case BINARY_OPERATOR_MULTIPLY:
+							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nimul rbx\n", NULL);
+							break;
+						case BINARY_OPERATOR_DIVIDE:
+							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nidiv rbx\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
+							bin_expr_code = straddall(bin_expr_code, "sal rax, ", literal->value, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
+							bin_expr_code = straddall(bin_expr_code, "sar rax, ", literal->value, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_AND:
+							bin_expr_code = straddall(bin_expr_code, "and rax, ", literal->value, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_XOR:
+							bin_expr_code = straddall(bin_expr_code, "xor rax, ", literal->value, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_OR:
+							bin_expr_code = straddall(bin_expr_code, "or rax, ", literal->value, "\n", NULL);
+							break;
+
+						default:
+							log_error("[3.1] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+							// TODO(lucalewin): free memory
+							return NULL;
+					} // switch (bin_expr->operator)
 					break;
-				}
+				} // case LITERAL_NUMBER
 				case LITERAL_IDENTIFIER: {
 					if (!scope_contains_variable(scope, literal->value)) {
 						log_error("undefined variable '%s'\n", literal->value);
@@ -401,116 +435,161 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					VariableTemplate *var_template = scope_get_variable_by_name(scope, literal->value);
 					char *var_address = scope_get_variable_address(scope, literal->value);
 
+					char *var_pointer = NULL;
+					char *reg_a = NULL;
+					char *reg_b = NULL;
+
 					switch (var_template->datatype->size) {
-						case 1: // BYTE
-							switch (bin_expr->operator) {
-								case BINARY_OPERATOR_PLUS:
-									bin_expr_code = straddall(bin_expr_code, "add al, BYTE[", var_address, "]\n", NULL);
-									break;
-								case BINARY_OPERATOR_MINUS:
-									bin_expr_code = straddall(bin_expr_code, "sub al, BYTE[", var_address, "]\n", NULL);
-									break;
-								case BINARY_OPERATOR_MULTIPLY:
-									bin_expr_code = straddall(bin_expr_code, 
-										"mov bl, BYTE[", var_address, "]\n"
-										"imul bl\n", NULL);
-									break;
-								case BINARY_OPERATOR_DIVIDE:
-									bin_expr_code = straddall(bin_expr_code, 
-										"mov bl, BYTE[", var_address, "]\n"
-										"idiv bl\n", NULL);
-									break;
-								default:
-									log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-									free(bin_expr_code);
-									return NULL;
-							}
+						case 1:
+							var_pointer = "BYTE";
+							reg_a = "al";
+							reg_b = "bl";
 							break;
-						case 2: // WORD
-							switch (bin_expr->operator) {
-								case BINARY_OPERATOR_PLUS:
-									bin_expr_code = straddall(bin_expr_code, "add ax, WORD[", var_address, "]\n", NULL);
-									break;
-								case BINARY_OPERATOR_MINUS:
-									bin_expr_code = straddall(bin_expr_code, "sub ax, WORD[", var_address, "]\n", NULL);
-									break;
-								case BINARY_OPERATOR_MULTIPLY:
-									bin_expr_code = straddall(bin_expr_code, 
-										"mov bx, WORD[", var_address, "]\n"
-										"imul bx\n", NULL);
-									break;
-								case BINARY_OPERATOR_DIVIDE:
-									bin_expr_code = straddall(bin_expr_code, 
-										"mov bx, WORD[", var_address, "]\n"
-										"idiv bx\n", NULL);
-									break;
-								default:
-									log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-									free(bin_expr_code);
-									return NULL;
-							}
+						case 2:
+							var_pointer = "WORD";
+							reg_a = "ax";
+							reg_b = "bx";
 							break;
-						case 4: { // DWORD
-							switch (bin_expr->operator) {
-								case BINARY_OPERATOR_PLUS:
-									bin_expr_code = straddall(bin_expr_code, "add eax, DWORD[", var_address, "]\n", NULL);
-									break;
-								case BINARY_OPERATOR_MINUS:
-									bin_expr_code = straddall(bin_expr_code, "sub eax, DWORD[", var_address, "]\n", NULL);
-									break;
-								case BINARY_OPERATOR_MULTIPLY:
-									bin_expr_code = straddall(bin_expr_code, 
-										"mov ebx, DWORD[", var_address, "]\n"
-										"imul ebx\n", NULL);
-									break;
-								case BINARY_OPERATOR_DIVIDE:
-									bin_expr_code = straddall(bin_expr_code, 
-										"mov ebx, DWORD[", var_address, "]\n"
-										"idiv ebx\n", NULL);
-									break;
-								default:
-									log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-									free(bin_expr_code);
-									return NULL;
-							}
+						case 4:
+							var_pointer = "DWORD";
+							reg_a = "eax";
+							reg_b = "ebx";
+							break;
+						case 8:
+							var_pointer = "QWORD";
+							reg_a = "rax";
+							reg_b = "rbx";
+							break;
+						default:
+							log_error("[2] compile_binary_expression(): unknown datatype size: %d\n", var_template->datatype->size);
+							// TODO(lucalewin): free memory
+							return NULL;
+					} // switch (var_template->datatype->size)
+
+					var_pointer = straddall(var_pointer, "[", var_address, "]", NULL);
+
+					switch (bin_expr->operator) {
+						case BINARY_OPERATOR_PLUS:
+							bin_expr_code = straddall(bin_expr_code, "add ", reg_a, ", ", var_pointer, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_MINUS:
+							bin_expr_code = straddall(bin_expr_code, "sub ", reg_a, ", ", var_pointer, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_MULTIPLY:
+							bin_expr_code = straddall(bin_expr_code, "mov ", reg_b, ", ", var_pointer, "\nimul ", reg_b, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_DIVIDE:
+							bin_expr_code = straddall(bin_expr_code, "mov ", reg_b, ", ", var_pointer, "\nidiv ", reg_b, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
+							bin_expr_code = straddall(bin_expr_code, "sal ", reg_a, ", ", var_pointer, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
+							bin_expr_code = straddall(bin_expr_code, "sar ", reg_a, ", ", var_pointer, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_AND:
+							bin_expr_code = straddall(bin_expr_code, "and ", reg_a, ", ", var_pointer, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_XOR:
+							bin_expr_code = straddall(bin_expr_code, "xor ", reg_a, ", ", var_pointer, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_BITWISE_OR:
+							bin_expr_code = straddall(bin_expr_code, "or ", reg_a, ", ", var_pointer, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_EQUAL: {
+							// char* label_equal_index = int_to_string(label_counter++);
+							// char* label_not_equal_index = int_to_string(label_counter++);
+							// bin_expr_code = straddall(bin_expr_code,
+							// 					"mov ", reg_b, ", ", var_pointer, "\n"
+							// 					"cmp ", reg_a, ",",  reg_b, "\n", 
+							// 					"je .LE", label_equal_index, "\n"
+							// 					"mov ", reg_a, ", 0\n"
+							// 					"jmp .LNE", label_not_equal_index, "\n"
+							// 					".LE", label_equal_index, "\n"
+							// 					"mov ", reg_a, ", 1\n"
+							// 					".LNE", label_not_equal_index, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov ", reg_b, ", ", var_pointer, "\n"
+												"cmp ", reg_a, ",",  reg_b, "\n"
+												"sete al\n", NULL);
 							break;
 						}
-						case 8: // QWORD
-							switch (bin_expr->operator) {
-								case BINARY_OPERATOR_PLUS:
-									bin_expr_code = straddall(bin_expr_code, "add rax, QWORD[", var_address, "]\n", NULL);
-									break;
-								case BINARY_OPERATOR_MINUS:
-									bin_expr_code = straddall(bin_expr_code, "sub rax, QWORD[", var_address, "]\n", NULL);
-									break;
-								case BINARY_OPERATOR_MULTIPLY:
-									bin_expr_code = straddall(bin_expr_code, 
-										"mov rbx, QWORD[", var_address, "]\n"
-										"imul rbx\n", NULL);
-									break;
-								case BINARY_OPERATOR_DIVIDE:
-									bin_expr_code = straddall(bin_expr_code, 
-										"mov rbx, QWORD[", var_address, "]\n"
-										"idiv rbx\n", NULL);
-									break;
-								default:
-									log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-									free(bin_expr_code);
-									return NULL;
-							}
+
+						case BINARY_OPERATOR_LOGICAL_NOT_EQUAL: {
+							// char* label_equal_index = int_to_string(label_counter++);
+							// char* label_not_equal_index = int_to_string(label_counter++);
+							// bin_expr_code = straddall(bin_expr_code,
+							// 					"mov ", reg_b, ", ", var_pointer, "\n"
+							// 					"cmp ", reg_a, ",",  reg_b, "\n", 
+							// 					"je .LE", label_equal_index, "\n"
+							// 					"mov ", reg_a, ", 1\n"
+							// 					"jmp .LNE", label_not_equal_index, "\n"
+							// 					".LE", label_equal_index, ":\n"
+							// 					"mov ", reg_a, ", 0\n"
+							// 					".LNE", label_not_equal_index, ":\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov ", reg_b, ", ", var_pointer, "\n"
+												"cmp ", reg_a, ",",  reg_b, "\n"
+												"setne al\n", NULL);
+							break;
+						}
+
+						case BINARY_OPERATOR_LOGICAL_GREATHER:
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov ", reg_b, ", ", var_pointer, "\n"
+												"cmp ", reg_a, ",",  reg_b, "\n"
+												"setg al\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov ", reg_b, ", ", var_pointer, "\n"
+												"cmp ", reg_a, ",",  reg_b, "\n"
+												"setge al\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_LESS:
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov ", reg_b, ", ", var_pointer, "\n"
+												"cmp ", reg_a, ",",  reg_b, "\n"
+												"setl al\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov ", reg_b, ", ", var_pointer, "\n"
+												"cmp ", reg_a, ",",  reg_b, "\n"
+												"setle al\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_AND:
+							bin_expr_code = straddall(bin_expr_code, "and ", reg_a, ", ", var_pointer, "\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_OR:
+							bin_expr_code = straddall(bin_expr_code, "or ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						default:
-							log_error("unknown datatype size: %d\n", var_template->datatype->size);
-							exit(1);
-							break;
-					}
+							log_error("[3] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+							// TODO(lucalewin): free memory
+							return NULL;
+					} // switch (bin_expr->operator)
 					break;
-				}
+				} // case LITERAL_IDENTIFIER
 				default:
 					log_error("[4] compile_binary_expression(): literal type '%d' is not supported yet\n", literal->type);
 					exit(1);
-			}
+			} // switch (literal->type)
 			break;
  		}
 
@@ -542,19 +621,77 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					bin_expr_code = stradd(bin_expr_code, "idiv rbx\n");
 					break;
 
+				case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
+					bin_expr_code = stradd(bin_expr_code, "sal rax, rbx\n");
+					break;
+
+				case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
+					bin_expr_code = stradd(bin_expr_code, "sar rax, rbx\n");
+					break;
+
+				case BINARY_OPERATOR_BITWISE_AND:
+					bin_expr_code = stradd(bin_expr_code, "and rax, rbx\n");
+					break;
+
+				case BINARY_OPERATOR_BITWISE_XOR:
+					bin_expr_code = stradd(bin_expr_code, "xor rax, rbx\n");
+					break;
+
+				case BINARY_OPERATOR_BITWISE_OR:
+					bin_expr_code = stradd(bin_expr_code, "or rax, rbx\n");
+					break;
+
+				case BINARY_OPERATOR_LOGICAL_EQUAL:
+					bin_expr_code = straddall(bin_expr_code,
+										"cmp rax, rbx\n"
+										"sete al\n", NULL);
+					break;
+				case BINARY_OPERATOR_LOGICAL_NOT_EQUAL:
+					bin_expr_code = straddall(bin_expr_code,
+										"cmp rax, rbx\n"
+										"setne al\n", NULL);
+					break;
+				case BINARY_OPERATOR_LOGICAL_GREATHER:
+					bin_expr_code = straddall(bin_expr_code,
+										"cmp rax, rbx\n"
+										"setg al\n", NULL);
+					break;
+				case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+					bin_expr_code = straddall(bin_expr_code,
+										"cmp rax, rbx\n"
+										"setge al\n", NULL);
+					break;
+				case BINARY_OPERATOR_LOGICAL_LESS:
+					bin_expr_code = straddall(bin_expr_code,
+										"cmp rax, rbx\n"
+										"setl al\n", NULL);
+					break;
+
+				case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
+					bin_expr_code = straddall(bin_expr_code,
+										"cmp rax, rbx\n"
+										"setle al\n", NULL);
+					break;
+
+				case BINARY_OPERATOR_LOGICAL_AND:
+					bin_expr_code = stradd(bin_expr_code, "and rax, rbx\n");
+					break;
+
+				case BINARY_OPERATOR_LOGICAL_OR:
+					bin_expr_code = stradd(bin_expr_code, "or rax, rbx\n");
+					break;
+
 				default:
-					log_error("[4] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
+					log_error("[5] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
 					exit(1);
-			}
+			} // switch (bin_expr->operator)
 			break;
 		}
 
 		default:
 			log_error("[6] compile_binary_expression(): parsing for expression-type '%d' is not implemented yet\n", bin_expr->expression_right->type);
 			exit(1);
-	}
-
-	// log_warning("before returning bin_expr_code\n");
+	} // switch(bin_expr->expression_right->type)
 	return bin_expr_code;
 }
 
@@ -562,6 +699,7 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 	char *literal_expr_code = calloc(1, sizeof(char));
 
 	switch (literal->type) {
+		case LITERAL_BOOLEAN: // a boolean is also just a number (0 or 1)
 		case LITERAL_NUMBER: {
 			literal_expr_code = stradd(literal_expr_code, "mov rax, ");
 			literal_expr_code = stradd(literal_expr_code, literal->value);
