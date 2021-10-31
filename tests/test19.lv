@@ -1,0 +1,6 @@
+function main(): int {
+	var x: bool = false;
+	var y: bool = false;
+
+	return x == y; // returns true ( = 1)
+}

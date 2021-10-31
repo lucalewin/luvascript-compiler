@@ -1,0 +1,6 @@
+function main(): int {
+	var x: int = 20;
+	var y: int = 100;
+
+	return x != y;
+}

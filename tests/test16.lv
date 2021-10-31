@@ -1,0 +1,6 @@
+function main(): int {
+	var a: int = 5;
+	var b: byte = 9;
+
+	return a | b;
+}

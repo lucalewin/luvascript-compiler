@@ -1,0 +1,14 @@
+function main(): int {
+	var x: int = 20;
+	var y: int = 10;
+
+	// (10 > x) -> false
+	// (20 <= y) -> true
+	// (30 >= x) -> true
+	// (30 == y) -> false
+	// (15 < x) -> true
+	// ==> false && true || true && false || true
+	// ==> false || false || true 						--> see order of operations
+	// ==> true
+	return (10 > x) && (20 <= y) || (30 >= x) && (30 == y) || (15 < x);
+}
