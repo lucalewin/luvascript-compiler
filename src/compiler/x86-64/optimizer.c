@@ -60,6 +60,19 @@ Expression_T *simplify_expression(Expression_T *expr) {
 				case BINARY_OPERATOR_DIVIDE:
 					result = num_left / num_right;
 					break;
+				case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
+				case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
+					// currently not supported, because some c compilers use arithmetic shift and some use logical shift
+					return expr;
+				case BINARY_OPERATOR_BITWISE_AND:
+					result = num_left & num_right;
+					break;
+				case BINARY_OPERATOR_BITWISE_XOR:
+					result = num_left ^ num_right;
+					break;
+				case BINARY_OPERATOR_BITWISE_OR:
+					result = num_left | num_right;
+					break;
 				default:
 					log_error("unexpected binary expression operator '%d'\n", bin_expr->operator);
 					return NULL;
