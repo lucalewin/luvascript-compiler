@@ -728,6 +728,15 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 			return NULL;
 		}
 
+		VariableTemplate *template = scope_get_variable_by_name(scope, identifier->value);
+
+		if (template->is_constant) {
+			// throw error: cannot assign to constant
+			log_error("cannot assign to constant\n");
+			free(assignment_expr_code);
+			return NULL;
+		}
+
 		char *var_address = scope_get_variable_address(scope, identifier->value);
 
 		switch (assignment_expr->operator) {
