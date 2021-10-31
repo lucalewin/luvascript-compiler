@@ -4,7 +4,8 @@
 typedef enum _LiteralType {
     LITERAL_NUMBER,
     LITERAL_STRING,
-    LITERAL_IDENTIFIER
+    LITERAL_IDENTIFIER,
+	LITERAL_BOOLEAN
 } LiteralType;
 
 typedef struct Literal {
