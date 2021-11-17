@@ -16,6 +16,7 @@ typedef struct CompoundStatement CompoundStatement;
 typedef struct ExpressionStatement ExpressionStatement;
 typedef struct ReturnStatement ReturnStatement;
 typedef struct VariableDeclarationStatement VariableDeclarationStatement;
+typedef struct ConditionalStatement ConditionalStatement;
 
 // ---------------------------------
 
@@ -23,7 +24,8 @@ typedef enum {
 	STATEMENT_COMPOUND,
 	STATEMENT_EXPRESSION,
 	STATEMENT_RETURN,
-	STATEMENT_VARIABLE_DECLARATION
+	STATEMENT_VARIABLE_DECLARATION,
+	STATEMENT_CONDITIONAL
 } statement_type;
 
 typedef struct statement {
@@ -34,6 +36,7 @@ typedef struct statement {
 		ExpressionStatement *expression_statement;
 		ReturnStatement *return_statement;
 		VariableDeclarationStatement *variable_decl;
+		ConditionalStatement *condtional_statement;
 	} stmt;
 } Statement;
 
@@ -52,6 +55,19 @@ struct ReturnStatement {
 
 struct VariableDeclarationStatement {
 	Variable *var;
+};
+
+struct ConditionalStatement {
+	Expression_T *conditional_expression;
+
+	enum {
+		CONDITIONAL_STATEMENT_IF,
+		CONDITIONAL_STATEMENT_ELSEIF,
+		CONDITIONAL_STATEMENT_ELSE,
+	} type;
+
+	Statement *body;
+	Statement *else_stmt;
 };
 
 extern const char* STATEMENT_TYPES[];
