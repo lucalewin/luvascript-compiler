@@ -1,0 +1,8 @@
+function main(): int {
+	const a: int = 23;
+
+	if (a == 0)
+		return 2;
+	else
+		return 10;
+}

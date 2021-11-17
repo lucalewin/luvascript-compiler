@@ -1,9 +1,7 @@
 function main(): int {
 	var x: int = 5;
 	
-	if (10 > x) {
+	if (10 > x)
 		return 20;
-	} else {
-		return 78;
-	}
+	return 78;
 }

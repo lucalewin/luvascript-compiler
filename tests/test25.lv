@@ -1,0 +1,11 @@
+function main(): int {
+	var x: int = 36;
+
+	if (x == 0)
+		return 2;
+	else if (x < 0)
+		return 4;
+	else
+		return 8;
+	return 0;
+}
