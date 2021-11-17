@@ -68,6 +68,8 @@ void scope_evaluate_function(Function *function) {
 		arraylist_add(function->scope->local_variable_templates, convert_to_variable_template(parameter));
 	}
 
+	log_debug("scope_evaluate_function(): statment count: %d\n", function->body_statements->size);
+
 	// evaluate scopes of function statements
 	for (size_t i = 0; i < function->body_statements->size; i++) {
 		Statement *stmt = arraylist_get(function->body_statements, i);
@@ -79,7 +81,7 @@ void scope_evaluate_function(Function *function) {
 // ----------------------------------------------------------------
 
 void scope_evaluate_statement(Statement *stmt, Scope *parent_scope) {
-	// log_debug("scope_evaluate_statement()\n");
+	log_debug("scope_evaluate_statement(): statment-type: %s\n", STATEMENT_TYPES[stmt->type]);
 
 	switch (stmt->type) {
 		case STATEMENT_COMPOUND:
@@ -104,6 +106,27 @@ void scope_evaluate_statement(Statement *stmt, Scope *parent_scope) {
 			}
 
 			arraylist_add(parent_scope->local_variable_templates, convert_to_variable_template(var));
+
+			break;
+		}
+
+		case STATEMENT_CONDITIONAL: {
+
+			ConditionalStatement *cond_stmt = stmt->stmt.condtional_statement;
+
+			cond_stmt->body->scope = scope_copy(stmt->scope);
+			
+			scope_evaluate_statement(cond_stmt->body, parent_scope);
+
+			if (cond_stmt->else_stmt != NULL) {
+				cond_stmt->else_stmt->scope = scope_copy(stmt->scope);
+				log_debug("scope_evaluate_function(): eval else_stmt\n");
+				scope_evaluate_statement(cond_stmt->else_stmt, parent_scope);
+			}
+
+			// Statement *body_stmt = stmt->stmt.condtional_statement->body;
+			// body_stmt->scope = scope_copy(stmt->scope);
+			// scope_evaluate_statement(body_stmt, parent_scope);
 
 			break;
 		}
