@@ -423,6 +423,8 @@ Statement *expectStatement() {
         	return expectJumpStatement();
 		} else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
 			return expectVariableDeclarationStatement();
+		} else if (strcmp(current->data, "if") == 0) {
+			return expectConditionalStatement();
 		} else {
 			log_error("unexpected keyword at [%d:%d]\n", current->line, current->pos);
 			exit(1);
@@ -529,6 +531,84 @@ Statement *expectVariableDeclarationStatement() {
 	statement->type = STATEMENT_VARIABLE_DECLARATION;
 
 	var_decl_stmt->var = parseVariable();
+
+	return statement;
+}
+
+Statement *expectConditionalStatement() {
+	if (!strcmp(current->data, "if") == 0) {
+		// TODO(lucalewin): log error
+		log_error("expectConditionalStatement(): unexpected token '%s'\n", current->data);
+		return NULL;
+	}
+
+	log_debug("expectConditionalStatement(): here is a conditional statement\n");
+
+	eat(TOKEN_KEYWORD); // 'if'
+
+	eat(TOKEN_LPAREN); // '('
+
+	Expression_T *condition = expectExpression();
+	if (condition == NULL) {
+		// TODO(lucalewin): log error
+		return NULL;
+	}
+
+	eat(TOKEN_RPAREN); // ')'
+
+	Statement *body = expectStatement();
+	if (body == NULL) {
+		log_error("expectConditionalStatement(): expectStatement returned NULL\n");
+		free(condition);
+		return NULL;
+	}
+
+	Statement *statement = calloc(1, sizeof(Statement));
+	if (statement == NULL) {
+		log_error("expectConditionalStatement(): not able to allocated memory for Statement\n");
+		free(condition);
+		free(body);
+		return NULL;
+	}
+
+	ConditionalStatement *conditional_statement = calloc(1, sizeof(ConditionalStatement));
+	if (conditional_statement == NULL) {
+		log_error("expectConditionalStatement(): not able to allocated memory for ConditionalStatement\n");
+		free(condition);
+		free(body);
+		free(statement);
+		return NULL;
+	}
+
+	statement->type = STATEMENT_CONDITIONAL;
+	statement->stmt.condtional_statement = conditional_statement;
+
+	conditional_statement->type = CONDITIONAL_STATEMENT_IF;
+	conditional_statement->conditional_expression = condition;
+	conditional_statement->body = body;
+	conditional_statement->else_stmt = NULL;
+
+	if (is(TOKEN_KEYWORD) && strcmp(current->data, "else") == 0) {
+		next();
+
+		if (is(TOKEN_KEYWORD) && strcmp(current->data, "if") == 0) {
+			log_debug("parsing: else if statement\n");
+			Statement *else_conditional_statement = expectConditionalStatement();
+			if (else_conditional_statement == NULL) {
+				log_error("expectConditionalStatement(): expectConditionalStatement() failed\n");
+				free(condition);
+				free(body);
+				free(statement);
+				free(conditional_statement);
+				return NULL;
+			}
+			else_conditional_statement->stmt.condtional_statement->type = CONDITIONAL_STATEMENT_ELSEIF;
+			conditional_statement->else_stmt = else_conditional_statement;
+		} else {
+			log_debug("parsing else statement\n");
+			conditional_statement->else_stmt = expectStatement();
+		}
+	}
 
 	return statement;
 }
