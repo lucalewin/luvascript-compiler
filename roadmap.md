@@ -14,7 +14,7 @@
 ## Luvascript v0.1.0
 
 ### Features
-- [ ] global variables / constants
+- [x] global variables / constants
 - [x] local variables / constants
 - [x] primitive datatypes
 	- [x] `byte`
@@ -25,7 +25,7 @@
 - [x] basic mathematical expressions
 - [x] functions
 - [x] external functions (importing / exporting functions to c/c++ or other)
-- [ ] conditional statements (`if` / `else if` / `else`)
-- [ ] condtional expressions
+- [x] conditional statements (`if` / `else if` / `else`)
+- [x] condtional expressions
 - [ ] loop statements (`while`)
 - [x] jump statememts (`return`)
