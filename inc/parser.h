@@ -84,6 +84,7 @@ Statement *expectCompoundStatement();
 Statement *expectExpressionStatement();
 Statement *expectJumpStatement();
 Statement *expectVariableDeclarationStatement();
+Statement *expectConditionalStatement();
 
 // expressions
 ArrayList *expectExpressionList();
