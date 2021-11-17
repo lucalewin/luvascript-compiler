@@ -5,7 +5,7 @@
 #include <util.h>
 #include <token.h>
 
-#define keywords_length 15
+#define keywords_length 17
 
 char *keywords[keywords_length] = {
     "function",
@@ -22,7 +22,9 @@ char *keywords[keywords_length] = {
     "long",
     "float",
     "double",
-	"extern"
+	"extern",
+	"if",
+	"else"
 };
 
 ArrayList *tokenize(char *code) {
@@ -178,7 +180,7 @@ ArrayList *tokenize(char *code) {
         } else if (*code == '<') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("<=", TOKEN_RELATIONAL_LESS, line, pos));
+                    arraylist_add(list, token_create("<=", TOKEN_RELATIONAL_LESS_OR_EQUAL, line, pos));
                     code++;
                     break;
                 }
@@ -193,13 +195,13 @@ ArrayList *tokenize(char *code) {
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("<", TOKEN_RELATIONAL_LESS_OR_EQUAL, line, pos));
+                    arraylist_add(list, token_create("<", TOKEN_RELATIONAL_LESS, line, pos));
                     break;
             }
         } else if (*code == '>') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create(">=", TOKEN_RELATIONAL_GREATER, line, pos));
+                    arraylist_add(list, token_create(">=", TOKEN_RELATIONAL_GREATER_OR_EQUAL, line, pos));
                     code++;
                     break;
                 }
@@ -214,7 +216,7 @@ ArrayList *tokenize(char *code) {
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create(">", TOKEN_RELATIONAL_GREATER_OR_EQUAL, line, pos));
+                    arraylist_add(list, token_create(">", TOKEN_RELATIONAL_GREATER, line, pos));
                     break;
             }
         } else if (*code == '!') {
