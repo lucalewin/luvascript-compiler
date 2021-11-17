@@ -1,0 +1,13 @@
+extern function print_number(n: int): void;
+
+function main(): int {
+	var index: int = 0;
+	var sum: int = 0;
+	while (index < 1000) {
+		if (index % 3 == 0 || index % 5 == 0) {
+			sum += index++;
+		}
+	}
+	print_number(sum);
+	return sum;
+}
