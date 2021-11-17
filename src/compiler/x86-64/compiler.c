@@ -40,6 +40,8 @@ char *linker = "ld";
 // ------------------------- global variables --------------------------
 
 int label_counter;
+int else_if_label_counter;
+int statement_label_counter;
 
 // ----------------------- function prototypes -------------------------
 
@@ -52,6 +54,7 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope);
 char *compile_variable_declaration_statement(VariableDeclarationStatement *var_decl_stmt, Scope *scope);
 char *compile_expression_statement(ExpressionStatement *expr_stmt, Scope *scope);
+char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scope);
 
 char *compile_expression(Expression_T *expr, Scope *scope);
 char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope);
@@ -78,6 +81,8 @@ char *compile_to_x86_64_assembly(AST *root) {
 	log_debug("compiling to x68_64 assembly\n");
 	
 	label_counter = 0;
+	else_if_label_counter = 0;
+	statement_label_counter = 0;
 
 	// char *stmt_code = compile_statement(root->statement);
 	char *asm_code = calloc(1, sizeof(char));
@@ -241,6 +246,9 @@ char *compile_statement(Statement *stmt) {
 		case STATEMENT_EXPRESSION:
 			return compile_expression_statement(stmt->stmt.expression_statement, stmt->scope);
 
+		case STATEMENT_CONDITIONAL:
+			return compile_conditional_statement(stmt->stmt.condtional_statement, stmt->scope);
+
 		default:
 			log_error("compile_statement(): unexpected statement type '%s'\n", STATEMENT_TYPES[stmt->type]);
 			exit(1);
@@ -338,10 +346,50 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 char *compile_expression_statement(ExpressionStatement *expr_stmt, Scope *scope) {
 	char *expr_stmt_code = compile_expression(expr_stmt->expression, scope);
 
-	
-
 	return expr_stmt_code;
 }
+
+char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scope) {
+	// compile condition expression
+	char *cond_expr_code = compile_expression(cond_stmt->conditional_expression, scope);
+
+	// compile true branch
+	char *true_branch_code = compile_statement(cond_stmt->body);
+
+	// generate label for false branch (CF = condition false)
+	char *label_condition_false = stradd(".CF", int_to_string(label_counter++));
+
+	// if false branch is empty, just return the true branch
+	if (cond_stmt->else_stmt == NULL) {
+		return straddall(
+					cond_expr_code, 
+					"cmp eax, 0\n"
+					"je ", label_condition_false, "\n", 
+					true_branch_code, 
+					label_condition_false, ":\n", NULL);
+	}
+
+	// else statement is not empty
+	Statement *else_stmt = cond_stmt->else_stmt;
+	
+	// compile false branch
+	char *false_branch_code = compile_statement(else_stmt);
+
+	// generate label for end of conditional statement (CE = condition end)
+	char *end_of_conditional_statement = stradd(".CE", int_to_string(statement_label_counter)); 
+
+	return straddall(
+				cond_expr_code, 
+				"cmp eax, 0\n"
+				"je ", label_condition_false, "\n", 
+				true_branch_code, 
+				"jmp ", end_of_conditional_statement, "\n", 
+				label_condition_false, ":\n", 
+				false_branch_code,
+				end_of_conditional_statement, ":\n", NULL);
+}
+
+// ----------------------------------------------------------------
 
 char *compile_expression(Expression_T *expr, Scope *scope) {
 	// try to simplify the expression
@@ -417,6 +465,58 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 						case BINARY_OPERATOR_BITWISE_OR:
 							bin_expr_code = straddall(bin_expr_code, "or rax, ", literal->value, "\n", NULL);
 							break;
+
+						case BINARY_OPERATOR_LOGICAL_EQUAL: {
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov rbx, ", literal->value, "\n"
+												"cmp rax, rbx\n"
+												"sete al\n", NULL);
+							break;
+						}
+
+						case BINARY_OPERATOR_LOGICAL_NOT_EQUAL: {
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov rbx, ", literal->value, "\n"
+												"cmp rax, rbx\n"
+												"setne al\n", NULL);
+							break;
+						}
+
+						case BINARY_OPERATOR_LOGICAL_GREATHER:
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov rbx, ", literal->value, "\n"
+												"cmp rax, rbx\n"
+												"setg al\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov rbx, ", literal->value, "\n"
+												"cmp rax, rbx\n"
+												"setge al\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_LESS:
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov rbx, ", literal->value, "\n"
+												"cmp rax, rbx\n"
+												"setl al\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
+							bin_expr_code = straddall(bin_expr_code, 
+												"mov rbx, ", literal->value, "\n"
+												"cmp rax, rbx\n"
+												"setle al\n", NULL);
+							break;
+
+						// case BINARY_OPERATOR_LOGICAL_AND:
+						// 	bin_expr_code = straddall(bin_expr_code, "and ", reg_a, ", ", var_pointer, "\n", NULL);
+						// 	break;
+
+						// case BINARY_OPERATOR_LOGICAL_OR:
+						// 	bin_expr_code = straddall(bin_expr_code, "or ", reg_a, ", ", var_pointer, "\n", NULL);
+						// 	break;
 
 						default:
 							log_error("[3.1] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
