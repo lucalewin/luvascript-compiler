@@ -425,6 +425,8 @@ Statement *expectStatement() {
 			return expectVariableDeclarationStatement();
 		} else if (strcmp(current->data, "if") == 0) {
 			return expectConditionalStatement();
+		} else if (strcmp(current->data, "while") == 0) {
+			return expectLoopStatement();
 		} else {
 			log_error("unexpected keyword at [%d:%d]\n", current->line, current->pos);
 			exit(1);
@@ -542,8 +544,6 @@ Statement *expectConditionalStatement() {
 		return NULL;
 	}
 
-	log_debug("expectConditionalStatement(): here is a conditional statement\n");
-
 	eat(TOKEN_KEYWORD); // 'if'
 
 	eat(TOKEN_LPAREN); // '('
@@ -592,7 +592,6 @@ Statement *expectConditionalStatement() {
 		next();
 
 		if (is(TOKEN_KEYWORD) && strcmp(current->data, "if") == 0) {
-			log_debug("parsing: else if statement\n");
 			Statement *else_conditional_statement = expectConditionalStatement();
 			if (else_conditional_statement == NULL) {
 				log_error("expectConditionalStatement(): expectConditionalStatement() failed\n");
@@ -605,10 +604,60 @@ Statement *expectConditionalStatement() {
 			else_conditional_statement->stmt.condtional_statement->type = CONDITIONAL_STATEMENT_ELSEIF;
 			conditional_statement->else_stmt = else_conditional_statement;
 		} else {
-			log_debug("parsing else statement\n");
 			conditional_statement->else_stmt = expectStatement();
 		}
 	}
+
+	return statement;
+}
+
+Statement *expectLoopStatement() {
+	if (!strcmp(current->data, "while") == 0) {
+		log_error("expectLoopStatement(): unexpected token '%s'\n", current->data);
+		return NULL;
+	}
+
+	eat(TOKEN_KEYWORD); // 'while'
+
+	eat(TOKEN_LPAREN); // '('
+
+	Expression_T *condition = expectExpression();
+	if (condition == NULL) {
+		// TODO(lucalewin): log error
+		return NULL;
+	}
+
+	eat(TOKEN_RPAREN); // ')'
+
+	Statement *body = expectStatement();
+	if (body == NULL) {
+		log_error("expectLoopStatement(): expectStatement returned NULL\n");
+		free(condition);
+		return NULL;
+	}
+
+	Statement *statement = calloc(1, sizeof(Statement));
+	if (statement == NULL) {
+		log_error("expectLoopStatement(): not able to allocated memory for Statement\n");
+		free(condition);
+		free(body);
+		return NULL;
+	}
+
+	LoopStatement *loop_statement = calloc(1, sizeof(LoopStatement));
+	if (loop_statement == NULL) {
+		log_error("expectLoopStatement(): not able to allocated memory for LoopStatement\n");
+		free(condition);
+		free(body);
+		free(statement);
+		return NULL;
+	}
+
+	statement->type = STATEMENT_LOOP;
+	statement->stmt.loop_statement = loop_statement;
+
+	loop_statement->conditional_expression = condition;
+	loop_statement->body = body;
 
 	return statement;
 }
@@ -975,7 +1024,6 @@ Expression_T *expectShiftExpression() {
 	Expression_T *expr = expectAdditiveExpression();
 
 	if (!is(TOKEN_BITWISE_LEFT_SHIFT) && !is(TOKEN_BITWISE_RIGHT_SHIFT)) {
-		// log_debug("current token type: %s\n", current->data);
 		return expr;
 	}
 
@@ -1009,7 +1057,6 @@ Expression_T *expectAdditiveExpression() {
     Expression_T *expr = expectMultiplicativeExpression();
 
     if (!is(TOKEN_PLUS) && !is(TOKEN_MINUS)) {
-        // log_debug("current token type: %s\n", current->data);
         return expr;
     }
 
@@ -1043,7 +1090,6 @@ Expression_T *expectMultiplicativeExpression() {
     Expression_T *expr = expectUnaryExpression();
 
     if (!is(TOKEN_ASTERISK) && !is(TOKEN_SLASH)) {
-        // log_debug("current token type: %s\n", current->data);
         return expr;
     }
 
@@ -1076,7 +1122,6 @@ Expression_T *expectMultiplicativeExpression() {
 Expression_T *expectUnaryExpression() {
 	switch (current->type) {
 		case TOKEN_MINUS: {
-			// log_debug("token minus\n");
 			UnaryExpression_T *unary_expr = calloc(1, sizeof(UnaryExpression_T));
 			if (unary_expr == NULL) {
 				log_error("expectUnaryExpression(): calloc failed\n");
@@ -1085,8 +1130,6 @@ Expression_T *expectUnaryExpression() {
 
 			unary_expr->operator = UNARY_OPERATOR_NEGATE;
 			next();
-
-			// log_debug("expectUnaryExpression(): current token type: %d | value: %s\n", current->type, current->data);
 
 			if (!is(TOKEN_NUMBER) && !is(TOKEN_IDENDIFIER)) {
 				log_error("expectUnaryExpression(): Unexpected Token: expected number or identifier but got '%s' instead\n", TOKEN_TYPE_NAMES[current->type]);
@@ -1115,6 +1158,48 @@ Expression_T *expectUnaryExpression() {
 					exit(1);
 				}
 			}
+			literal->value = calloc(strlen(current->data), sizeof(char));
+			strcpy(literal->value, current->data);
+			next();
+
+			unary_expr->identifier = literal;
+
+			Expression_T *expr = calloc(1, sizeof(Expression_T));
+			if (expr == NULL) {
+				free(unary_expr);
+				free(literal);
+				log_error("expectUnaryExpression(): calloc failed\n");
+				exit(1);
+			}
+
+			expr->type = EXPRESSION_UNARY;
+			expr->expr.unary_expr = unary_expr;
+
+			return expr;
+		} // case TOKEN_MINUS
+		case TOKEN_INCREMENT: {
+			UnaryExpression_T *unary_expr = calloc(1, sizeof(UnaryExpression_T));
+			if (unary_expr == NULL) {
+				log_error("expectUnaryExpression(): calloc failed\n");
+				exit(1);
+			}
+
+			unary_expr->operator = UNARY_OPERATOR_INCREMENT;
+			next();
+
+			if (!is(TOKEN_IDENDIFIER)) {
+				log_error("expectUnaryExpression(): Unexpected Token: expected identifier but got '%s' instead\n", TOKEN_TYPE_NAMES[current->type]);
+				exit(1);
+			}
+
+			Literal_T *literal = calloc(1, sizeof(Literal_T));
+			if (literal == NULL) {
+				free(unary_expr);
+				log_error("expectUnaryExpression(): calloc failed\n");
+				exit(1);
+			}
+
+			literal->type = LITERAL_IDENTIFIER;
 			literal->value = calloc(strlen(current->data), sizeof(char));
 			strcpy(literal->value, current->data);
 			next();
