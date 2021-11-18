@@ -76,5 +76,6 @@ const char* STATEMENT_TYPES[] = {
 	[STATEMENT_EXPRESSION] = "expression_statement",
 	[STATEMENT_RETURN] = "return_statement",
 	[STATEMENT_VARIABLE_DECLARATION] = "variable_declaration_statement",
-	[STATEMENT_CONDITIONAL] = "conditional_statement"
+	[STATEMENT_CONDITIONAL] = "conditional_statement",
+	[STATEMENT_LOOP] = "loop_statement"
 };
