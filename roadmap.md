@@ -1,12 +1,22 @@
 # Luvascript Roadmap
 
+## Luvascript v0.3.0
+
+### New Features
+
+- [ ] classes
+- [ ] interfaces
+
 ## Luvascript v0.2.0
 
 ### New Features
 
-- [ ] structs
-- [ ] enums
-- [ ] strings
+- [ ] more primitive datatypes
+	- [ ] `string`
+	- [ ] `char`
+	- [ ] `struct`
+	- [ ] `enum`
+	- [ ] `union`
 - [ ] arrays
 - [ ] lambdas (function lambdas / assign lambda to variable)
 - [ ] passing functions as variables/parameter
@@ -27,5 +37,6 @@
 - [x] external functions (importing / exporting functions to c/c++ or other)
 - [x] conditional statements (`if` / `else if` / `else`)
 - [x] condtional expressions
-- [ ] loop statements (`while`)
+- [x] loop statements (`while`)
 - [x] jump statememts (`return`)
+- [x] compound statements
