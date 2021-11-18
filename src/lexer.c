@@ -5,7 +5,7 @@
 #include <util.h>
 #include <token.h>
 
-#define keywords_length 17
+#define keywords_length 18
 
 char *keywords[keywords_length] = {
     "function",
@@ -24,7 +24,8 @@ char *keywords[keywords_length] = {
     "double",
 	"extern",
 	"if",
-	"else"
+	"else",
+	"while",
 };
 
 ArrayList *tokenize(char *code) {
