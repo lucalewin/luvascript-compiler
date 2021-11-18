@@ -114,13 +114,8 @@ AST *parse(ArrayList *token_list) {
 			arraylist_add(root->functions, func);
 		} else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
 			// expect global variable/constant declaration
-			
 			Variable *glob_var = parseVariable();
-
 			arraylist_add(root->global_variables, glob_var);
-
-			// log_error("global variables are not supported yet\n");
-			// exit(1);
 		} else if (strcmp(current->data, "extern") == 0) {
 			// expect extern function declaration
 			FunctionTemplate *extern_func_template = expectExternFunctionTemplate();
@@ -131,12 +126,6 @@ AST *parse(ArrayList *token_list) {
 			arraylist_free(root->extern_functions);
 			arraylist_free(root->global_variables);
 			free(root);
-			// TODO: implement freeing of tokenlist in caller method
-			// for (size_t i = token_list->size - 1; i >= 0; i--) {
-			// 	Token *token = arraylist_get(token_list, i);
-			// 	token_free(token);
-			// }
-			// arraylist_free(token_list);
 			return NULL;
 		}
 	}

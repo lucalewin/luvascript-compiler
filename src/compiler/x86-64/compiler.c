@@ -61,6 +61,7 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope);
 
 char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope);
+char *compile_variable_pointer_with_offset(VariableTemplate *var_template, Scope *scope);
 
 // --------------------- function implementations ----------------------
 
@@ -301,8 +302,6 @@ char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
 }
 
 char *compile_variable_declaration_statement(VariableDeclarationStatement *var_decl_stmt, Scope *scope) {
-	// log_debug("compile_variable_declaration_statement():\n");
-
 	Variable *var = var_decl_stmt->var;	
 
 	// compile default expression
@@ -310,26 +309,13 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 	// if (var->default_value->type == EXPRESSION_LITERAL) {}
 
 	char *var_decl_code = compile_expression(var->default_value, scope);
-	char *rbp_offset = int_to_string(scope_get_variable_rbp_offset(scope, var->identifier->value));
 
-	switch (var->datatype->size) {
-		case 1: // BYTE
-			var_decl_code = straddall(var_decl_code, "mov BYTE[rbp-", rbp_offset, "], al\n");
-			break;
-		case 2: // WORD
-			var_decl_code = straddall(var_decl_code, "mov WORD[rbp-", rbp_offset, "], ax\n");
-			break;
-		case 4: // DWORD
-			var_decl_code = straddall(var_decl_code, "mov DWORD[rbp-", rbp_offset, "], eax\n");
-			break;
-		case 8: // QWORD
-			var_decl_code = straddall(var_decl_code, "mov QWORD[rbp-", rbp_offset, "], rax\n");
-			break;
-		default:
-			log_error("unexpected datatype size: %d\n", var->datatype->size);
-			exit(1);
-			break;
-	}
+	var_decl_code = straddall(var_decl_code, 
+					"mov ", 
+					compile_variable_pointer_with_offset(convert_to_variable_template(var), scope), 
+					", ", 
+					getRegisterWithOpCodeSize(REGISTER_EAX, var->datatype->size), 
+					"\n", NULL);
 
 	return var_decl_code;
 }
@@ -539,7 +525,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 				} // case LITERAL_NUMBER
 				case LITERAL_IDENTIFIER: {
 					if (!scope_contains_variable(scope, literal->value)) {
-						log_error("undefined variable '%s'\n", literal->value);
+						log_error("#1 undefined variable '%s'\n", literal->value);
 						free(bin_expr_code);
 						return NULL;
 					}
@@ -768,7 +754,7 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 		}
 		case LITERAL_IDENTIFIER: {
 			if (!scope_contains_variable(scope, literal->value)) {
-				log_error("undefined variable '%s'\n", literal->value);
+				log_error("#2 undefined variable '%s'\n", literal->value);
 				free(literal_expr_code);
 				return NULL;
 			}
@@ -919,7 +905,7 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 		}
 
 		if (!scope_contains_variable(scope, identifier->value)) {
-			log_error("undefined variable '%s'\n", identifier->value);
+			log_error("#3 undefined variable '%s'\n", identifier->value);
 			free(assignment_expr_code);
 			return NULL;
 		}
@@ -992,6 +978,24 @@ char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 			return straddall("DWORD[", var_address, "]", NULL);
 		case 8: // QWORD
 			return straddall("QWORD[", var_address, "]", NULL);
+		default:
+			log_error("unknown datatype size: %d\n", var_template->datatype->size);
+			exit(1);
+	}
+}
+
+char *compile_variable_pointer_with_offset(VariableTemplate *var_template, Scope *scope) {
+	char *offset = int_to_string(scope_get_variable_rbp_offset(scope, var_template->identifier));
+
+	switch (var_template->datatype->size) {
+		case 1: // BYTE
+			return straddall("BYTE[rbp-", offset, "]", NULL);
+		case 2: // WORD
+			return straddall("WORD[rbp-", offset, "]", NULL);
+		case 4: // DWORD
+			return straddall("DWORD[rbp-", offset, "]", NULL);
+		case 8: // QWORD
+			return straddall("QWORD[rbp-", offset, "]", NULL);
 		default:
 			log_error("unknown datatype size: %d\n", var_template->datatype->size);
 			exit(1);
