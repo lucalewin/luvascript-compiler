@@ -23,7 +23,8 @@ void scope_evaluate_function(Function *function);
  * @param stmt 
  * @param parent_scope 
  */
-void scope_evaluate_statement(Statement *stmt, Scope *parent_scope);
+// void scope_evaluate_statement(Statement *stmt, Scope *parent_scope);
+void scope_evaluate_statement(Statement *stmt);
 
 // ----------------------------------------------------------------
 
@@ -41,6 +42,10 @@ Scope *scope_new();
  * @return Scope* the new scope
  */
 Scope *scope_copy(Scope *scope);
+
+Scope *scope_join(Scope *scope, Scope *other);
+
+void scope_free(Scope *scope);
 
 /**
  * @brief get the base pointer offset on the stack where the var is located
