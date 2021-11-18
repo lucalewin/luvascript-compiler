@@ -12,6 +12,11 @@
 #include <types/statement.h>
 #include <types/function.h>
 
+/**
+ * @brief evaluates the scopes of the ast
+ * 
+ * @param ast the ast to evaluate
+ */
 void scope_evaluate_ast(AST *ast) {
 	log_debug("evaluating scope\n");
 
@@ -56,6 +61,11 @@ void scope_evaluate_ast(AST *ast) {
 	}
 }
 
+/**
+ * @brief evaluates a function's scope
+ * 
+ * @param function the function to evaluate
+ */
 void scope_evaluate_function(Function *function) {
 	// add parameter templates to local variables
 	for (size_t i = 0; i < function->parameters->size; i++) {
@@ -81,6 +91,11 @@ void scope_evaluate_function(Function *function) {
 
 // ----------------------------------------------------------------
 
+/**
+ * @brief evaluates a statement's scope
+ * 
+ * @param stmt the statement to evaluate
+ */
 void scope_evaluate_statement(Statement *stmt) {
 	switch (stmt->type) {
 		case STATEMENT_COMPOUND: {
@@ -149,7 +164,11 @@ void scope_evaluate_statement(Statement *stmt) {
 
 // -----------------------------------------------------------
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief creates a new scope and initializes it with default values
+ * 
+ * @return Scope* the newly allocated memory for the scope
+ */
 Scope *scope_new() {
 	Scope *scope = calloc(1, sizeof(Scope));
 	scope->global_variable_templates = arraylist_create();
@@ -158,7 +177,12 @@ Scope *scope_new() {
 	return scope;
 }
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief creates a new scope and copies all variables and functions from the given scope
+ * 
+ * @param scope the scope to be copied
+ * @return Scope* the new scope
+ */
 Scope *scope_copy(Scope *scope) {
 	Scope *copy = calloc(1, sizeof(Scope));
 	copy->global_variable_templates = arraylist_copy(scope->global_variable_templates);
@@ -167,6 +191,13 @@ Scope *scope_copy(Scope *scope) {
 	return copy;
 }
 
+/**
+ * @brief joins two scopes together
+ * 
+ * @param scope the first scope
+ * @param other the second scope
+ * @return Scope* the joined scope
+ */
 Scope *scope_join(Scope *scope, Scope *other) {
 	Scope *joined = scope_copy(scope);
 
@@ -177,6 +208,11 @@ Scope *scope_join(Scope *scope, Scope *other) {
 	return joined;
 }
 
+/**
+ * @brief frees the memory allocated memory for the given scope
+ * 
+ * @param scope the scope to be freed
+ */
 void scope_free(Scope *scope) {
 	arraylist_free(scope->global_variable_templates);
 	arraylist_free(scope->local_variable_templates);
@@ -184,7 +220,13 @@ void scope_free(Scope *scope) {
 	free(scope);
 }
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief calculates the offset of the given variable on the stack
+ * 
+ * @param scope the current scope
+ * @param var_name the name of the variable
+ * @return int the offset of the variable on the stack
+ */
 int scope_get_variable_rbp_offset(Scope *scope, char *var_name) {
 	int offset = 0;
 	for (size_t i = 0; i < scope->local_variable_templates->size; i++) {
@@ -201,12 +243,24 @@ int scope_get_variable_rbp_offset(Scope *scope, char *var_name) {
 
 // -------------------------------
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief checks if the given scope contains a local or global variable with the given name
+ * 
+ * @param scope the current scope
+ * @param var_name the name of the variable
+ * @return int 1 if the variable is defined, 0 otherwise
+ */
 int scope_contains_variable(Scope *scope, char *var_name) {
 	return scope_contains_local_variable(scope, var_name) || scope_contains_global_variable(scope, var_name);
 }
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief checks if the given scope contains a local variable with the given name
+ * 
+ * @param scope the current scope
+ * @param var_name the name of the variable
+ * @return int 1 if the variable is defined localy, 0 otherwise
+ */
 int scope_contains_local_variable(Scope *scope, char *var_name) {
 	for (int i = 0; i < scope->local_variable_templates->size; i++) {
 		VariableTemplate *local_variable_template = arraylist_get(scope->local_variable_templates, i);
@@ -217,7 +271,13 @@ int scope_contains_local_variable(Scope *scope, char *var_name) {
 	return 0; // false
 }
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief checks if the given scope contains a global variable with the given name
+ * 
+ * @param scope the current scope
+ * @param var_name the name of the variable
+ * @return int 1 if the variable is defined globaly, 0 otherwise
+ */
 int scope_contains_global_variable(Scope *scope, char *var_name) {
 	for (int i = 0; i < scope->global_variable_templates->size; i++) {
 		VariableTemplate *global_variable_template = arraylist_get(scope->global_variable_templates, i);
@@ -228,7 +288,13 @@ int scope_contains_global_variable(Scope *scope, char *var_name) {
 	return 0; // false
 }
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief get the address of the variable with the given name
+ * 
+ * @param scope the current scope
+ * @param var_name the name of the variable
+ * @return char* the address of the variable
+ */
 char *scope_get_variable_address(Scope *scope, char *var_name) {
 	if (!scope_contains_variable(scope, var_name)) {
 		log_error("undefined variable '%s'\n", var_name);
@@ -248,7 +314,13 @@ char *scope_get_variable_address(Scope *scope, char *var_name) {
 	return address;
 }
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief checks if the given scope contains a function with the given name
+ * 
+ * @param scope the current scope
+ * @param func_name the name of the function
+ * @return int 1 if the function is defined, 0 otherwise
+ */
 int scope_contains_function(Scope *scope, char *func_name) {
 	for (int i = 0; i < scope->function_templates->size; i++) {
 		FunctionTemplate *func_template = arraylist_get(scope->function_templates, i);
@@ -259,7 +331,13 @@ int scope_contains_function(Scope *scope, char *func_name) {
 	return 0; // false
 }
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief get the variable template of the variable with the given name
+ * 
+ * @param scope the current scope
+ * @param var_name the name of the variable
+ * @return VariableTemplate* the variable template of the variable
+ */
 VariableTemplate *scope_get_variable_by_name(Scope *scope, char *var_name) {
 	for (int i = 0; i < scope->local_variable_templates->size; i++) {
 		VariableTemplate *local_variable_template = arraylist_get(scope->local_variable_templates, i);
@@ -279,7 +357,13 @@ VariableTemplate *scope_get_variable_by_name(Scope *scope, char *var_name) {
 	return NULL;
 }
 
-// TODO(lucalewin) add documentation
+/**
+ * @brief get the function template of the function with the given name
+ * 
+ * @param scope the current scope
+ * @param func_name the name of the function
+ * @return FunctionTemplate* the function template of the function
+ */
 FunctionTemplate *scope_get_function_by_name(Scope *scope, char *func_name) {
 	for (int i = 0; i < scope->function_templates->size; i++) {
 		FunctionTemplate *func_template = arraylist_get(scope->function_templates, i);
