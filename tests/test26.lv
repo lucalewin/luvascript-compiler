@@ -1,0 +1,9 @@
+function main(): int {
+	var index: int = 0;
+	var sum: int = 0;
+
+	while (index < 10)
+		sum += ++index;
+
+	return sum;
+}

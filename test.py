@@ -5,14 +5,14 @@ import glob
 import subprocess
 
 def colored(r, g, b, text):
-    return "\033[38;2;{};{};{}m{}\x1B[0m".format(r, g, b, text)
+    return f"\033[38;2;{r};{g};{b}m{text}\x1B[0m"
 
 test_dir = "./tests"
 
 # load all test files
 test_files = [file for root, dirs, files in os.walk(test_dir) for file in files if file.lower().endswith(".lv")]
 
-# format: 'test-name', ['test-output', ...], exitcode
+# format: ['test-name', ['test-output', ...], exitcode]
 expected_outputs = [
 	["Test 1", [], 55],
 	["Test 2", [], 26],
@@ -38,7 +38,9 @@ expected_outputs = [
 	["Test 22", [], 1],
 	["Test 23", [], 20],
 	["Test 24", [], 10],
-	["Test 25", [], 8]]
+	["Test 25", [], 8],
+	["Test 26", [], 55],
+	["Test 27", [], 22]]
 
 index = 0
 
@@ -78,7 +80,7 @@ for test in test_files:
 		successfull_tests += 1
 	else:
 		print(f'{expected_outputs[index][0]}:', colored(255, 0, 0, 'test failed'))
-		print('\texpected exitcode \'{}\' but got \'{}\' instead'.format(expected_outputs[index][2], result.returncode))
+		print(f'\texpected exitcode \'{expected_outputs[index][2]}\' but got \'{result.returncode}\' instead')
 		print()
 		failed_tests += 1
 

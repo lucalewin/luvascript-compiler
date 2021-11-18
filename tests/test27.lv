@@ -1,0 +1,13 @@
+function main(): int {
+	var x: int = 20;
+
+	if (x > 10) {
+		var y: int = x + 42;
+		x = y - 2 * x;
+	} else {
+		var y: int = x + 69;
+		x = y + 2 * x;
+	}
+
+	return x;
+}
