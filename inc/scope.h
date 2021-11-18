@@ -3,10 +3,13 @@
 
 #include <util/arraylist.h>
 
-typedef struct _scope {
+typedef struct _scope Scope;
+
+struct _scope {
 	ArrayList *global_variable_templates;
 	ArrayList *local_variable_templates;
 	ArrayList *function_templates;
-} Scope;
+	Scope *parent;
+};
 
 #endif
