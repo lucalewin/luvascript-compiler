@@ -13,8 +13,11 @@
 #include <types/function.h>
 
 void scope_evaluate_ast(AST *ast) {
+	log_debug("evaluating scope\n");
+
 	// initialize a empty global scope
 	ast->global_scope = scope_new();
+	ast->global_scope->parent = NULL;
 
 	// convert variables to variable templates + add them to the global scope
 	for (size_t i = 0; i < ast->global_variables->size; i++) {
@@ -48,55 +51,59 @@ void scope_evaluate_ast(AST *ast) {
 	for (size_t i = 0; i < ast->functions->size; i++) {
 		Function *func = arraylist_get(ast->functions, i);
 		func->scope = scope_copy(ast->global_scope);
+		func->scope->parent = ast->global_scope;
 		scope_evaluate_function(func);
 	}
 }
 
 void scope_evaluate_function(Function *function) {
-	log_debug("scope_evaluate_function()\n");
-
 	// add parameter templates to local variables
 	for (size_t i = 0; i < function->parameters->size; i++) {
 		Variable *parameter = arraylist_get(function->parameters, i);
-
 		if (scope_contains_local_variable(function->scope, parameter->identifier->value)) {
 			log_error("variable already defined\n");
 			// TODO(lucalewin): free memory
 			exit(1);
 		}
-
 		arraylist_add(function->scope->local_variable_templates, convert_to_variable_template(parameter));
 	}
-
-	log_debug("scope_evaluate_function(): statment count: %d\n", function->body_statements->size);
 
 	// evaluate scopes of function statements
 	for (size_t i = 0; i < function->body_statements->size; i++) {
 		Statement *stmt = arraylist_get(function->body_statements, i);
+
 		stmt->scope = scope_copy(function->scope);
-		scope_evaluate_statement(stmt, function->scope);
+		stmt->scope->parent = function->scope;
+
+		scope_evaluate_statement(stmt);
 	}
 }
 
 // ----------------------------------------------------------------
 
-void scope_evaluate_statement(Statement *stmt, Scope *parent_scope) {
-	log_debug("scope_evaluate_statement(): statment-type: %s\n", STATEMENT_TYPES[stmt->type]);
-
+void scope_evaluate_statement(Statement *stmt) {
 	switch (stmt->type) {
-		case STATEMENT_COMPOUND:
-			// TODO(lucalewin)
-			break;
+		case STATEMENT_COMPOUND: {
+			CompoundStatement *compound_stmt = stmt->stmt.compound_statement;
 
+			compound_stmt->local_scope = scope_new();
+
+			for (size_t i = 0; i < compound_stmt->nested_statements->size; i++) {
+				Statement *inner_stmt = arraylist_get(compound_stmt->nested_statements, i);
+
+				inner_stmt->scope = scope_join(stmt->scope, compound_stmt->local_scope);
+				inner_stmt->scope->parent = compound_stmt->local_scope;
+
+				scope_evaluate_statement(inner_stmt);
+			}
+
+			break;
+		}
 		case STATEMENT_EXPRESSION:
 			break;
-
 		case STATEMENT_RETURN:
 			break;
-
 		case STATEMENT_VARIABLE_DECLARATION: {
-			// log_debug("scope_evaluate_statement(): evaluating variable declaration statement\n");
-
 			Variable *var = stmt->stmt.variable_decl->var;
 
 			if (scope_contains_local_variable(stmt->scope, var->identifier->value)) {
@@ -105,32 +112,35 @@ void scope_evaluate_statement(Statement *stmt, Scope *parent_scope) {
 				exit(1);
 			}
 
-			arraylist_add(parent_scope->local_variable_templates, convert_to_variable_template(var));
-
+			arraylist_add(stmt->scope->parent->local_variable_templates, convert_to_variable_template(var));
+			
 			break;
 		}
-
 		case STATEMENT_CONDITIONAL: {
-
 			ConditionalStatement *cond_stmt = stmt->stmt.condtional_statement;
 
 			cond_stmt->body->scope = scope_copy(stmt->scope);
-			
-			scope_evaluate_statement(cond_stmt->body, parent_scope);
+			cond_stmt->body->scope->parent = stmt->scope;
+
+			scope_evaluate_statement(cond_stmt->body);
 
 			if (cond_stmt->else_stmt != NULL) {
 				cond_stmt->else_stmt->scope = scope_copy(stmt->scope);
-				log_debug("scope_evaluate_function(): eval else_stmt\n");
-				scope_evaluate_statement(cond_stmt->else_stmt, parent_scope);
+				cond_stmt->else_stmt->scope->parent = stmt->scope;
+				scope_evaluate_statement(cond_stmt->else_stmt);
 			}
-
-			// Statement *body_stmt = stmt->stmt.condtional_statement->body;
-			// body_stmt->scope = scope_copy(stmt->scope);
-			// scope_evaluate_statement(body_stmt, parent_scope);
 
 			break;
 		}
+		case STATEMENT_LOOP: {
+			LoopStatement *loop_stmt = stmt->stmt.loop_statement;
+			
+			loop_stmt->body->scope = scope_copy(stmt->scope);
+			loop_stmt->body->scope->parent = stmt->scope;
 
+			scope_evaluate_statement(loop_stmt->body);
+			break;
+		}
 		default:
 			log_error("unexpected statement type '%d'\n", stmt->type);
 			exit(1);
@@ -151,11 +161,27 @@ Scope *scope_new() {
 // TODO(lucalewin) add documentation
 Scope *scope_copy(Scope *scope) {
 	Scope *copy = calloc(1, sizeof(Scope));
-	// copy->variables_old = arraylist_copy(scope->variables_old);
 	copy->global_variable_templates = arraylist_copy(scope->global_variable_templates);
 	copy->local_variable_templates = arraylist_copy(scope->local_variable_templates);
 	copy->function_templates = arraylist_copy(scope->function_templates);
 	return copy;
+}
+
+Scope *scope_join(Scope *scope, Scope *other) {
+	Scope *joined = scope_copy(scope);
+
+	arraylist_addall(joined->global_variable_templates, other->global_variable_templates);
+	arraylist_addall(joined->local_variable_templates, other->local_variable_templates);
+	arraylist_addall(joined->function_templates, other->function_templates);
+
+	return joined;
+}
+
+void scope_free(Scope *scope) {
+	arraylist_free(scope->global_variable_templates);
+	arraylist_free(scope->local_variable_templates);
+	arraylist_free(scope->function_templates);
+	free(scope);
 }
 
 // TODO(lucalewin) add documentation
@@ -164,10 +190,11 @@ int scope_get_variable_rbp_offset(Scope *scope, char *var_name) {
 	for (size_t i = 0; i < scope->local_variable_templates->size; i++) {
 		VariableTemplate *var_template = arraylist_get(scope->local_variable_templates, i);
 		if (strcmp(var_name, var_template->identifier) == 0) {
-			break;
+			return offset + 8;
 		}
 		offset += var_template->datatype->size;
 	}
+
 	// in bytes 0..7 the old value of rbp is store -> add 8 bytes to avoid overwriting old value of rbp
 	return offset + 8;
 }
