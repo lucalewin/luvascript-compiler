@@ -9,6 +9,7 @@
 #include <logging/logger.h>
 
 #include <scope_impl.h>
+#include <register.h>
 
 // types
 #include <types/operator.h>
@@ -33,14 +34,9 @@ char *exit_template =
 "mov rax, 60\n"
 "syscall\n";
 
-char *assembler = "nasm";
-char *file_format = "-f elf64";
-char *linker = "ld";
-
 // ------------------------- global variables --------------------------
 
 int label_counter;
-int else_if_label_counter;
 int statement_label_counter;
 
 // ----------------------- function prototypes -------------------------
@@ -55,6 +51,7 @@ char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope);
 char *compile_variable_declaration_statement(VariableDeclarationStatement *var_decl_stmt, Scope *scope);
 char *compile_expression_statement(ExpressionStatement *expr_stmt, Scope *scope);
 char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scope);
+char *compile_loop_statement(LoopStatement *loop_stmt, Scope *scope);
 
 char *compile_expression(Expression_T *expr, Scope *scope);
 char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope);
@@ -63,25 +60,14 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope);
 char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr, Scope *scope);
 char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope);
 
+char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope);
+
 // --------------------- function implementations ----------------------
-
-void compile_asm_file(char *src_file, char *out_file) {
-	// get temp object file name
-	char *obj_file = calloc(1, sizeof(char));
-	obj_file = straddall(obj_file, src_file, ".o", NULL);
-
-	// compile .asm file using nasm and elf64 format
-	exec(assembler, file_format, src_file, "-o", obj_file, NULL);
-
-	// link .o file and create binary file
-	exec(linker, "-g", obj_file, out_file, NULL);
-}
 
 char *compile_to_x86_64_assembly(AST *root) {
 	log_debug("compiling to x68_64 assembly\n");
 	
 	label_counter = 0;
-	else_if_label_counter = 0;
 	statement_label_counter = 0;
 
 	// char *stmt_code = compile_statement(root->statement);
@@ -249,6 +235,9 @@ char *compile_statement(Statement *stmt) {
 		case STATEMENT_CONDITIONAL:
 			return compile_conditional_statement(stmt->stmt.condtional_statement, stmt->scope);
 
+		case STATEMENT_LOOP:
+			return compile_loop_statement(stmt->stmt.loop_statement, stmt->scope);
+
 		default:
 			log_error("compile_statement(): unexpected statement type '%s'\n", STATEMENT_TYPES[stmt->type]);
 			exit(1);
@@ -256,34 +245,36 @@ char *compile_statement(Statement *stmt) {
 }
 
 char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope) {
-	// calculate size for stack align
-	size_t size_for_stack_align = 0;
-	for (int i = 0; i < scope->local_variable_templates->size; i++) {
-		VariableTemplate *var_template = arraylist_get(scope->local_variable_templates, i);
+	log_debug("compile_compound_statement():\n");
+
+	// align stack if needed (for local variables)
+	int size_for_stack_align = 0;
+	for (size_t i = 0; i < compound_stmt->local_scope->local_variable_templates->size; i++) {
+		VariableTemplate *var_template = arraylist_get(compound_stmt->local_scope->local_variable_templates, i);
 		size_for_stack_align += var_template->datatype->size;
 	}
 
-	// compile to assembly
-	char *compound_stmt_code = calloc(1, sizeof(char));
+	char *compound_code = calloc(1, sizeof(char));
+
+	if (size_for_stack_align > 0) {
+		log_debug("aliging stack by %d bytes\n", size_for_stack_align);
+		compound_code = straddall(compound_code, 
+				// "push rbp\n"
+				// "mov rbp, rsp\n"
+				"sub rsp, ", int_to_string(size_for_stack_align), "\n", NULL);
+	}
+
+	for (size_t i = 0; i < compound_stmt->nested_statements->size; i++) {
+		Statement *stmt = arraylist_get(compound_stmt->nested_statements, i);
+		compound_code = stradd(compound_code, compile_statement(stmt));
+	}
 
 	if (size_for_stack_align != 0) {
-		compound_stmt_code = stradd(compound_stmt_code, "push rbp\n"); // save old value of RBP
-		compound_stmt_code = stradd(compound_stmt_code, "mov rbp, rsp\n");
-		compound_stmt_code = stradd(compound_stmt_code, "sub rsp, "); // align stack
-		compound_stmt_code = stradd(compound_stmt_code, int_to_string(size_for_stack_align + 8)); // size in bytes
-		compound_stmt_code = stradd(compound_stmt_code, "\n");
+		// compound_code = stradd(compound_code, "mov rsp, rbp\npop rbp\n");
+		compound_code = straddall(compound_code, "add rsp, ", int_to_string(size_for_stack_align), "\n", NULL);
 	}
 
-	for (int i = 0; i < compound_stmt->nested_statements->size; i++) {
-		compound_stmt_code = stradd(compound_stmt_code, compile_statement(arraylist_get(compound_stmt->nested_statements, i)));
-	}
-
-	if (size_for_stack_align != 0) {
-		compound_stmt_code = stradd(compound_stmt_code, "mov rsp, rbp\n");
-		compound_stmt_code = stradd(compound_stmt_code, "pop rbp\n");
-	}
-
-	return compound_stmt_code;
+	return compound_code;
 }
 
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
@@ -387,6 +378,27 @@ char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scop
 				label_condition_false, ":\n", 
 				false_branch_code,
 				end_of_conditional_statement, ":\n", NULL);
+}
+
+char *compile_loop_statement(LoopStatement *loop_stmt, Scope *scope) {
+	// compile condition expression
+	char *cond_expr_code = compile_expression(loop_stmt->conditional_expression, scope);
+
+	// compile loop body
+	char *loop_body_code = compile_statement(loop_stmt->body);
+
+	// generate label for false condition
+	char *label_condition = stradd(".LC", int_to_string(label_counter++));
+	char *label_condition_false = stradd(".LCF", int_to_string(label_counter++));
+
+	return straddall(
+				label_condition, ":\n", 
+				cond_expr_code, 
+				"cmp eax, 0\n"
+				"je ", label_condition_false, "\n", 
+				loop_body_code, 
+				"jmp ", label_condition, "\n",
+				label_condition_false ,":\n", NULL);
 }
 
 // ----------------------------------------------------------------
@@ -533,40 +545,10 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					}
 
 					VariableTemplate *var_template = scope_get_variable_by_name(scope, literal->value);
-					char *var_address = scope_get_variable_address(scope, literal->value);
 
-					char *var_pointer = NULL;
-					char *reg_a = NULL;
-					char *reg_b = NULL;
-
-					switch (var_template->datatype->size) {
-						case 1:
-							var_pointer = "BYTE";
-							reg_a = "al";
-							reg_b = "bl";
-							break;
-						case 2:
-							var_pointer = "WORD";
-							reg_a = "ax";
-							reg_b = "bx";
-							break;
-						case 4:
-							var_pointer = "DWORD";
-							reg_a = "eax";
-							reg_b = "ebx";
-							break;
-						case 8:
-							var_pointer = "QWORD";
-							reg_a = "rax";
-							reg_b = "rbx";
-							break;
-						default:
-							log_error("[2] compile_binary_expression(): unknown datatype size: %d\n", var_template->datatype->size);
-							// TODO(lucalewin): free memory
-							return NULL;
-					} // switch (var_template->datatype->size)
-
-					var_pointer = straddall(var_pointer, "[", var_address, "]", NULL);
+					char *var_pointer = compile_variable_pointer(var_template, scope);
+					char *reg_a = getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size);
+					char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, var_template->datatype->size);
 
 					switch (bin_expr->operator) {
 						case BINARY_OPERATOR_PLUS:
@@ -606,17 +588,6 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_EQUAL: {
-							// char* label_equal_index = int_to_string(label_counter++);
-							// char* label_not_equal_index = int_to_string(label_counter++);
-							// bin_expr_code = straddall(bin_expr_code,
-							// 					"mov ", reg_b, ", ", var_pointer, "\n"
-							// 					"cmp ", reg_a, ",",  reg_b, "\n", 
-							// 					"je .LE", label_equal_index, "\n"
-							// 					"mov ", reg_a, ", 0\n"
-							// 					"jmp .LNE", label_not_equal_index, "\n"
-							// 					".LE", label_equal_index, "\n"
-							// 					"mov ", reg_a, ", 1\n"
-							// 					".LNE", label_not_equal_index, "\n", NULL);
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov ", reg_b, ", ", var_pointer, "\n"
 												"cmp ", reg_a, ",",  reg_b, "\n"
@@ -625,17 +596,6 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 						}
 
 						case BINARY_OPERATOR_LOGICAL_NOT_EQUAL: {
-							// char* label_equal_index = int_to_string(label_counter++);
-							// char* label_not_equal_index = int_to_string(label_counter++);
-							// bin_expr_code = straddall(bin_expr_code,
-							// 					"mov ", reg_b, ", ", var_pointer, "\n"
-							// 					"cmp ", reg_a, ",",  reg_b, "\n", 
-							// 					"je .LE", label_equal_index, "\n"
-							// 					"mov ", reg_a, ", 1\n"
-							// 					"jmp .LNE", label_not_equal_index, "\n"
-							// 					".LE", label_equal_index, ":\n"
-							// 					"mov ", reg_a, ", 0\n"
-							// 					".LNE", label_not_equal_index, ":\n", NULL);
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov ", reg_b, ", ", var_pointer, "\n"
 												"cmp ", reg_a, ",",  reg_b, "\n"
@@ -814,26 +774,11 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 			}
 
 			VariableTemplate *var_template = scope_get_variable_by_name(scope, literal->value);
-			char *var_address = scope_get_variable_address(scope, literal->value);
 
-			switch (var_template->datatype->size) {
-				case 1: // BYTE
-					literal_expr_code = straddall(literal_expr_code, "mov al, BYTE[", var_address, "]\n", NULL);
-					break;
-				case 2: // WORD
-					literal_expr_code = straddall(literal_expr_code, "mov ax, WORD[", var_address, "]\n", NULL);
-					break;
-				case 4: // DWORD
-					literal_expr_code = straddall(literal_expr_code, "mov eax, DWORD[", var_address, "]\n", NULL);
-					break;
-				case 8: // QWORD
-					literal_expr_code = straddall(literal_expr_code, "mov rax, QWORD[", var_address, "]\n", NULL);
-					break;
-				default:
-					log_error("unknown datatype size: %d\n", var_template->datatype->size);
-					exit(1);
-					break;
-			}
+			literal_expr_code = straddall(literal_expr_code, "mov ", 
+							getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size), ", ", 
+							compile_variable_pointer(var_template, scope), "\n", NULL);
+
 			break;
 		}
 		default:
@@ -862,6 +807,19 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 				exit(1);
 			}
 			unary_expr_code = stradd(unary_expr_code, "neg rax\n");
+			break;
+		}
+		case UNARY_OPERATOR_INCREMENT: {
+			if (unary_expr->identifier->type != LITERAL_IDENTIFIER) {
+				log_error("unary increment with string-literal is not supported\n");
+				exit(1);
+			}
+			VariableTemplate *var_template = scope_get_variable_by_name(scope, unary_expr->identifier->value);
+			char *var_pointer = compile_variable_pointer(var_template, scope);
+			
+			unary_expr_code = straddall(unary_expr_code, 
+						"inc ", var_pointer, "\n" 
+						"mov ", getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size), ", ", var_pointer, "\n", NULL);
 			break;
 		}
 		default:
@@ -975,31 +933,36 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 			return NULL;
 		}
 
-		char *var_address = scope_get_variable_address(scope, identifier->value);
+		// char *var_address = scope_get_variable_address(scope, identifier->value);
+		char *var_pointer = compile_variable_pointer(template, scope);
+		char *reg_a = getRegisterWithOpCodeSize(REGISTER_EAX, template->datatype->size);
+		char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, template->datatype->size);
 
 		switch (assignment_expr->operator) {
 			case ASSIGNMENT_OPERATOR_DEFAULT:
-				assignment_expr_code = straddall(assignment_expr_code, "mov DWORD[", var_address, "], eax\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "mov ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_ADD:
-				assignment_expr_code = straddall(assignment_expr_code, "add DWORD[", var_address, "], eax\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "add ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_SUBTRACT:
-				assignment_expr_code = straddall(assignment_expr_code, "sub DWORD[", var_address, "], eax\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "sub ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_MULTIPLY:
-				assignment_expr_code = straddall(assignment_expr_code, "imul DWORD[", var_address, "]\nmov DWORD[", var_address, "], eax\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, 
+							"imul ", var_pointer, "\n"
+							"mov ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_DIVIDE:
 				assignment_expr_code = straddall(assignment_expr_code, 
-							"mov rbx, rax\n"
-							"mov eax, DWORD[", var_address, "]\n"
-							"idiv ebx\n"
-							"mov DWORD[", var_address, "], eax\n", NULL);
+							"mov ", reg_b, ", ", reg_a, "\n"
+							"mov ", reg_a, ", ", var_pointer, "\n"
+							"idiv ", reg_b, "\n"
+							"mov ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			default:
@@ -1015,4 +978,22 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 	}
 
 	return assignment_expr_code;
+}
+
+char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
+	char *var_address = scope_get_variable_address(scope, var_template->identifier);
+
+	switch (var_template->datatype->size) {
+		case 1: // BYTE
+			return straddall("BYTE[", var_address, "]", NULL);
+		case 2: // WORD
+			return straddall("WORD[", var_address, "]", NULL);
+		case 4: // DWORD
+			return straddall("DWORD[", var_address, "]", NULL);
+		case 8: // QWORD
+			return straddall("QWORD[", var_address, "]", NULL);
+		default:
+			log_error("unknown datatype size: %d\n", var_template->datatype->size);
+			exit(1);
+	}
 }
