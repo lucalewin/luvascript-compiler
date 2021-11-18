@@ -3,6 +3,7 @@
 
 typedef enum UnaryOperator {
 	UNARY_OPERATOR_NEGATE,
+	UNARY_OPERATOR_INCREMENT
     // UNARY_OPERATOR_PRE_INCREMENT,
     // ...
     // TODO: add missing unary operator types
