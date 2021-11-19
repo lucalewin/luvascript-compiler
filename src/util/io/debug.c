@@ -25,14 +25,14 @@ void print_literal(Literal_T *literal) {
 void print_expression(Expression_T *expression) {
     printf("\"type\":\"%s\",\"value\":", EXPRESSION_TYPES[expression->type]);
     switch (expression->type) {
-        case EXPRESSION_LITERAL:
+        case EXPRESSION_TYPE_LITERAL:
             print_literal(expression->expr.literal_expr);
             break;
-        case EXPRESSION_UNARY: {
+        case EXPRESSION_TYPE_UNARY: {
 			printf("{\"operator\":%d,\"value\":\"%s\"}", expression->expr.unary_expr->operator, expression->expr.unary_expr->identifier->value);
             break;
         }
-        case EXPRESSION_BINARY: {
+        case EXPRESSION_TYPE_BINARY: {
             printf("{\"left\":{");
             print_expression(expression->expr.binary_expr->expression_left);
             printf("},\"operator\":%d,\"right\":{", expression->expr.binary_expr->operator);
@@ -40,7 +40,7 @@ void print_expression(Expression_T *expression) {
             printf("}}");
             break;
         }
-        case EXPRESSION_NESTED: {
+        case EXPRESSION_TYPE_NESTED: {
             printf("{");
             print_expression(expression->expr.nested_expr->expression);
             printf("}");
@@ -77,11 +77,11 @@ void print_statement(Statement *statement) {
             break;
         case STATEMENT_RETURN:
 			printf("\"expression\":{");
-            print_expression(statement->stmt.return_statement->return_expression);
+            print_expression(statement->stmt.return_statement->expression);
 			printf("}");
             break;
 		case STATEMENT_VARIABLE_DECLARATION: {
-			Variable *var = statement->stmt.variable_decl->var;
+			Variable *var = statement->stmt.variable_decl->variable;
 			printf("\"identifier\":\"%s\",\"type\":%s,\"default_value\":{", var->identifier->value, var->datatype->type_identifier);
 			print_expression(var->default_value);
 			printf("}");

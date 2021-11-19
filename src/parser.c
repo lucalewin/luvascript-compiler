@@ -413,7 +413,7 @@ Variable *parseVariable() {
 			exit(1);
 		}
 
-		default_value_expr->type = EXPRESSION_LITERAL;
+		default_value_expr->type = EXPRESSION_TYPE_LITERAL;
 		default_value_expr->expr.literal_expr = default_value;
 		variable->default_value = default_value_expr;
 	} else if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
@@ -515,7 +515,7 @@ Statement *expectJumpStatement() {
         next();
         statement->type = STATEMENT_RETURN;
         ReturnStatement *ret_stmt = calloc(1, sizeof(ReturnStatement));
-        ret_stmt->return_expression = expectExpression();
+        ret_stmt->expression = expectExpression();
         statement->stmt.return_statement = ret_stmt;
         eat(TOKEN_SEMICOLON);
     } else {
@@ -545,7 +545,7 @@ Statement *expectVariableDeclarationStatement() {
 	statement->stmt.variable_decl = var_decl_stmt;
 	statement->type = STATEMENT_VARIABLE_DECLARATION;
 
-	var_decl_stmt->var = parseVariable();
+	var_decl_stmt->variable = parseVariable();
 
 	return statement;
 }
@@ -593,12 +593,11 @@ Statement *expectConditionalStatement() {
 	}
 
 	statement->type = STATEMENT_CONDITIONAL;
-	statement->stmt.condtional_statement = conditional_statement;
+	statement->stmt.conditional_statement = conditional_statement;
 
-	conditional_statement->type = CONDITIONAL_STATEMENT_IF;
-	conditional_statement->conditional_expression = condition;
-	conditional_statement->body = body;
-	conditional_statement->else_stmt = NULL;
+	conditional_statement->condition = condition;
+	conditional_statement->true_branch = body;
+	conditional_statement->false_branch = NULL;
 
 	if (is(TOKEN_KEYWORD) && strcmp(current->data, "else") == 0) {
 		next();
@@ -613,10 +612,9 @@ Statement *expectConditionalStatement() {
 				free(conditional_statement);
 				return NULL;
 			}
-			else_conditional_statement->stmt.condtional_statement->type = CONDITIONAL_STATEMENT_ELSEIF;
-			conditional_statement->else_stmt = else_conditional_statement;
+			conditional_statement->false_branch = else_conditional_statement;
 		} else {
-			conditional_statement->else_stmt = expectStatement();
+			conditional_statement->false_branch = expectStatement();
 		}
 	}
 
@@ -668,7 +666,7 @@ Statement *expectLoopStatement() {
 	statement->type = STATEMENT_LOOP;
 	statement->stmt.loop_statement = loop_statement;
 
-	loop_statement->conditional_expression = condition;
+	loop_statement->condition = condition;
 	loop_statement->body = body;
 
 	return statement;
@@ -707,9 +705,9 @@ Expression_T *expectAssignmentExpression() {
 	}
 
 	switch (identifier_expr->type) {
-		case EXPRESSION_UNARY: // all unary expressions are valid (for now [lvc version 0.1.0-alpha])
+		case EXPRESSION_TYPE_UNARY: // all unary expressions are valid (for now [lvc version 0.1.0-alpha])
 			break;
-		case EXPRESSION_LITERAL:
+		case EXPRESSION_TYPE_LITERAL:
 			if (identifier_expr->expr.literal_expr->type != LITERAL_IDENTIFIER) {
 				log_error("expected identifier but got '%s' instead\n", LITERAL_TYPES[identifier_expr->expr.literal_expr->type]);
 				exit(1);
@@ -731,7 +729,7 @@ Expression_T *expectAssignmentExpression() {
 		return NULL;
 	}
 
-	expr->type = EXPRESSION_ASSIGNMENT;
+	expr->type = EXPRESSION_TYPE_ASSIGNMENT;
 	expr->expr.assignment_expr = assignment_expr;
 
 	assignment_expr->identifier = identifier_expr;
@@ -799,7 +797,7 @@ Expression_T *expectLogicalOrExpression() {
 		binary_expression = temp;
 		temp = calloc(1, sizeof(BinaryExpression_T));
 		temp_expr = calloc(1, sizeof(Expression_T));
-		temp_expr->type = EXPRESSION_BINARY;
+		temp_expr->type = EXPRESSION_TYPE_BINARY;
 		temp_expr->expr.binary_expr = binary_expression;
 		temp->expression_left = temp_expr;
 	}
@@ -807,7 +805,7 @@ Expression_T *expectLogicalOrExpression() {
 	free(temp_expr);
 
 	Expression_T *expression = calloc(1, sizeof(Expression_T));
-	expression->type = EXPRESSION_BINARY;
+	expression->type = EXPRESSION_TYPE_BINARY;
 	expression->expr.binary_expr = binary_expression;
 
 	return expression;
@@ -832,7 +830,7 @@ Expression_T *expectLogicalAndExpression() {
 		binary_expression = temp;
 		temp = calloc(1, sizeof(BinaryExpression_T));
 		temp_expr = calloc(1, sizeof(Expression_T));
-		temp_expr->type = EXPRESSION_BINARY;
+		temp_expr->type = EXPRESSION_TYPE_BINARY;
 		temp_expr->expr.binary_expr = binary_expression;
 		temp->expression_left = temp_expr;
 	}
@@ -840,7 +838,7 @@ Expression_T *expectLogicalAndExpression() {
 	free(temp_expr);
 
 	Expression_T *expression = calloc(1, sizeof(Expression_T));
-	expression->type = EXPRESSION_BINARY;
+	expression->type = EXPRESSION_TYPE_BINARY;
 	expression->expr.binary_expr = binary_expression;
 
 	return expression;
@@ -865,7 +863,7 @@ Expression_T *expectBitwiseOrExpression() {
 		binary_expression = temp;
 		temp = calloc(1, sizeof(BinaryExpression_T));
 		temp_expr = calloc(1, sizeof(Expression_T));
-		temp_expr->type = EXPRESSION_BINARY;
+		temp_expr->type = EXPRESSION_TYPE_BINARY;
 		temp_expr->expr.binary_expr = binary_expression;
 		temp->expression_left = temp_expr;
 	}
@@ -873,7 +871,7 @@ Expression_T *expectBitwiseOrExpression() {
 	free(temp_expr);
 
 	Expression_T *expression = calloc(1, sizeof(Expression_T));
-	expression->type = EXPRESSION_BINARY;
+	expression->type = EXPRESSION_TYPE_BINARY;
 	expression->expr.binary_expr = binary_expression;
 
 	return expression;
@@ -898,7 +896,7 @@ Expression_T *expectBitwiseXorExpression() {
 		binary_expression = temp;
 		temp = calloc(1, sizeof(BinaryExpression_T));
 		temp_expr = calloc(1, sizeof(Expression_T));
-		temp_expr->type = EXPRESSION_BINARY;
+		temp_expr->type = EXPRESSION_TYPE_BINARY;
 		temp_expr->expr.binary_expr = binary_expression;
 		temp->expression_left = temp_expr;
 	}
@@ -906,7 +904,7 @@ Expression_T *expectBitwiseXorExpression() {
 	free(temp_expr);
 
 	Expression_T *expression = calloc(1, sizeof(Expression_T));
-	expression->type = EXPRESSION_BINARY;
+	expression->type = EXPRESSION_TYPE_BINARY;
 	expression->expr.binary_expr = binary_expression;
 
 	return expression;
@@ -931,7 +929,7 @@ Expression_T *expectBitwiseAndExpression() {
 		binary_expression = temp;
 		temp = calloc(1, sizeof(BinaryExpression_T));
 		temp_expr = calloc(1, sizeof(Expression_T));
-		temp_expr->type = EXPRESSION_BINARY;
+		temp_expr->type = EXPRESSION_TYPE_BINARY;
 		temp_expr->expr.binary_expr = binary_expression;
 		temp->expression_left = temp_expr;
 	}
@@ -939,7 +937,7 @@ Expression_T *expectBitwiseAndExpression() {
 	free(temp_expr);
 
 	Expression_T *expression = calloc(1, sizeof(Expression_T));
-	expression->type = EXPRESSION_BINARY;
+	expression->type = EXPRESSION_TYPE_BINARY;
 	expression->expr.binary_expr = binary_expression;
 
 	return expression;
@@ -964,7 +962,7 @@ Expression_T *expectEqualitiyExpression() {
 		binary_expression = temp;
 		temp = calloc(1, sizeof(BinaryExpression_T));
 		temp_expr = calloc(1, sizeof(Expression_T));
-		temp_expr->type = EXPRESSION_BINARY;
+		temp_expr->type = EXPRESSION_TYPE_BINARY;
 		temp_expr->expr.binary_expr = binary_expression;
 		temp->expression_left = temp_expr;
 	}
@@ -972,7 +970,7 @@ Expression_T *expectEqualitiyExpression() {
 	free(temp_expr);
 
 	Expression_T *expression = calloc(1, sizeof(Expression_T));
-	expression->type = EXPRESSION_BINARY;
+	expression->type = EXPRESSION_TYPE_BINARY;
 	expression->expr.binary_expr = binary_expression;
 
 	return expression;
@@ -1018,7 +1016,7 @@ Expression_T *expectRelationalExpression() {
 		binary_expression = temp;
 		temp = calloc(1, sizeof(BinaryExpression_T));
 		temp_expr = calloc(1, sizeof(Expression_T));
-		temp_expr->type = EXPRESSION_BINARY;
+		temp_expr->type = EXPRESSION_TYPE_BINARY;
 		temp_expr->expr.binary_expr = binary_expression;
 		temp->expression_left = temp_expr;
 	}
@@ -1026,7 +1024,7 @@ Expression_T *expectRelationalExpression() {
 	free(temp_expr);
 
 	Expression_T *expression = calloc(1, sizeof(Expression_T));
-	expression->type = EXPRESSION_BINARY;
+	expression->type = EXPRESSION_TYPE_BINARY;
 	expression->expr.binary_expr = binary_expression;
 
 	return expression;
@@ -1051,7 +1049,7 @@ Expression_T *expectShiftExpression() {
 		binary_expression = temp;
 		temp = calloc(1, sizeof(BinaryExpression_T));
 		temp_expr = calloc(1, sizeof(Expression_T));
-		temp_expr->type = EXPRESSION_BINARY;
+		temp_expr->type = EXPRESSION_TYPE_BINARY;
 		temp_expr->expr.binary_expr = binary_expression;
 		temp->expression_left = temp_expr;
 	}
@@ -1059,7 +1057,7 @@ Expression_T *expectShiftExpression() {
 	free(temp_expr);
 
 	Expression_T *expression = calloc(1, sizeof(Expression_T));
-	expression->type = EXPRESSION_BINARY;
+	expression->type = EXPRESSION_TYPE_BINARY;
 	expression->expr.binary_expr = binary_expression;
 
 	return expression;
@@ -1084,7 +1082,7 @@ Expression_T *expectAdditiveExpression() {
         binary_expression = temp;
         temp = calloc(1, sizeof(BinaryExpression_T));
         temp_expr = calloc(1, sizeof(Expression_T));
-        temp_expr->type = EXPRESSION_BINARY;
+        temp_expr->type = EXPRESSION_TYPE_BINARY;
         temp_expr->expr.binary_expr = binary_expression;
         temp->expression_left = temp_expr;
     }
@@ -1092,7 +1090,7 @@ Expression_T *expectAdditiveExpression() {
     free(temp_expr);
 
     Expression_T *expression = calloc(1, sizeof(Expression_T));
-    expression->type = EXPRESSION_BINARY;
+    expression->type = EXPRESSION_TYPE_BINARY;
     expression->expr.binary_expr = binary_expression;
 
     return expression;
@@ -1117,7 +1115,7 @@ Expression_T *expectMultiplicativeExpression() {
         binary_expression = temp;
         temp = calloc(1, sizeof(BinaryExpression_T));
         temp_expr = calloc(1, sizeof(Expression_T));
-        temp_expr->type = EXPRESSION_BINARY;
+        temp_expr->type = EXPRESSION_TYPE_BINARY;
         temp_expr->expr.binary_expr = binary_expression;
         temp->expression_left = temp_expr;
     }
@@ -1125,7 +1123,7 @@ Expression_T *expectMultiplicativeExpression() {
     free(temp_expr);
 
     Expression_T *expression = calloc(1, sizeof(Expression_T));
-    expression->type = EXPRESSION_BINARY;
+    expression->type = EXPRESSION_TYPE_BINARY;
     expression->expr.binary_expr = binary_expression;
 
     return expression;
@@ -1184,7 +1182,7 @@ Expression_T *expectUnaryExpression() {
 				exit(1);
 			}
 
-			expr->type = EXPRESSION_UNARY;
+			expr->type = EXPRESSION_TYPE_UNARY;
 			expr->expr.unary_expr = unary_expr;
 
 			return expr;
@@ -1226,7 +1224,7 @@ Expression_T *expectUnaryExpression() {
 				exit(1);
 			}
 
-			expr->type = EXPRESSION_UNARY;
+			expr->type = EXPRESSION_TYPE_UNARY;
 			expr->expr.unary_expr = unary_expr;
 
 			return expr;
@@ -1255,7 +1253,7 @@ Expression_T *expectPostfixExpression() {
 		exit(1);
 	}
 
-	expr->type = EXPRESSION_FUNCTION_CALL;
+	expr->type = EXPRESSION_TYPE_FUNCTIONCALL;
 	expr->expr.func_call_expr = func_call_expr;
 
 	func_call_expr->function_identifier = calloc(strlen(current->data), sizeof(char));
@@ -1281,14 +1279,14 @@ Expression_T *expectPrimaryExpression() {
     Expression_T *expression = calloc(1, sizeof(Expression_T));
     if (is(TOKEN_LPAREN)) {
         eat(TOKEN_LPAREN);
-        expression->type = EXPRESSION_NESTED;
+        expression->type = EXPRESSION_TYPE_NESTED;
         Expression_T *expr = expectExpression();
         NestedExpression_T *nested_expression = calloc(1, sizeof(NestedExpression_T));
         nested_expression->expression = expr;
         expression->expr.nested_expr = nested_expression;
         eat(TOKEN_RPAREN);
     } else if (is(TOKEN_IDENDIFIER) || is(TOKEN_NUMBER) || is(TOKEN_STRING) || is(TOKEN_KEYWORD)) {
-        expression->type = EXPRESSION_LITERAL;
+        expression->type = EXPRESSION_TYPE_LITERAL;
         Literal_T *literal = calloc(1, sizeof(Literal_T));
         switch (current->type) {
             case TOKEN_IDENDIFIER: {
@@ -1312,10 +1310,12 @@ Expression_T *expectPrimaryExpression() {
 			case TOKEN_KEYWORD: {
 				if (strcmp(current->data, "true") == 0) {
 					literal->type = LITERAL_BOOLEAN;
-					literal->value = "1"; // 1 == true
+					literal->value = calloc(2, sizeof(char)); //"1"; // 1 == true
+					literal->value[0] = '1';
 				} else if (strcmp(current->data, "false") == 0) {
 					literal->type = LITERAL_BOOLEAN;
-					literal->value = "0"; // 0 = false
+					literal->value = calloc(2, sizeof(char));//"0"; // 0 = false
+					literal->value[0] = '0';
 				} else {
 					log_error("unexpected keyword '%s' at [%d:%d]", current->data, current->line, current->pos);
 					free(expression);

@@ -107,7 +107,7 @@ char *compile_to_x86_64_assembly(AST *root) {
 
 char *compile_global_variable(Variable *glob_var) {
 
-	if (glob_var->default_value->type != EXPRESSION_LITERAL) {
+	if (glob_var->default_value->type != EXPRESSION_TYPE_LITERAL) {
 		log_error("only global variables with literal expressions are supported yet\n");
 		exit(1);
 	}
@@ -233,7 +233,7 @@ char *compile_statement(Statement *stmt) {
 			return compile_expression_statement(stmt->stmt.expression_statement, stmt->scope);
 
 		case STATEMENT_CONDITIONAL:
-			return compile_conditional_statement(stmt->stmt.condtional_statement, stmt->scope);
+			return compile_conditional_statement(stmt->stmt.conditional_statement, stmt->scope);
 
 		case STATEMENT_LOOP:
 			return compile_loop_statement(stmt->stmt.loop_statement, stmt->scope);
@@ -245,8 +245,6 @@ char *compile_statement(Statement *stmt) {
 }
 
 char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope) {
-	log_debug("compile_compound_statement():\n");
-
 	// align stack if needed (for local variables)
 	int size_for_stack_align = 0;
 	for (size_t i = 0; i < compound_stmt->local_scope->local_variable_templates->size; i++) {
@@ -257,7 +255,6 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 	char *compound_code = calloc(1, sizeof(char));
 
 	if (size_for_stack_align > 0) {
-		log_debug("aliging stack by %d bytes\n", size_for_stack_align);
 		compound_code = straddall(compound_code, 
 				// "push rbp\n"
 				// "mov rbp, rsp\n"
@@ -280,7 +277,7 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
 	// log_debug("before expression compilation\n");
 
-	char *ret_stmt_code = compile_expression(ret_stmt->return_expression, scope);
+	char *ret_stmt_code = compile_expression(ret_stmt->expression, scope);
 
 	// log_debug("after expression compilation\n");
 
@@ -303,7 +300,7 @@ char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
 char *compile_variable_declaration_statement(VariableDeclarationStatement *var_decl_stmt, Scope *scope) {
 	// log_debug("compile_variable_declaration_statement():\n");
 
-	Variable *var = var_decl_stmt->var;	
+	Variable *var = var_decl_stmt->variable;	
 
 	// compile default expression
 	// TODO(lucalewin): simplify default value assignment
@@ -342,16 +339,16 @@ char *compile_expression_statement(ExpressionStatement *expr_stmt, Scope *scope)
 
 char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scope) {
 	// compile condition expression
-	char *cond_expr_code = compile_expression(cond_stmt->conditional_expression, scope);
+	char *cond_expr_code = compile_expression(cond_stmt->condition, scope);
 
 	// compile true branch
-	char *true_branch_code = compile_statement(cond_stmt->body);
+	char *true_branch_code = compile_statement(cond_stmt->true_branch);
 
 	// generate label for false branch (CF = condition false)
 	char *label_condition_false = stradd(".CF", int_to_string(label_counter++));
 
 	// if false branch is empty, just return the true branch
-	if (cond_stmt->else_stmt == NULL) {
+	if (cond_stmt->false_branch == NULL) {
 		return straddall(
 					cond_expr_code, 
 					"cmp eax, 0\n"
@@ -361,10 +358,10 @@ char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scop
 	}
 
 	// else statement is not empty
-	Statement *else_stmt = cond_stmt->else_stmt;
+	Statement *false_branch_statement = cond_stmt->false_branch;
 	
 	// compile false branch
-	char *false_branch_code = compile_statement(else_stmt);
+	char *false_branch_code = compile_statement(false_branch_statement);
 
 	// generate label for end of conditional statement (CE = condition end)
 	char *end_of_conditional_statement = stradd(".CE", int_to_string(statement_label_counter)); 
@@ -382,7 +379,7 @@ char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scop
 
 char *compile_loop_statement(LoopStatement *loop_stmt, Scope *scope) {
 	// compile condition expression
-	char *cond_expr_code = compile_expression(loop_stmt->conditional_expression, scope);
+	char *cond_expr_code = compile_expression(loop_stmt->condition, scope);
 
 	// compile loop body
 	char *loop_body_code = compile_statement(loop_stmt->body);
@@ -408,19 +405,19 @@ char *compile_expression(Expression_T *expr, Scope *scope) {
 	expr = simplify_expression(expr);
 
 	switch(expr->type) {
-		case EXPRESSION_LITERAL:
+		case EXPRESSION_TYPE_LITERAL:
 			return compile_literal_expression(expr->expr.literal_expr, scope);
 
-		case EXPRESSION_BINARY:
+		case EXPRESSION_TYPE_BINARY:
 			return compile_binary_expression(expr->expr.binary_expr, scope);
 
-		case EXPRESSION_UNARY:
+		case EXPRESSION_TYPE_UNARY:
 			return compile_unary_expression(expr->expr.unary_expr, scope);
 
-		case EXPRESSION_FUNCTION_CALL:
+		case EXPRESSION_TYPE_FUNCTIONCALL:
 			return compile_function_call_expression(expr->expr.func_call_expr, scope);
 
-		case EXPRESSION_ASSIGNMENT:
+		case EXPRESSION_TYPE_ASSIGNMENT:
 			return compile_assignment_expression(expr->expr.assignment_expr, scope);
 
 		default:
@@ -438,7 +435,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 	bin_expr_code = stradd(bin_expr_code, compile_expression(bin_expr->expression_left, scope));
 
 	switch(bin_expr->expression_right->type) {
-		case EXPRESSION_LITERAL: {
+		case EXPRESSION_TYPE_LITERAL: {
 			Literal_T *literal = bin_expr->expression_right->expr.literal_expr;
 
 			switch (literal->type) {
@@ -656,9 +653,9 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 			break;
  		}
 
-		case EXPRESSION_BINARY:
-		case EXPRESSION_NESTED: 
-		case EXPRESSION_FUNCTION_CALL: {
+		case EXPRESSION_TYPE_BINARY:
+		case EXPRESSION_TYPE_NESTED: 
+		case EXPRESSION_TYPE_FUNCTIONCALL: {
 			char *right_expr_code = compile_expression(bin_expr->expression_right, scope);
 
 			bin_expr_code = straddall(bin_expr_code, 
@@ -910,7 +907,7 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 	// parse expression on the right hand side of the assignment operator
 	char *assignment_expr_code = compile_expression(assignment_expr->assignment_value, scope);
 
-	if (assignment_expr->identifier->type == EXPRESSION_LITERAL) {
+	if (assignment_expr->identifier->type == EXPRESSION_TYPE_LITERAL) {
 		// check if literal is an identifier
 		// this should always be the case because the parser already checks if this is the case
 		// but for extra savety we also check it here
@@ -972,7 +969,7 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 				log_error("unknown assignment operator: %d\n", assignment_expr->operator);
 				exit(1);
 		}
-	} else if (assignment_expr->identifier->type == EXPRESSION_UNARY) {
+	} else if (assignment_expr->identifier->type == EXPRESSION_TYPE_UNARY) {
 		log_error("assignment expressions with unary expressions as identifier are not implemented yet\n");
 		exit(1);
 	} else {

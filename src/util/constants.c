@@ -63,12 +63,12 @@ const char *LITERAL_TYPES[] = {
 };
 
 const char *EXPRESSION_TYPES[] = {
-	[EXPRESSION_LITERAL] = "literal_expression",
-	[EXPRESSION_UNARY] = "unary_expression",
-	[EXPRESSION_BINARY] = "binary_expression",
-	[EXPRESSION_NESTED] = "nested_expression",
-	[EXPRESSION_FUNCTION_CALL] = "function_call_expression",
-	[EXPRESSION_ASSIGNMENT] = "assignment_expression"
+	[EXPRESSION_TYPE_LITERAL] = "literal_expression",
+	[EXPRESSION_TYPE_UNARY] = "unary_expression",
+	[EXPRESSION_TYPE_BINARY] = "binary_expression",
+	[EXPRESSION_TYPE_NESTED] = "nested_expression",
+	[EXPRESSION_TYPE_FUNCTIONCALL] = "function_call_expression",
+	[EXPRESSION_TYPE_ASSIGNMENT] = "assignment_expression"
 };
 
 const char* STATEMENT_TYPES[] = {

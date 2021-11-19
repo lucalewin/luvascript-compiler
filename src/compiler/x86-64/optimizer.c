@@ -9,20 +9,20 @@
 
 Expression_T *simplify_expression(Expression_T *expr) {
 	switch (expr->type) {
-		case EXPRESSION_LITERAL:
+		case EXPRESSION_TYPE_LITERAL:
 			return expr;
 
-		case EXPRESSION_BINARY: {
+		case EXPRESSION_TYPE_BINARY: {
 
 			BinaryExpression_T *bin_expr = expr->expr.binary_expr;
 			Expression_T *left = bin_expr->expression_left;
 			Expression_T *right = bin_expr->expression_right;
 
-			if (bin_expr->expression_left->type != EXPRESSION_LITERAL) {
+			if (bin_expr->expression_left->type != EXPRESSION_TYPE_LITERAL) {
 				// try to simplify expression
 				left = simplify_expression(bin_expr->expression_left);
 			}
-			if (bin_expr->expression_right->type != EXPRESSION_LITERAL) {
+			if (bin_expr->expression_right->type != EXPRESSION_TYPE_LITERAL) {
 				// try to simplify expression
 				right = simplify_expression(bin_expr->expression_right);
 			}
@@ -32,7 +32,7 @@ Expression_T *simplify_expression(Expression_T *expr) {
 				exit(1);
 			}
 
-			if (left->type != EXPRESSION_LITERAL || right->type != EXPRESSION_LITERAL) {
+			if (left->type != EXPRESSION_TYPE_LITERAL || right->type != EXPRESSION_TYPE_LITERAL) {
 				// log_debug("simplify_expression(): could not simplify expression: \n\ttype 1: %d\n\ttype 2: %d\n", left->type, right->type);
 				return expr;
 			}
@@ -95,28 +95,28 @@ Expression_T *simplify_expression(Expression_T *expr) {
 			literal->type = LITERAL_NUMBER;
 			literal->value = result_as_string;
 
-			expr->type = EXPRESSION_LITERAL;
+			expr->type = EXPRESSION_TYPE_LITERAL;
 			expr->expr.literal_expr = literal;
 
 			return expr;
 		}
 
-		case EXPRESSION_NESTED: {
+		case EXPRESSION_TYPE_NESTED: {
 			// log_warning("simplify_expression(): simplification for nested expression is not implemented yet\n");
 			return simplify_expression(expr->expr.nested_expr->expression);
 		}
 
-		case EXPRESSION_UNARY: {
+		case EXPRESSION_TYPE_UNARY: {
 			// log_warning("simplify_expression(): simplification for unary expressions is not implemented yet\n");
 			return expr;
 		}
 
-		case EXPRESSION_FUNCTION_CALL: {
+		case EXPRESSION_TYPE_FUNCTIONCALL: {
 			// log_warning("simplify_expression(): simplification for function call expressions is not implemented yet\n");
 			return expr;
 		}
 
-		case EXPRESSION_ASSIGNMENT:
+		case EXPRESSION_TYPE_ASSIGNMENT:
 			return expr;
 
 		default:

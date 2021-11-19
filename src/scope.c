@@ -131,7 +131,7 @@ int scope_evaluate_statement(Statement *stmt) {
 		case STATEMENT_RETURN:
 			break;
 		case STATEMENT_VARIABLE_DECLARATION: {
-			Variable *var = stmt->stmt.variable_decl->var;
+			Variable *var = stmt->stmt.variable_decl->variable;
 
 			if (scope_contains_local_variable(stmt->scope, var->identifier->value)) {
 				log_error("variable '%s' is already defined!\n", var->identifier->value);
@@ -143,20 +143,20 @@ int scope_evaluate_statement(Statement *stmt) {
 			break;
 		}
 		case STATEMENT_CONDITIONAL: {
-			ConditionalStatement *cond_stmt = stmt->stmt.condtional_statement;
+			ConditionalStatement *cond_stmt = stmt->stmt.conditional_statement;
 
-			cond_stmt->body->scope = scope_copy(stmt->scope);
-			cond_stmt->body->scope->parent = stmt->scope;
+			cond_stmt->true_branch->scope = scope_copy(stmt->scope);
+			cond_stmt->true_branch->scope->parent = stmt->scope;
 
-			if (!scope_evaluate_statement(cond_stmt->body)) {
+			if (!scope_evaluate_statement(cond_stmt->true_branch)) {
 				// some error occurred while evaluating the statement
 				return 0;
 			}
 
-			if (cond_stmt->else_stmt != NULL) {
-				cond_stmt->else_stmt->scope = scope_copy(stmt->scope);
-				cond_stmt->else_stmt->scope->parent = stmt->scope;
-				if (!scope_evaluate_statement(cond_stmt->else_stmt)) {
+			if (cond_stmt->false_branch != NULL) {
+				cond_stmt->false_branch->scope = scope_copy(stmt->scope);
+				cond_stmt->false_branch->scope->parent = stmt->scope;
+				if (!scope_evaluate_statement(cond_stmt->false_branch)) {
 					// some error occurred while evaluating the statement
 					return 0;
 				}
