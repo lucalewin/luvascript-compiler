@@ -34,8 +34,3 @@ Datatype *parse_datatype(char *type) {
 
 	return dt;
 }
-
-void datatype_free(Datatype *datatype) {
-	free(datatype->type_identifier);
-	free(datatype);
-}
