@@ -141,7 +141,9 @@ AST *parse(ArrayList *token_list) {
 		}
 	}
 
-	scope_evaluate_ast(root);
+	if (!scope_evaluate_ast(root)) {
+		ast_free(root);
+	}
 
     return root;
 }
@@ -253,15 +255,25 @@ Function *expectFunction() {
 			}
 
 			parameter->identifier = calloc(1, sizeof(Literal_T));
+			if (parameter->identifier == NULL) {
+				free(parameter);
+				log_error("calloc failed: unable to allocate memory for parameter identifier\n");
+				return NULL;
+			}
+
 			parameter->identifier->type = LITERAL_IDENTIFIER;
 			parameter->identifier->value = calloc(strlen(current->data), sizeof(char));
-			// TODO: add NULL checks
+			if (parameter->identifier->value == NULL) {
+				free(parameter->identifier);
+				free(parameter);
+				log_error("calloc failed: unable to allocate memory for parameter identifier value\n");
+				return NULL;
+			}
 
 			strcpy(parameter->identifier->value, current->data);
 			next();
 
-			// `:`
-			expect(TOKEN_COLON);
+			expect(TOKEN_COLON); // `:`
 			next();
 
 			if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
@@ -295,6 +307,7 @@ Function *expectFunction() {
 
 	if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENDIFIER)) {
 		free(function->identifier);
+		arraylist_free(function->parameters);
 		free(function);
 		log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
 		exit(1);
@@ -539,7 +552,6 @@ Statement *expectVariableDeclarationStatement() {
 
 Statement *expectConditionalStatement() {
 	if (!strcmp(current->data, "if") == 0) {
-		// TODO(lucalewin): log error
 		log_error("expectConditionalStatement(): unexpected token '%s'\n", current->data);
 		return NULL;
 	}
@@ -550,7 +562,7 @@ Statement *expectConditionalStatement() {
 
 	Expression_T *condition = expectExpression();
 	if (condition == NULL) {
-		// TODO(lucalewin): log error
+		log_error("expectConditionalStatement(): expectExpression() returned NULL\n");
 		return NULL;
 	}
 
@@ -623,7 +635,7 @@ Statement *expectLoopStatement() {
 
 	Expression_T *condition = expectExpression();
 	if (condition == NULL) {
-		// TODO(lucalewin): log error
+		log_error("expectLoopStatement(): expectExpression() failed\n");
 		return NULL;
 	}
 

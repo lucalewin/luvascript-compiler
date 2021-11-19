@@ -41,7 +41,6 @@ void print_expression(Expression_T *expression) {
             break;
         }
         case EXPRESSION_NESTED: {
-            // log_warning("TODO: printing of nested expression is not implemented yet\n");
             printf("{");
             print_expression(expression->expr.nested_expr->expression);
             printf("}");
@@ -56,8 +55,6 @@ void print_statement(Statement *statement) {
     printf("\"type\":\"%s\",", STATEMENT_TYPES[statement->type]);
     switch (statement->type) {
         case STATEMENT_COMPOUND: {
-            // TODO
-            // log_warning("TODO: implement debug printing for compound statements\n");
 			CompoundStatement *compound_stmt = statement->stmt.compound_statement;
 
 			printf("\"statements\":[");

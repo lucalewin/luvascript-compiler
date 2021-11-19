@@ -532,7 +532,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 
 						default:
 							log_error("[3.1] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-							// TODO(lucalewin): free memory
+							free(bin_expr_code);
 							return NULL;
 					} // switch (bin_expr->operator)
 					break;
@@ -641,7 +641,10 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 
 						default:
 							log_error("[3] compile_binary_expression(): binary operator '%d' not implemented yet\n", bin_expr->operator);
-							// TODO(lucalewin): free memory
+							free(bin_expr_code);
+							free(var_pointer);
+							free(reg_a);
+							free(reg_b);
 							return NULL;
 					} // switch (bin_expr->operator)
 					break;

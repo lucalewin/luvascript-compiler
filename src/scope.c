@@ -12,7 +12,12 @@
 #include <types/statement.h>
 #include <types/function.h>
 
-void scope_evaluate_ast(AST *ast) {
+/**
+ * @brief evaluates the scopes of the ast
+ * 
+ * @param ast the ast to evaluate
+ */
+int scope_evaluate_ast(AST *ast) {
 	log_debug("evaluating scope\n");
 
 	// initialize a empty global scope
@@ -52,18 +57,27 @@ void scope_evaluate_ast(AST *ast) {
 		Function *func = arraylist_get(ast->functions, i);
 		func->scope = scope_copy(ast->global_scope);
 		func->scope->parent = ast->global_scope;
-		scope_evaluate_function(func);
+		if (!scope_evaluate_function(func)) {
+			// some error occurred while evaluating the function
+			return 0;
+		}
 	}
+
+	return 1;
 }
 
-void scope_evaluate_function(Function *function) {
+/**
+ * @brief evaluates a function's scope
+ * 
+ * @param function the function to evaluate
+ */
+int scope_evaluate_function(Function *function) {
 	// add parameter templates to local variables
 	for (size_t i = 0; i < function->parameters->size; i++) {
 		Variable *parameter = arraylist_get(function->parameters, i);
 		if (scope_contains_local_variable(function->scope, parameter->identifier->value)) {
 			log_error("variable already defined\n");
-			// TODO(lucalewin): free memory
-			exit(1);
+			return 0;
 		}
 		arraylist_add(function->scope->local_variable_templates, convert_to_variable_template(parameter));
 	}
@@ -75,13 +89,23 @@ void scope_evaluate_function(Function *function) {
 		stmt->scope = scope_copy(function->scope);
 		stmt->scope->parent = function->scope;
 
-		scope_evaluate_statement(stmt);
+		if (!scope_evaluate_statement(stmt)) {
+			// some error occurred while evaluating the statement
+			return 0;
+		}
 	}
+
+	return 1;
 }
 
 // ----------------------------------------------------------------
 
-void scope_evaluate_statement(Statement *stmt) {
+/**
+ * @brief evaluates a statement's scope
+ * 
+ * @param stmt the statement to evaluate
+ */
+int scope_evaluate_statement(Statement *stmt) {
 	switch (stmt->type) {
 		case STATEMENT_COMPOUND: {
 			CompoundStatement *compound_stmt = stmt->stmt.compound_statement;
@@ -94,7 +118,10 @@ void scope_evaluate_statement(Statement *stmt) {
 				inner_stmt->scope = scope_join(stmt->scope, compound_stmt->local_scope);
 				inner_stmt->scope->parent = compound_stmt->local_scope;
 
-				scope_evaluate_statement(inner_stmt);
+				if (!scope_evaluate_statement(inner_stmt)) {
+					// some error occurred while evaluating the statement
+					return 0;
+				}
 			}
 
 			break;
@@ -108,8 +135,7 @@ void scope_evaluate_statement(Statement *stmt) {
 
 			if (scope_contains_local_variable(stmt->scope, var->identifier->value)) {
 				log_error("variable '%s' is already defined!\n", var->identifier->value);
-				// TODO(lucalewin): free memory
-				exit(1);
+				return 0;
 			}
 
 			arraylist_add(stmt->scope->parent->local_variable_templates, convert_to_variable_template(var));
@@ -122,12 +148,18 @@ void scope_evaluate_statement(Statement *stmt) {
 			cond_stmt->body->scope = scope_copy(stmt->scope);
 			cond_stmt->body->scope->parent = stmt->scope;
 
-			scope_evaluate_statement(cond_stmt->body);
+			if (!scope_evaluate_statement(cond_stmt->body)) {
+				// some error occurred while evaluating the statement
+				return 0;
+			}
 
 			if (cond_stmt->else_stmt != NULL) {
 				cond_stmt->else_stmt->scope = scope_copy(stmt->scope);
 				cond_stmt->else_stmt->scope->parent = stmt->scope;
-				scope_evaluate_statement(cond_stmt->else_stmt);
+				if (!scope_evaluate_statement(cond_stmt->else_stmt)) {
+					// some error occurred while evaluating the statement
+					return 0;
+				}
 			}
 
 			break;
@@ -138,13 +170,18 @@ void scope_evaluate_statement(Statement *stmt) {
 			loop_stmt->body->scope = scope_copy(stmt->scope);
 			loop_stmt->body->scope->parent = stmt->scope;
 
-			scope_evaluate_statement(loop_stmt->body);
+			if (!scope_evaluate_statement(loop_stmt->body)) {
+				// some error occurred while evaluating the statement
+				return 0;
+			}
 			break;
 		}
 		default:
 			log_error("unexpected statement type '%d'\n", stmt->type);
-			exit(1);
+			return 0;
 	}
+
+	return 1;
 }
 
 // -----------------------------------------------------------

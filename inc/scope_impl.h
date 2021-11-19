@@ -8,14 +8,14 @@
  * 
  * @param ast 
  */
-void scope_evaluate_ast(AST *ast);
+int scope_evaluate_ast(AST *ast);
 
 /**
  * @brief 
  * 
  * @param function 
  */
-void scope_evaluate_function(Function *function);
+int scope_evaluate_function(Function *function);
 
 /**
  * @brief 
@@ -24,7 +24,7 @@ void scope_evaluate_function(Function *function);
  * @param parent_scope 
  */
 // void scope_evaluate_statement(Statement *stmt, Scope *parent_scope);
-void scope_evaluate_statement(Statement *stmt);
+int scope_evaluate_statement(Statement *stmt);
 
 // ----------------------------------------------------------------
 
