@@ -15,4 +15,6 @@ typedef struct Literal {
 
 extern const char *LITERAL_TYPES[];
 
+void literal_free(Literal_T *literal);
+
 #endif

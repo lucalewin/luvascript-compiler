@@ -14,12 +14,12 @@ typedef struct FunctionCallExpression FunctionCallExpression_T;
 typedef struct AssignmentExpression AssignmentExpression_T;
 
 enum ExpressionType {
-    EXPRESSION_LITERAL,
-    EXPRESSION_UNARY,
-    EXPRESSION_BINARY,
-    EXPRESSION_NESTED,
-	EXPRESSION_FUNCTION_CALL,
-	EXPRESSION_ASSIGNMENT
+    EXPRESSION_TYPE_LITERAL,
+    EXPRESSION_TYPE_UNARY,
+    EXPRESSION_TYPE_BINARY,
+    EXPRESSION_TYPE_NESTED,
+	EXPRESSION_TYPE_FUNCTIONCALL,
+	EXPRESSION_TYPE_ASSIGNMENT
 };
 
 struct Expression {

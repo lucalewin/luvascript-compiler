@@ -20,4 +20,7 @@ typedef struct _func_template {
 	Datatype *return_type;
 } FunctionTemplate;
 
+void function_free(Function *function);
+void function_template_free(FunctionTemplate *template);
+
 #endif // LUVA_TYPES_FUNCTION_H

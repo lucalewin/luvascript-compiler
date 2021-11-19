@@ -13,4 +13,6 @@ struct _ast {
 	ArrayList *extern_functions;
 };
 
+void ast_free(AST *ast);
+
 #endif // LUVA_AST_H

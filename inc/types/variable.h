@@ -23,4 +23,7 @@ struct _VariableTemplate {
 
 VariableTemplate *convert_to_variable_template(Variable *variable);
 
+void variable_free(Variable *variable);
+void variable_template_free(VariableTemplate *variable_template);
+
 #endif // LUVA_TYPE_VARIABLE_H

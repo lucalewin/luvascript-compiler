@@ -38,7 +38,7 @@ typedef struct statement {
 		ExpressionStatement *expression_statement;
 		ReturnStatement *return_statement;
 		VariableDeclarationStatement *variable_decl;
-		ConditionalStatement *condtional_statement;
+		ConditionalStatement *conditional_statement;
 		LoopStatement *loop_statement;
 	} stmt;
 } Statement;
@@ -53,31 +53,26 @@ struct ExpressionStatement {
 };
 
 struct ReturnStatement {
-	Expression_T *return_expression;
+	Expression_T *expression;
 };
 
 struct VariableDeclarationStatement {
-	Variable *var;
+	Variable *variable;
 };
 
 struct ConditionalStatement {
-	Expression_T *conditional_expression;
-
-	enum {
-		CONDITIONAL_STATEMENT_IF,
-		CONDITIONAL_STATEMENT_ELSEIF,
-		CONDITIONAL_STATEMENT_ELSE,
-	} type;
-
-	Statement *body;
-	Statement *else_stmt;
+	Expression_T *condition;
+	Statement *true_branch;
+	Statement *false_branch;
 };
 
 struct LoopStatement {
-	Expression_T *conditional_expression;
+	Expression_T *condition;
 	Statement *body;
 };
 
 extern const char* STATEMENT_TYPES[];
+
+void statement_free(Statement *statement);
 
 #endif // LUVA_STATEMENT_H
