@@ -1,9 +1,13 @@
 #include <lexer.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <util.h>
 #include <token.h>
+
+#include <logging/logger.h>
 
 #define keywords_length 18
 
@@ -76,7 +80,22 @@ ArrayList *tokenize(char *code) {
 
             // create new token && add it to the list
             arraylist_add(list, token_create(string, TOKEN_STRING, line, pos));
-        } else if ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {  // regex: [_a-zA-Z] -> identifier / keyword
+        } else if (*code == '\'') {
+			code++; // increment because *code is currently pointing to the first '
+
+			if (*(code + 1) != '\'') {
+				log_error("unexpected character '%c' at [%d:%d], end of char literal\n", *code, line, pos);
+			}
+
+			char *character = calloc(2, sizeof(char));
+			character[0] = *code;
+			character[1] = '\0';
+
+			code++; // increment because *code is currently pointing to the character
+
+			// create new token and add it to the list
+			arraylist_add(list, token_create(character, TOKEN_CHAR, line, pos));
+		} else if ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {  // regex: [_a-zA-Z] -> identifier / keyword
             // get length of identifier
             int i = 0;
             while ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {

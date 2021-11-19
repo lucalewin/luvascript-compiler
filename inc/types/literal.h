@@ -4,6 +4,7 @@
 typedef enum _LiteralType {
     LITERAL_NUMBER,
     LITERAL_STRING,
+	LITERAL_CHAR,
     LITERAL_IDENTIFIER,
 	LITERAL_BOOLEAN
 } LiteralType;

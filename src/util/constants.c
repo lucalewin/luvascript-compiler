@@ -58,6 +58,7 @@ const char *TOKEN_TYPE_NAMES[] = {
 const char *LITERAL_TYPES[] = {
 	[LITERAL_IDENTIFIER] = "identifier_literal",
 	[LITERAL_NUMBER] = "number_literal",
+	[LITERAL_CHAR] = "char_literal",
 	[LITERAL_STRING] = "string_literal",
 	[LITERAL_BOOLEAN] = "boolean_literal"
 };

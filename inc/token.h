@@ -8,6 +8,7 @@ typedef enum _TokenType {
 	TOKEN_IDENDIFIER,
 	TOKEN_NUMBER,
 	TOKEN_STRING,
+	TOKEN_CHAR,
 
 	/* arithmetic operators */
 	TOKEN_PLUS,
