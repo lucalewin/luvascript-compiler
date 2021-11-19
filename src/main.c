@@ -60,11 +60,6 @@ int main(int argc, char **argv) {
 	}
 	arraylist_free(tokens);
 
-	// print ast
-	// log_debug("{");
-	// print_statement(root->statement);
-	// printf("}\n");
-
 	// compile ast to x86_64 assembly
 	char *asm_code = compile_to_x86_64_assembly(root);
 	ast_free(root);
