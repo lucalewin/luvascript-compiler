@@ -104,55 +104,55 @@ ArrayList *tokenize(char *code) {
         } else if (*code == '+') {
             switch (*(code + 1)) {
                 case '+': {
-                    arraylist_add(list, token_create("++", TOKEN_INCREMENT, line, pos));
+                    arraylist_add(list, token_create(allocate_string("++"), TOKEN_INCREMENT, line, pos));
                     code++;
                     break;
                 }
                 case '=': {
-                    arraylist_add(list, token_create("+=", TOKEN_ASSIGNMENT_SUM, line, pos));
+                    arraylist_add(list, token_create(allocate_string("+="), TOKEN_ASSIGNMENT_SUM, line, pos));
                     code++;
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("+", TOKEN_PLUS, line, pos));
+                    arraylist_add(list, token_create(allocate_string("+"), TOKEN_PLUS, line, pos));
                     break;
             }
         } else if (*code == '-') {
             switch (*(code + 1)) {
                 case '-': {
-                    arraylist_add(list, token_create("--", TOKEN_DECREMENT, line, pos));
+                    arraylist_add(list, token_create(allocate_string("--"), TOKEN_DECREMENT, line, pos));
                     code++;
                     break;
                 }
                 case '=': {
-                    arraylist_add(list, token_create("-=", TOKEN_ASSIGNMENT_DIFFERENCE, line, pos));
+                    arraylist_add(list, token_create(allocate_string("-="), TOKEN_ASSIGNMENT_DIFFERENCE, line, pos));
                     code++;
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("-", TOKEN_MINUS, line, pos));
+                    arraylist_add(list, token_create(allocate_string("-"), TOKEN_MINUS, line, pos));
                     break;
             }
         } else if (*code == '*') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("*=", TOKEN_ASSIGNMENT_PRODUCT, line, pos));
+                    arraylist_add(list, token_create(allocate_string("*="), TOKEN_ASSIGNMENT_PRODUCT, line, pos));
                     code++;
                     break;
                 }
                 case '*': {
-                    arraylist_add(list, token_create("**", TOKEN_POWER, line, pos));
+                    arraylist_add(list, token_create(allocate_string("**"), TOKEN_POWER, line, pos));
                     code++;
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("*", TOKEN_ASTERISK, line, pos));
+                    arraylist_add(list, token_create(allocate_string("*"), TOKEN_ASTERISK, line, pos));
                     break;
             }
         } else if (*code == '/') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("/=", TOKEN_ASSIGNMENT_QUOTIENT, line, pos));
+                    arraylist_add(list, token_create(allocate_string("/="), TOKEN_ASSIGNMENT_QUOTIENT, line, pos));
                     code++;
                     break;
                 }
@@ -164,151 +164,151 @@ ArrayList *tokenize(char *code) {
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("/", TOKEN_SLASH, line, pos));
+                    arraylist_add(list, token_create(allocate_string("/"), TOKEN_SLASH, line, pos));
                     break;
             }
         } else if (*code == '%') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("%=", TOKEN_ASSIGNMENT_REMAINDER, line, pos));
+                    arraylist_add(list, token_create(allocate_string("%="), TOKEN_ASSIGNMENT_REMAINDER, line, pos));
                     code++;
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("%", TOKEN_MOD, line, pos));
+                    arraylist_add(list, token_create(allocate_string("%"), TOKEN_MOD, line, pos));
                     break;
             }
         } else if (*code == '<') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("<=", TOKEN_RELATIONAL_LESS_OR_EQUAL, line, pos));
+                    arraylist_add(list, token_create(allocate_string("<="), TOKEN_RELATIONAL_LESS_OR_EQUAL, line, pos));
                     code++;
                     break;
                 }
                 case '<': {
                     if (*(code + 2) == '=') {
-                        arraylist_add(list, token_create("<<=", TOKEN_ASSIGNMENT_BITWISE_LEFT_SHIFT, line, pos));
+                        arraylist_add(list, token_create(allocate_string("<<="), TOKEN_ASSIGNMENT_BITWISE_LEFT_SHIFT, line, pos));
                         code+=2;
                     } else {
-                        arraylist_add(list, token_create("<<", TOKEN_BITWISE_LEFT_SHIFT, line, pos));
+                        arraylist_add(list, token_create(allocate_string("<<"), TOKEN_BITWISE_LEFT_SHIFT, line, pos));
                         code++;
                     }
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("<", TOKEN_RELATIONAL_LESS, line, pos));
+                    arraylist_add(list, token_create(allocate_string("<"), TOKEN_RELATIONAL_LESS, line, pos));
                     break;
             }
         } else if (*code == '>') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create(">=", TOKEN_RELATIONAL_GREATER_OR_EQUAL, line, pos));
+                    arraylist_add(list, token_create(allocate_string(">="), TOKEN_RELATIONAL_GREATER_OR_EQUAL, line, pos));
                     code++;
                     break;
                 }
                 case '>': {
                     if (*(code + 2) == '=') {
-                        arraylist_add(list, token_create(">>=", TOKEN_ASSIGNMENT_BITWISE_RIGHT_SHIFT, line, pos));
+                        arraylist_add(list, token_create(allocate_string(">>="), TOKEN_ASSIGNMENT_BITWISE_RIGHT_SHIFT, line, pos));
                         code+=2;
                     } else {
-                        arraylist_add(list, token_create(">>", TOKEN_BITWISE_RIGHT_SHIFT, line, pos));
+                        arraylist_add(list, token_create(allocate_string(">>"), TOKEN_BITWISE_RIGHT_SHIFT, line, pos));
                         code++;
                     }
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create(">", TOKEN_RELATIONAL_GREATER, line, pos));
+                    arraylist_add(list, token_create(allocate_string(">"), TOKEN_RELATIONAL_GREATER, line, pos));
                     break;
             }
         } else if (*code == '!') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("!=", TOKEN_RELATIONAL_NOT_EQUAL, line, pos));
+                    arraylist_add(list, token_create(allocate_string("!="), TOKEN_RELATIONAL_NOT_EQUAL, line, pos));
                     code++;
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("!", TOKEN_NOT, line, pos));
+                    arraylist_add(list, token_create(allocate_string("!"), TOKEN_NOT, line, pos));
                     break;
             }
         } else if (*code == '&') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("&=", TOKEN_ASSIGNMENT_BITWISE_AND, line, pos));
+                    arraylist_add(list, token_create(allocate_string("&="), TOKEN_ASSIGNMENT_BITWISE_AND, line, pos));
                     code++;
                     break;
                 }
                 case '&': {
-                    arraylist_add(list, token_create("&&", TOKEN_LOGICAL_AND, line, pos));
+                    arraylist_add(list, token_create(allocate_string("&&"), TOKEN_LOGICAL_AND, line, pos));
                     code++;
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("&", TOKEN_AMPERSAND, line, pos));
+                    arraylist_add(list, token_create(allocate_string("&"), TOKEN_AMPERSAND, line, pos));
                     break;
             }
         } else if (*code == '|') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("|=", TOKEN_ASSIGNMENT_BITWISE_OR, line, pos));
+                    arraylist_add(list, token_create(allocate_string("|="), TOKEN_ASSIGNMENT_BITWISE_OR, line, pos));
                     code++;
                     break;
                 }
                 case '|': {
-                    arraylist_add(list, token_create("||", TOKEN_LOGICAL_OR, line, pos));
+                    arraylist_add(list, token_create(allocate_string("||"), TOKEN_LOGICAL_OR, line, pos));
                     code++;
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("|", TOKEN_VERTICAL_BAR, line, pos));
+                    arraylist_add(list, token_create(allocate_string("|"), TOKEN_VERTICAL_BAR, line, pos));
                     break;
             }
         } else if (*code == '^') {
             switch (*(code + 1)) {
                 case '=': {
-                    arraylist_add(list, token_create("^=", TOKEN_ASSIGNMENT_BITWISE_XOR, line, pos));
+                    arraylist_add(list, token_create(allocate_string("^="), TOKEN_ASSIGNMENT_BITWISE_XOR, line, pos));
                     code++;
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create("^", TOKEN_CIRCUMFLEX, line, pos));
+                    arraylist_add(list, token_create(allocate_string("^"), TOKEN_CIRCUMFLEX, line, pos));
                     break;
             }
         } else if (*code == '=') {
 			switch (*(code + 1)) {
 				case '=': {
-					arraylist_add(list, token_create("==", TOKEN_RELATIONAL_EQUAL, line, pos));
+					arraylist_add(list, token_create(allocate_string("=="), TOKEN_RELATIONAL_EQUAL, line, pos));
 					code++;
 					break;
 				}
 				default:
-					arraylist_add(list, token_create("=", TOKEN_ASSIGNMENT_SIMPLE, line, pos));
+					arraylist_add(list, token_create(allocate_string("="), TOKEN_ASSIGNMENT_SIMPLE, line, pos));
 					break;
 			}
         } else if (*code == '(') {
-            arraylist_add(list, token_create("(", TOKEN_LPAREN, line, pos));
+            arraylist_add(list, token_create(allocate_string("("), TOKEN_LPAREN, line, pos));
         } else if (*code == ')') {
-            arraylist_add(list, token_create(")", TOKEN_RPAREN, line, pos));
+            arraylist_add(list, token_create(allocate_string(")"), TOKEN_RPAREN, line, pos));
         } else if (*code == '[') {
-            arraylist_add(list, token_create("[", TOKEN_LBRACKET, line, pos));
+            arraylist_add(list, token_create(allocate_string("["), TOKEN_LBRACKET, line, pos));
         } else if (*code == ']') {
-            arraylist_add(list, token_create("]", TOKEN_RBRACKET, line, pos));
+            arraylist_add(list, token_create(allocate_string("]"), TOKEN_RBRACKET, line, pos));
         } else if (*code == '{') {
-            arraylist_add(list, token_create("{", TOKEN_LBRACE, line, pos));
+            arraylist_add(list, token_create(allocate_string("{"), TOKEN_LBRACE, line, pos));
         } else if (*code == '}') {
-            arraylist_add(list, token_create("}", TOKEN_RBRACE, line, pos));
+            arraylist_add(list, token_create(allocate_string("}"), TOKEN_RBRACE, line, pos));
         } else if (*code == ':') {
-            arraylist_add(list, token_create(":", TOKEN_COLON, line, pos));
+            arraylist_add(list, token_create(allocate_string(":"), TOKEN_COLON, line, pos));
         } else if (*code == ';') {
-            arraylist_add(list, token_create(";", TOKEN_SEMICOLON, line, pos));
+            arraylist_add(list, token_create(allocate_string(";"), TOKEN_SEMICOLON, line, pos));
         } else if (*code == '.') {
-            arraylist_add(list, token_create(".", TOKEN_DOT, line, pos));
+            arraylist_add(list, token_create(allocate_string("."), TOKEN_DOT, line, pos));
         } else if (*code == ',') {
-            arraylist_add(list, token_create(",", TOKEN_COMMA, line, pos));
+            arraylist_add(list, token_create(allocate_string(","), TOKEN_COMMA, line, pos));
         } else if (*code == '~') {
-            arraylist_add(list, token_create("~", TOKEN_TILDE, line, pos));
+            arraylist_add(list, token_create(allocate_string("~"), TOKEN_TILDE, line, pos));
         } else if (*code == '?') {
-            arraylist_add(list, token_create("?", TOKEN_QUESTION_MARK, line, pos));
+            arraylist_add(list, token_create(allocate_string("?"), TOKEN_QUESTION_MARK, line, pos));
         } else {
             printf("CHAR: %c\n", *code);
         }

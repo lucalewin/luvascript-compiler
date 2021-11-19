@@ -40,6 +40,12 @@ char *straddall(char *src, ...) {
 	return src;
 }
 
+char *allocate_string(const char *str) {
+	char *new_str = calloc(strlen(str) + 1, sizeof(char));
+	strcpy(new_str, str);
+	return new_str;
+}
+
 // ----------------------------------------------------------
 
 int str_last_index_of(char *str, char x) { 
