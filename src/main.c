@@ -54,6 +54,10 @@ int main(int argc, char **argv) {
 
 	// parse tokens to an ast
 	AST *root = parse(tokens);
+	for (size_t i = 0; i < tokens->size; i++) {
+		Token *token = arraylist_get(tokens, i);
+		token_free(token);
+	}
 	arraylist_free(tokens);
 
 	// print ast
@@ -63,7 +67,7 @@ int main(int argc, char **argv) {
 
 	// compile ast to x86_64 assembly
 	char *asm_code = compile_to_x86_64_assembly(root);
-	free(root);
+	ast_free(root);
 
 	// create filename of the assembly file
 	char *asm_file_name = stradd(options->input_file_name, ".asm");
