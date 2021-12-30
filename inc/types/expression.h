@@ -12,6 +12,9 @@ typedef struct BinaryExpression BinaryExpression_T;
 typedef struct NestedExpression NestedExpression_T;
 typedef struct FunctionCallExpression FunctionCallExpression_T;
 typedef struct AssignmentExpression AssignmentExpression_T;
+typedef struct ArrayAccessExpression ArrayAccessExpression_T;
+typedef struct MemberAccessExpression MemberAccessExpression_T;
+typedef struct ExpressionList ExpressionList_T;
 
 enum ExpressionType {
     EXPRESSION_TYPE_LITERAL,
@@ -19,7 +22,10 @@ enum ExpressionType {
     EXPRESSION_TYPE_BINARY,
     EXPRESSION_TYPE_NESTED,
 	EXPRESSION_TYPE_FUNCTIONCALL,
-	EXPRESSION_TYPE_ASSIGNMENT
+	EXPRESSION_TYPE_ASSIGNMENT,
+	EXPRESSION_TYPE_ARRAYACCESS,
+	EXPRESSION_TYPE_MEMBERACCESS,
+	EXPRESSION_TYPE_LIST,
 };
 
 struct Expression {
@@ -32,6 +38,9 @@ struct Expression {
         NestedExpression_T *nested_expr;
 		FunctionCallExpression_T *func_call_expr;
 		AssignmentExpression_T *assignment_expr;
+		ArrayAccessExpression_T *array_access_expr;
+		MemberAccessExpression_T *member_access_expr;
+		ExpressionList_T *list_expr;
     } expr;
 };
 
@@ -52,7 +61,7 @@ struct NestedExpression {
 
 struct FunctionCallExpression {
 	char *function_identifier;
-	ArrayList *argument_expression_list;
+	ExpressionList_T *argument_expression_list;
 };
 
 struct AssignmentExpression {
@@ -61,6 +70,22 @@ struct AssignmentExpression {
 	Expression_T *assignment_value;
 };
 
+struct MemberAccessExpression {
+	Expression_T *identifier;
+	char *member_identifier;
+};
+
+struct ArrayAccessExpression {
+	Literal_T *identifier;
+	Expression_T *index_expression;
+};
+
+struct ExpressionList {
+	ArrayList *expressions;
+};
+
 extern const char *EXPRESSION_TYPES[];
+
+void expression_free(Expression_T *expression);
 
 #endif // LUVA_EXPRESSION_H

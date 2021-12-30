@@ -82,14 +82,30 @@ void expression_free(Expression_T *expression) {
 			break;
 		case EXPRESSION_TYPE_FUNCTIONCALL:
 			free(expression->expr.func_call_expr->function_identifier);
-			for (size_t i = 0; i < expression->expr.func_call_expr->argument_expression_list->size; i++) {
-				Expression_T *argument = arraylist_get(expression->expr.func_call_expr->argument_expression_list, i);
+			for (size_t i = 0; i < expression->expr.func_call_expr->argument_expression_list->expressions->size; i++) {
+				Expression_T *argument = arraylist_get(expression->expr.func_call_expr->argument_expression_list->expressions, i);
 				expression_free(argument);
 			}
 			break;
 		case EXPRESSION_TYPE_ASSIGNMENT:
 			expression_free(expression->expr.assignment_expr->identifier);
 			expression_free(expression->expr.assignment_expr->assignment_value);
+			break;
+		case EXPRESSION_TYPE_ARRAYACCESS:
+			literal_free(expression->expr.array_access_expr->identifier);
+			expression_free(expression->expr.array_access_expr->index_expression);
+			break;
+		case EXPRESSION_TYPE_MEMBERACCESS:
+			expression_free(expression->expr.member_access_expr->identifier);
+			free(expression->expr.member_access_expr->member_identifier);
+			break;
+		case EXPRESSION_TYPE_LIST:
+			for (size_t i = 0; i < expression->expr.list_expr->expressions->size; i++) {
+				Expression_T *expr = arraylist_get(expression->expr.list_expr->expressions, i);
+				expression_free(expr);
+			}
+			arraylist_free(expression->expr.list_expr->expressions);
+			free(expression->expr.list_expr);
 			break;
 	}
 
@@ -181,9 +197,6 @@ void statement_free(Statement *statement) {
 		case STATEMENT_LOOP:
 			expression_free(statement->stmt.loop_statement->condition);
 			statement_free(statement->stmt.loop_statement->body);
-			break;
-		default:
-			log_error("unknown statement type: %d\n", statement->type);
 			break;
 	}
 
