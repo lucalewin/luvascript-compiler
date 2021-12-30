@@ -5,7 +5,7 @@ typedef enum _TokenType {
 	TOKEN_KEYWORD,
 
 	/* literals */
-	TOKEN_IDENDIFIER,
+	TOKEN_IDENTIFIER,
 	TOKEN_NUMBER,
 	TOKEN_STRING,
 	TOKEN_CHAR,

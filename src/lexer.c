@@ -114,7 +114,7 @@ ArrayList *tokenize(char *code) {
                 arraylist_add(list, token_create(identifier, TOKEN_KEYWORD, line, pos));
             } else {
                 // create new token && add it to the list
-                arraylist_add(list, token_create(identifier, TOKEN_IDENDIFIER, line, pos));
+                arraylist_add(list, token_create(identifier, TOKEN_IDENTIFIER, line, pos));
             }
 
             pos += i;

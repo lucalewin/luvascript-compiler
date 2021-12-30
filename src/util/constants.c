@@ -5,9 +5,10 @@
 
 const char *TOKEN_TYPE_NAMES[] = {
 	[TOKEN_KEYWORD] = "token_keyword",
-	[TOKEN_IDENDIFIER] = "token_identifier",
+	[TOKEN_IDENTIFIER] = "token_identifier",
 	[TOKEN_NUMBER] = "token_number",
 	[TOKEN_STRING] = "token_string",
+	[TOKEN_CHAR] = "token_char",
 	[TOKEN_PLUS] = "token_plus",
 	[TOKEN_MINUS] = "token_minus",
 	[TOKEN_ASTERISK] = "token_asterisk",
@@ -58,7 +59,7 @@ const char *TOKEN_TYPE_NAMES[] = {
 const char *LITERAL_TYPES[] = {
 	[LITERAL_IDENTIFIER] = "identifier_literal",
 	[LITERAL_NUMBER] = "number_literal",
-	[LITERAL_CHAR] = "char_literal",
+	[LITERAL_CHARACTER] = "char_literal",
 	[LITERAL_STRING] = "string_literal",
 	[LITERAL_BOOLEAN] = "boolean_literal"
 };
@@ -69,7 +70,9 @@ const char *EXPRESSION_TYPES[] = {
 	[EXPRESSION_TYPE_BINARY] = "binary_expression",
 	[EXPRESSION_TYPE_NESTED] = "nested_expression",
 	[EXPRESSION_TYPE_FUNCTIONCALL] = "function_call_expression",
-	[EXPRESSION_TYPE_ASSIGNMENT] = "assignment_expression"
+	[EXPRESSION_TYPE_ASSIGNMENT] = "assignment_expression",
+	[EXPRESSION_TYPE_ARRAYACCESS] = "array_access_expression",
+	[EXPRESSION_TYPE_LIST] = "list_expression"
 };
 
 const char* STATEMENT_TYPES[] = {
