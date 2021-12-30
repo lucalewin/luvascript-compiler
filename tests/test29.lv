@@ -1,0 +1,14 @@
+const array_length: int = 6;
+const array: int[] = [1, 2, 4, 8, 16, 32];
+
+function main(): int {
+	var sum: int = 0;
+	var index: int = 0;
+
+	while (index < 100) {
+		sum += array[index];
+		++index;
+	}
+
+	return sum;
+}

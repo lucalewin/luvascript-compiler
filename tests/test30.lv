@@ -1,0 +1,5 @@
+const hello_world_str: string = "Hello, World!";
+
+function main(): int {
+	return hello_world_str[5];
+}
