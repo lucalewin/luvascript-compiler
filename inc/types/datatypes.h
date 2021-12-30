@@ -8,6 +8,8 @@ typedef struct _datatype {
 	char *type_identifier;
 	unsigned int size;
 	unsigned int is_primitive : 1;
+	unsigned int is_array : 1;
+	unsigned long long int array_size;
 } Datatype;
 
 Datatype *parse_datatype(char *type);

@@ -26,6 +26,15 @@ Datatype *parse_datatype(char *type) {
 		dt->is_primitive = 1;
 		dt->type_identifier = "bool";
 		dt->size = 1; // 1 byte
+	} else if (strcmp(type, "char") == 0) {
+		dt->is_primitive = 1;
+		dt->type_identifier = "char";
+		dt->size = 1; // 1 byte (ascii) (might change in future versions)
+	} else if (strcmp(type, "string") == 0) {
+		// a string is an array of chars
+		dt->is_primitive = 1;
+		dt->type_identifier = "string";
+		dt->size = 1; // 1 byte (size of a char (in ascii)) (might change in future versions)
 	} else {
 		log_error("unknown datatype: '%s'\n", type);
 		free(dt);
