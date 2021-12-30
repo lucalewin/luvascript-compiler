@@ -88,8 +88,7 @@ Statement *expectConditionalStatement();
 Statement *expectLoopStatement();
 
 // expressions
-ArrayList *expectExpressionList();
-
+Expression_T *expectExpressionList();
 Expression_T *expectExpression();
 Expression_T *expectAssignmentExpression();
 Expression_T *expectConditionalExpression();
