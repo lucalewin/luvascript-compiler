@@ -119,8 +119,15 @@ Expression_T *simplify_expression(Expression_T *expr) {
 		case EXPRESSION_TYPE_ASSIGNMENT:
 			return expr;
 
-		default:
-			log_error("simplify_expression(): unexpected expression type %d\n", expr->type);
+		case EXPRESSION_TYPE_ARRAYACCESS:
+			return expr;
+
+		case EXPRESSION_TYPE_MEMBERACCESS:
+			return expr;
+
+		case EXPRESSION_TYPE_LIST:
 			return expr;
 	}
+	
+	return expr;
 }

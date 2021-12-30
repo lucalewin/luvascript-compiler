@@ -54,11 +54,15 @@ char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scop
 char *compile_loop_statement(LoopStatement *loop_stmt, Scope *scope);
 
 char *compile_expression(Expression_T *expr, Scope *scope);
-char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope);
 char *compile_literal_expression(Literal_T *literal, Scope *scope);
 char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope);
+char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope);
+char *compile_nested_expression(NestedExpression_T *nested_expr, Scope *scope);
 char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr, Scope *scope);
 char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope);
+char *compile_array_access_expression(ArrayAccessExpression_T *array_access_expr, Scope *scope);
+char *compile_member_access_expression(MemberAccessExpression_T *member_access_expr, Scope *scope);
+char *compile_list_expression(ExpressionList_T *list_expr, Scope *scope);
 
 char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope);
 char *compile_variable_pointer_with_offset(VariableTemplate *var_template, Scope *scope);
@@ -108,23 +112,63 @@ char *compile_to_x86_64_assembly(AST *root) {
 
 char *compile_global_variable(Variable *glob_var) {
 
-	if (glob_var->default_value->type != EXPRESSION_TYPE_LITERAL) {
-		log_error("only global variables with literal expressions are supported yet\n");
-		exit(1);
+	char *variable_value = NULL;
+
+	switch (glob_var->default_value->type) {
+		case EXPRESSION_TYPE_LITERAL: {
+			if (glob_var->default_value->expr.literal_expr->type == LITERAL_STRING) {
+				variable_value = "\"";
+				variable_value = stradd(variable_value, glob_var->default_value->expr.literal_expr->value);
+				variable_value = stradd(variable_value, "\"");
+			} else {
+				variable_value = glob_var->default_value->expr.literal_expr->value;
+			}
+			break;
+		}
+		case EXPRESSION_TYPE_LIST: {
+			ExpressionList_T *list_expr = glob_var->default_value->expr.list_expr;
+
+			log_debug("list expression: size=%d\n", list_expr->expressions->size);
+
+			for (size_t i = 0; i < list_expr->expressions->size; i++) {
+				Expression_T *expr = arraylist_get(list_expr->expressions, i);
+				if (expr->type != EXPRESSION_TYPE_LITERAL) {
+					log_error("default value of global variable must be a literal\n");
+					return NULL;
+				}
+
+				if (variable_value == NULL) {
+					// variable_value = stradd(variable_value, expr->expr.literal_expr->value);
+					// copy value into variable_value using calloc and strcpy
+					variable_value = calloc(strlen(expr->expr.literal_expr->value), sizeof(char));
+					strcpy(variable_value, expr->expr.literal_expr->value);
+
+				} else {
+					variable_value = straddall(variable_value, ",", expr->expr.literal_expr->value, NULL);
+				}
+
+			}
+			straddall(variable_value, "\n", NULL);
+
+			break;
+		}
+		default:
+			log_error("only global variables with literal or list expressions are supported yet\n");
+			return NULL;
 	}
 
 	switch (glob_var->datatype->size) {
 		case 1: // BYTE
-			return straddall(glob_var->identifier->value, " db ", glob_var->default_value->expr.literal_expr->value, "\n", NULL);
+			return straddall(glob_var->identifier->value, " db ", variable_value, "\n", NULL);
 
 		case 2: // WORD
-			return straddall(glob_var->identifier->value, " dw ", glob_var->default_value->expr.literal_expr->value, "\n", NULL);
+			return straddall(glob_var->identifier->value, " dw ", variable_value, "\n", NULL);
 
 		case 4: // DWORD
-			return straddall(glob_var->identifier->value, " dd ", glob_var->default_value->expr.literal_expr->value, "\n", NULL);
+			return straddall(glob_var->identifier->value, " dd ", variable_value, "\n", NULL);
 
 		case 8: // QWORD
-			return straddall(glob_var->identifier->value, " dq ", glob_var->default_value->expr.literal_expr->value, "\n", NULL);
+			return straddall(glob_var->identifier->value, " dq ", variable_value, "\n", NULL);
 			
 		default:
 			log_error("unknown variable size\n");
@@ -150,7 +194,11 @@ char *compile_function(Function *function) {
 	size_t size_for_stack_align = 0;
 	for (int i = 0; i < function->scope->local_variable_templates->size; i++) {
 		VariableTemplate *var_template = arraylist_get(function->scope->local_variable_templates, i);
-		size_for_stack_align += var_template->datatype->size;
+		if (var_template->datatype->is_array) {
+			size_for_stack_align += var_template->datatype->size * var_template->datatype->array_size;
+		} else {
+			size_for_stack_align += var_template->datatype->size;
+		}
 	}
 
 	if (size_for_stack_align != 0) {
@@ -159,7 +207,6 @@ char *compile_function(Function *function) {
 		function_code = stradd(function_code, "sub rsp, "); // align stack
 		function_code = stradd(function_code, int_to_string(size_for_stack_align + 8)); // size in bytes
 		function_code = stradd(function_code, "\n");
-		// log_debug("aligning stack by %d bytes\n", size_for_stack_align);
 	}
 
 	// compile args
@@ -396,11 +443,14 @@ char *compile_expression(Expression_T *expr, Scope *scope) {
 		case EXPRESSION_TYPE_LITERAL:
 			return compile_literal_expression(expr->expr.literal_expr, scope);
 
+		case EXPRESSION_TYPE_UNARY:
+			return compile_unary_expression(expr->expr.unary_expr, scope);
+
 		case EXPRESSION_TYPE_BINARY:
 			return compile_binary_expression(expr->expr.binary_expr, scope);
 
-		case EXPRESSION_TYPE_UNARY:
-			return compile_unary_expression(expr->expr.unary_expr, scope);
+		case EXPRESSION_TYPE_NESTED:
+			return compile_nested_expression(expr->expr.nested_expr, scope);
 
 		case EXPRESSION_TYPE_FUNCTIONCALL:
 			return compile_function_call_expression(expr->expr.func_call_expr, scope);
@@ -408,9 +458,14 @@ char *compile_expression(Expression_T *expr, Scope *scope) {
 		case EXPRESSION_TYPE_ASSIGNMENT:
 			return compile_assignment_expression(expr->expr.assignment_expr, scope);
 
-		default:
-			log_error("parsing for expression type '%d' is not implemented yet\n", expr->type);
-			exit(1);
+		case EXPRESSION_TYPE_ARRAYACCESS:
+			return compile_array_access_expression(expr->expr.array_access_expr, scope);
+
+		case EXPRESSION_TYPE_MEMBERACCESS:
+			return compile_member_access_expression(expr->expr.member_access_expr, scope);
+
+		case EXPRESSION_TYPE_LIST:
+			return compile_list_expression(expr->expr.list_expr, scope);
 	}
 
 	log_error("compile_expression(): returning NULL\n");
@@ -643,8 +698,11 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 
 		case EXPRESSION_TYPE_BINARY:
 		case EXPRESSION_TYPE_NESTED: 
-		case EXPRESSION_TYPE_FUNCTIONCALL: {
+		case EXPRESSION_TYPE_FUNCTIONCALL:
+		case EXPRESSION_TYPE_MEMBERACCESS: {
 			char *right_expr_code = compile_expression(bin_expr->expression_right, scope);
+
+			log_debug("right_expr_code = %s\n", right_expr_code);
 
 			bin_expr_code = straddall(bin_expr_code, 
 					"push rax\n",
@@ -743,6 +801,10 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 	return bin_expr_code;
 }
 
+char *compile_nested_expression(NestedExpression_T *nested_expr, Scope *scope) {
+	return compile_expression(nested_expr->expression, scope);
+}
+
 char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 	char *literal_expr_code = calloc(1, sizeof(char));
 
@@ -767,6 +829,12 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 							getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size), ", ", 
 							compile_variable_pointer(var_template, scope), "\n", NULL);
 
+			break;
+		}
+		case LITERAL_CHARACTER: {
+			literal_expr_code = stradd(literal_expr_code, "mov eax, '");
+			literal_expr_code = stradd(literal_expr_code, literal->value);
+			literal_expr_code = stradd(literal_expr_code, "'\n");
 			break;
 		}
 		default:
@@ -828,11 +896,11 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 	// check if parameter count matches
 	// TODO(lucalewin): check if parameter types match
 	FunctionTemplate *func_template = scope_get_function_by_name(scope, func_call_expr->function_identifier);
-	if (func_template->param_datatypes->size != func_call_expr->argument_expression_list->size) {
+	if (func_template->param_datatypes->size != func_call_expr->argument_expression_list->expressions->size) {
 		log_error("expected %d arguments for function '%s' but got %d instead\n", 
 				func_template->param_datatypes->size, 
 				func_template->identifier, 
-				func_call_expr->argument_expression_list->size);
+				func_call_expr->argument_expression_list->expressions->size);
 		return NULL;
 	}
 
@@ -840,41 +908,41 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 
 	// log_debug("compile_function_call_expression(): args.count = %d\n", func_call_expr->argument_expression_list->size);
 
-	switch (func_call_expr->argument_expression_list->size) {
+	switch (func_call_expr->argument_expression_list->expressions->size) {
 		case 6: {
 			func_call_expr_code = straddall(func_call_expr_code, 
 					"push rax\n", 
-					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 5), scope), 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 5), scope), 
 					"mov r9, rax\n"
 					"pop rax\n", NULL);
 		}
 		case 5: {
 			func_call_expr_code = straddall(func_call_expr_code, 
 					"push rax\n", 
-					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 4), scope), 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 4), scope), 
 					"mov r8, rax\n"
 					"pop rax\n", NULL);
 		}
 		case 4: {
 			func_call_expr_code = straddall(func_call_expr_code, 
 					"push rax\n", 
-					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 3), scope), 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 3), scope), 
 					"mov rcx, rax\n"
 					"pop rax\n", NULL);
 		}
 		case 3: {
 			func_call_expr_code = straddall(func_call_expr_code,
-					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 2), scope), 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 2), scope), 
 					"mov rdx, rax\n", NULL);
 		}
 		case 2: {
 			func_call_expr_code = straddall(func_call_expr_code,
-					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 1), scope), 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 1), scope), 
 					"mov rsi, rax\n", NULL);
 		}
 		case 1: {
 			func_call_expr_code = straddall(func_call_expr_code,
-					compile_expression(arraylist_get(func_call_expr->argument_expression_list, 0), scope), 
+					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 0), scope), 
 					"mov rdi, rax\n", NULL);
 			break;
 		}
@@ -893,7 +961,14 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 
 char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope) {
 	// parse expression on the right hand side of the assignment operator
-	char *assignment_expr_code = compile_expression(assignment_expr->assignment_value, scope);
+
+	char *assignment_expr_code;
+	
+	if (assignment_expr->assignment_value->type == EXPRESSION_TYPE_LIST) {
+		// TODO(lucalewin): implement
+
+	}
+	assignment_expr_code = compile_expression(assignment_expr->assignment_value, scope);
 
 	if (assignment_expr->identifier->type == EXPRESSION_TYPE_LITERAL) {
 		// check if literal is an identifier
@@ -967,6 +1042,29 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 
 	return assignment_expr_code;
 }
+
+char *compile_array_access_expression(ArrayAccessExpression_T *array_access_expr, Scope *scope) {
+	VariableTemplate *template = scope_get_variable_by_name(scope, array_access_expr->identifier->value);
+
+	return straddall(
+			compile_expression(array_access_expr->index_expression, scope),
+			"mov rax, [", scope_get_variable_address(scope, array_access_expr->identifier->value), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
+}
+
+char *compile_member_access_expression(MemberAccessExpression_T *member_access_expr, Scope *scope) {
+	char *member_access_expr_code = NULL;
+	
+	// get location of the member, then put it in the register
+	
+
+	return member_access_expr_code;
+}
+
+char *compile_list_expression(ExpressionList_T *list_expr, Scope *scope) {
+	return "not rax\t; test\n";
+}
+
+// ------------------------------------------------------------------------------------------------
 
 char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 	char *var_address = scope_get_variable_address(scope, var_template->identifier);
