@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 		// compile to object file
 		exec(assembler, file_format, asm_file_name, "-o", obj_file, NULL);
 		// link to binary file
-		exec(linker, "-g", obj_file, options->output_file_name, NULL);
+		exec(linker, "-g", obj_file, "-o", options->output_file_name, NULL);
 		// remove generated assembly file
 		if (!options->generate_assembly) {
 			exec("rm", asm_file_name, NULL);
