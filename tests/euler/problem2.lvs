@@ -28,15 +28,24 @@ function print_number(n: int): int {
 	return 0;
 }
 
+function fib(n: int): int {
+	if (n <= 1)
+		return 1;
+	return fib(n-1) + fib(n-2);
+}
+
 function main(): int {
-	var index: int = 0;
 	var sum: int = 0;
-	while (index < 1000) {
-		if (index % 3 == 0 || index % 5 == 0) {
-			sum += index;
+	var index: int = 0;
+	var current: int = 0;
+
+	while (current < 4000000) {
+		current = fib(++index);
+		if (current % 2 == 0) {
+			sum += current;
 		}
-		++index;
 	}
+
 	print_number(sum);
 	return 0;
 }

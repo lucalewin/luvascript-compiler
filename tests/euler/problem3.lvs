@@ -28,15 +28,54 @@ function print_number(n: int): int {
 	return 0;
 }
 
-function main(): int {
-	var index: int = 0;
-	var sum: int = 0;
-	while (index < 1000) {
-		if (index % 3 == 0 || index % 5 == 0) {
-			sum += index;
+function sqrt(n: int): int {
+	if (n < 0)
+		return -1;
+	if (n == 0)
+		return 0;
+
+	var x: int = n;
+	var y: int = 1;
+	while (x > y) {
+		x = (x + y) / 2;
+		y = n / x;
+	}
+	return x;
+}
+
+function isPrime(n: long): bool {
+	if (n <= 1)
+		return false;
+
+	var index: long = 2;
+	var upperBound: long = sqrt(n) + 1;
+
+	while(index < upperBound) {
+		if (n % index == 0) {
+			return false;
 		}
 		++index;
 	}
-	print_number(sum);
+
+	return true;
+}
+
+function main(): int {
+	var index: long = 3;
+	const upperBound: long = sqrt(600851475143) + 1;
+	var biggestPrimeFactor: long = 0;
+
+	while(index < upperBound) {
+		if (600851475143 % index == 0) {
+			if (isPrime(index)) {
+				//print_number(index);
+				biggestPrimeFactor = index;
+			}
+		}
+		index += 2;
+	}
+
+	print_number(biggestPrimeFactor); // 6857
+
 	return 0;
 }

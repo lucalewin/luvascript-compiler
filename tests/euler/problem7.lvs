@@ -28,15 +28,54 @@ function print_number(n: int): int {
 	return 0;
 }
 
-function main(): int {
-	var index: int = 0;
-	var sum: int = 0;
-	while (index < 1000) {
-		if (index % 3 == 0 || index % 5 == 0) {
-			sum += index;
+function sqrt(n: int): int {
+	if (n < 0)
+		return -1;
+	if (n == 0)
+		return 0;
+
+	var x: int = n;
+	var y: int = 1;
+	while (x > y) {
+		x = (x + y) / 2;
+		y = n / x;
+	}
+	return x;
+}
+
+function isPrime(n: int): bool {
+	if (n <= 1)
+		return false;
+		
+	var index: int = 2;
+	var upperBound: int = sqrt(n) + 1;
+
+	while(index < upperBound) {
+		if (n % index == 0) {
+			return false;
 		}
 		++index;
 	}
-	print_number(sum);
+
+	return true;
+}
+
+
+
+function main(): int {
+	// get 10001th prime
+	var index: int = 0;
+	var prime: int = 0;
+	var n: int = 0;
+
+	while (index < 10001) {
+		++n;
+		if (isPrime(n)) {
+			++index;
+			prime = n;
+		}
+	}
+
+	print_number(prime);
 	return 0;
 }
