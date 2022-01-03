@@ -131,9 +131,10 @@ AST *parse(ArrayList *token_list) {
 	}
 
 	if (!scope_evaluate_ast(root)) {
+		log_error("an exception occured during scope evaluation\n");
 		ast_free(root);
 	}
-
+	
     return root;
 }
 
@@ -471,7 +472,29 @@ Statement *expectStatement() {
 			log_error("unexpected keyword at [%d:%d]\n", current->line, current->pos);
 			exit(1);
 		}
-    } else {
+    } else if (is(TOKEN_ASSEMBLY_CODE_BLOCK)) {
+		AssemblyCodeBlockStatement *block = calloc(1, sizeof(AssemblyCodeBlockStatement));
+		if (block == NULL) {
+			log_error("expectStatement(): cannot allocate memory for block\n");
+			return NULL;
+		}
+		block->code = calloc(strlen(current->data), sizeof(char));
+		strcpy(block->code, current->data);
+		
+		eat(TOKEN_ASSEMBLY_CODE_BLOCK);
+
+		Statement *statement = calloc(1, sizeof(Statement));
+		if (statement == NULL) {
+			log_error("expectStatement(): cannot allocate memory for statement\n");
+			free(block);
+			return NULL;
+		}
+
+		statement->type = STATEMENT_ASSEMBLY_CODE_BLOCK;
+		statement->stmt.assembly_code_block_statement = block;
+
+		return statement;
+	} else {
         return expectExpressionStatement();
     }
 }
@@ -1146,7 +1169,7 @@ Expression_T *expectAdditiveExpression() {
 Expression_T *expectMultiplicativeExpression() {
     Expression_T *expr = expectUnaryExpression();
 
-    if (!is(TOKEN_ASTERISK) && !is(TOKEN_SLASH)) {
+    if (!is(TOKEN_ASTERISK) && !is(TOKEN_SLASH) && !is(TOKEN_PERCENT)) {
         return expr;
     }
 
@@ -1155,8 +1178,18 @@ Expression_T *expectMultiplicativeExpression() {
     BinaryExpression_T *temp = binary_expression;
     Expression_T *temp_expr;
 
-    while (is(TOKEN_ASTERISK) || is(TOKEN_SLASH)) {
-        temp->operator = is(TOKEN_ASTERISK) ? BINARY_OPERATOR_MULTIPLY : BINARY_OPERATOR_DIVIDE;
+    while (is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_PERCENT)) {
+        // temp->operator = is(TOKEN_ASTERISK) ? BINARY_OPERATOR_MULTIPLY : BINARY_OPERATOR_DIVIDE;
+		if (is(TOKEN_ASTERISK)) {
+			temp->operator = BINARY_OPERATOR_MULTIPLY;
+		} else if (is(TOKEN_SLASH)) {
+			temp->operator = BINARY_OPERATOR_DIVIDE;
+		} else if (is(TOKEN_PERCENT)) {
+			temp->operator = BINARY_OPERATOR_MODULO;
+		} else {
+			// this should never be reached
+			log_error("Unexpected token type %d", current->type);
+		}
         next();
         temp->expression_right = expectUnaryExpression();
         binary_expression = temp;

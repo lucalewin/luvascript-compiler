@@ -91,6 +91,7 @@ int scope_evaluate_function(Function *function) {
 
 		if (!scope_evaluate_statement(stmt)) {
 			// some error occurred while evaluating the statement
+			log_debug("error while evaluating statement\n");
 			return 0;
 		}
 	}
@@ -176,6 +177,9 @@ int scope_evaluate_statement(Statement *stmt) {
 			}
 			break;
 		}
+		case STATEMENT_ASSEMBLY_CODE_BLOCK:
+			// TODO: handle assembly code blocks
+			break;
 		default:
 			log_error("unexpected statement type '%d'\n", stmt->type);
 			return 0;

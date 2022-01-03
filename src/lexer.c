@@ -9,7 +9,7 @@
 
 #include <logging/logger.h>
 
-#define keywords_length 18
+#define keywords_length 19
 
 char *keywords[keywords_length] = {
     "function",
@@ -30,12 +30,11 @@ char *keywords[keywords_length] = {
 	"if",
 	"else",
 	"while",
+	"asm",
 };
 
 ArrayList *tokenize(char *code) {
     ArrayList *list = arraylist_create();
-
-    int index = 0;
 
     int line = 1, pos = 1;
     // move through code until end is reached
@@ -61,7 +60,6 @@ ArrayList *tokenize(char *code) {
             //   2 needs to be subtracted because
             // i is incremented two times to much
             code = code + i - 2;
-            index += i - 2;
             pos += i - 2;
         } else if (*code == '"') {          // string literal
             // get length of string
@@ -70,7 +68,6 @@ ArrayList *tokenize(char *code) {
             while (*code != '\0' && *code != '"') {
                 code++;
                 i++;
-                index++;
                 pos++;
             }
 
@@ -101,7 +98,6 @@ ArrayList *tokenize(char *code) {
             while ((*code >= 'A' && *code <= 'Z') || (*code >= 'a' && *code <= 'z') || *code == '_') {
                 code++;
                 i++;
-                index++;
             }
 
             // extract identifier or keyword from *code
@@ -111,7 +107,40 @@ ArrayList *tokenize(char *code) {
             // check if identifier could be a keyword
             if (arr_contains(keywords, keywords_length, identifier)) {
                 // create new token && add it to the list
-                arraylist_add(list, token_create(identifier, TOKEN_KEYWORD, line, pos));
+				if (strcmp(identifier, "asm") != 0) {
+                	arraylist_add(list, token_create(identifier, TOKEN_KEYWORD, line, pos));
+				} else {
+					// read assembly code block
+					pos += i;
+					while (*code != '\0' && is_whitespace(*code)) {
+						code++;
+						pos++;
+					}
+					if (*code != '{') {
+						log_error("unexpected token '%c' at [%d:%d], expected '{'\n", *code, line, pos);
+					}
+
+					// get length of assembly code block
+					int j = 0;
+					code++; // increment because *code is currently pointing to the first '{'
+					while (*code != '\0' && *code != '}') {
+						j++;
+						pos++;
+						if (*code == '\n') {
+							line++;
+							pos = 0;
+						}
+						code++;
+					}
+
+					// extract assembly code block from *code
+					char *assembly = malloc(sizeof(char) * j);
+					substring(code - j, assembly, j);
+					// log_debug("assembly code: %s\n", assembly);
+					// free(assembly);
+					code++;
+					arraylist_add(list, token_create(assembly, TOKEN_ASSEMBLY_CODE_BLOCK, line, pos));
+				}
             } else {
                 // create new token && add it to the list
                 arraylist_add(list, token_create(identifier, TOKEN_IDENTIFIER, line, pos));
@@ -194,7 +223,7 @@ ArrayList *tokenize(char *code) {
                     break;
                 }
                 default:
-                    arraylist_add(list, token_create(allocate_string("%"), TOKEN_MOD, line, pos));
+                    arraylist_add(list, token_create(allocate_string("%"), TOKEN_PERCENT, line, pos));
                     break;
             }
         } else if (*code == '<') {
@@ -332,7 +361,6 @@ ArrayList *tokenize(char *code) {
             printf("CHAR: %c\n", *code);
         }
         code++;
-        index++;
         pos++;
     }
 

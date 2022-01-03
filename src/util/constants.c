@@ -13,7 +13,7 @@ const char *TOKEN_TYPE_NAMES[] = {
 	[TOKEN_MINUS] = "token_minus",
 	[TOKEN_ASTERISK] = "token_asterisk",
 	[TOKEN_SLASH] = "token_slash",
-	[TOKEN_MOD] = "token_mod",
+	[TOKEN_PERCENT] = "token_mod",
 	[TOKEN_AMPERSAND] = "token_ampersand",
 	[TOKEN_VERTICAL_BAR] = "token_vertical_bar",
 	[TOKEN_POWER] = "token_power",
@@ -53,7 +53,8 @@ const char *TOKEN_TYPE_NAMES[] = {
 	[TOKEN_ASSIGNMENT_BITWISE_RIGHT_SHIFT] = "token_assignment_bitwise_right_shift",
 	[TOKEN_ASSIGNMENT_BITWISE_AND] = "token_assignment_bitwise_and",
 	[TOKEN_ASSIGNMENT_BITWISE_XOR] = "token_assignment_bitwise_xor",
-	[TOKEN_ASSIGNMENT_BITWISE_OR] = "token_assignment_bitwise_or"
+	[TOKEN_ASSIGNMENT_BITWISE_OR] = "token_assignment_bitwise_or",
+	[TOKEN_ASSEMBLY_CODE_BLOCK] = "token_assembly_code_block",
 };
 
 const char *LITERAL_TYPES[] = {
@@ -81,5 +82,6 @@ const char* STATEMENT_TYPES[] = {
 	[STATEMENT_RETURN] = "return_statement",
 	[STATEMENT_VARIABLE_DECLARATION] = "variable_declaration_statement",
 	[STATEMENT_CONDITIONAL] = "conditional_statement",
-	[STATEMENT_LOOP] = "loop_statement"
+	[STATEMENT_LOOP] = "loop_statement",
+	[STATEMENT_ASSEMBLY_CODE_BLOCK] = "assembly_code_block_statement",
 };

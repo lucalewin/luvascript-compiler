@@ -216,37 +216,37 @@ char *compile_function(Function *function) {
 			Variable *param = arraylist_get(function->parameters, 5);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
 			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = stradd(function_code, "], r9\n");
+			function_code = straddall(function_code, "], r9\t; func-param ", param->identifier->value, "\n", NULL);
 		}
 		case 5: {
 			Variable *param = arraylist_get(function->parameters, 4);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
 			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = stradd(function_code, "], r8\n");
+			function_code = straddall(function_code, "], r8\t; func-param ", param->identifier->value, "\n", NULL);
 		}
 		case 4: {
 			Variable *param = arraylist_get(function->parameters, 3);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
 			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = stradd(function_code, "], ecx\n");
+			function_code = straddall(function_code, "], ecx\t; func-param ", param->identifier->value, "\n", NULL);
 		}
 		case 3: {
 			Variable *param = arraylist_get(function->parameters, 2);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
 			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = stradd(function_code, "], edx\n");
+			function_code = straddall(function_code, "], edx\t; func-param ", param->identifier->value, "\n", NULL);
 		}
 		case 2: {
 			Variable *param = arraylist_get(function->parameters, 1);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
 			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = stradd(function_code, "], esi\n");
+			function_code = straddall(function_code, "], esi\t; func-param ", param->identifier->value, "\n", NULL);
 		}
 		case 1: {
 			Variable *param = arraylist_get(function->parameters, 0);
 			function_code = stradd(function_code, "mov DWORD[rbp-");
 			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = stradd(function_code, "], edi\n");
+			function_code = straddall(function_code, "], edi\t; func-param ", param->identifier->value, "\n", NULL);
 		}
 		case 0:
 			break;
@@ -285,6 +285,9 @@ char *compile_statement(Statement *stmt) {
 
 		case STATEMENT_LOOP:
 			return compile_loop_statement(stmt->stmt.loop_statement, stmt->scope);
+
+		case STATEMENT_ASSEMBLY_CODE_BLOCK:
+			return stmt->stmt.assembly_code_block_statement->code;
 
 		default:
 			log_error("compile_statement(): unexpected statement type '%s'\n", STATEMENT_TYPES[stmt->type]);
@@ -361,7 +364,7 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 					compile_variable_pointer_with_offset(convert_to_variable_template(var), scope), 
 					", ", 
 					getRegisterWithOpCodeSize(REGISTER_EAX, var->datatype->size), 
-					"\n", NULL);
+					"\t; variable: ", var->identifier->value, "\n", NULL);
 
 	return var_decl_code;
 }
@@ -385,6 +388,7 @@ char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scop
 	// if false branch is empty, just return the true branch
 	if (cond_stmt->false_branch == NULL) {
 		return straddall(
+					"; condition\n", 
 					cond_expr_code, 
 					"cmp eax, 0\n"
 					"je ", label_condition_false, "\n", 
@@ -424,20 +428,24 @@ char *compile_loop_statement(LoopStatement *loop_stmt, Scope *scope) {
 	char *label_condition_false = stradd(".LCF", int_to_string(label_counter++));
 
 	return straddall(
-				label_condition, ":\n", 
+				label_condition, ":\t; while () {\n", 
 				cond_expr_code, 
 				"cmp eax, 0\n"
 				"je ", label_condition_false, "\n", 
 				loop_body_code, 
-				"jmp ", label_condition, "\n",
+				"jmp ", label_condition, "\t;}\n",
 				label_condition_false ,":\n", NULL);
 }
 
 // ----------------------------------------------------------------
 
 char *compile_expression(Expression_T *expr, Scope *scope) {
+	
 	// try to simplify the expression
 	expr = simplify_expression(expr);
+
+	// print_expression(expr);
+	// printf("\n\n");
 
 	switch(expr->type) {
 		case EXPRESSION_TYPE_LITERAL:
@@ -495,7 +503,11 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nimul rbx\n", NULL);
 							break;
 						case BINARY_OPERATOR_DIVIDE:
-							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nidiv rbx\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nxor rdx, rdx\nidiv rbx\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_MODULO:
+							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nxor rdx, rdx\nidiv rbx\nmov rax, rdx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
@@ -521,45 +533,57 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 						case BINARY_OPERATOR_LOGICAL_EQUAL: {
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov rbx, ", literal->value, "\n"
+												"xor rcx, rcx\n"
 												"cmp rax, rbx\n"
-												"sete al\n", NULL);
+												"sete cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 						}
 
 						case BINARY_OPERATOR_LOGICAL_NOT_EQUAL: {
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov rbx, ", literal->value, "\n"
+												"xor rcx, rcx\n"
 												"cmp rax, rbx\n"
-												"setne al\n", NULL);
+												"setne cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 						}
 
 						case BINARY_OPERATOR_LOGICAL_GREATHER:
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov rbx, ", literal->value, "\n"
+												"xor rcx, rcx\n"
 												"cmp rax, rbx\n"
-												"setg al\n", NULL);
+												"setg cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov rbx, ", literal->value, "\n"
+												"xor rcx, rcx\n"
 												"cmp rax, rbx\n"
-												"setge al\n", NULL);
+												"setge cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_LESS:
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov rbx, ", literal->value, "\n"
+												"xor rcx, rcx\n"
 												"cmp rax, rbx\n"
-												"setl al\n", NULL);
+												"setl cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov rbx, ", literal->value, "\n"
+												"xor rcx, rcx\n"
 												"cmp rax, rbx\n"
-												"setle al\n", NULL);
+												"setle cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 
 						// case BINARY_OPERATOR_LOGICAL_AND:
@@ -604,7 +628,11 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 							break;
 
 						case BINARY_OPERATOR_DIVIDE:
-							bin_expr_code = straddall(bin_expr_code, "mov ", reg_b, ", ", var_pointer, "\nidiv ", reg_b, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "xor rbx, rbx\nmov ", reg_b, ", ", var_pointer, "\nxor rdx, rdx\nidiv rbx\n", NULL);
+							break;
+
+						case BINARY_OPERATOR_MODULO:
+							bin_expr_code = straddall(bin_expr_code, "mov ", reg_b, ", ", var_pointer, "\nxor rdx, rdx\nidiv rbx\nmov rax, rdx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
@@ -630,45 +658,57 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 						case BINARY_OPERATOR_LOGICAL_EQUAL: {
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov ", reg_b, ", ", var_pointer, "\n"
+												"xor rcx, rcx\n"
 												"cmp ", reg_a, ",",  reg_b, "\n"
-												"sete al\n", NULL);
+												"sete cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 						}
 
 						case BINARY_OPERATOR_LOGICAL_NOT_EQUAL: {
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov ", reg_b, ", ", var_pointer, "\n"
+												"xor rcx, rcx\n"
 												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setne al\n", NULL);
+												"setne cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 						}
 
 						case BINARY_OPERATOR_LOGICAL_GREATHER:
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov ", reg_b, ", ", var_pointer, "\n"
+												"xor rcx, rcx\n"
 												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setg al\n", NULL);
+												"setg cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov ", reg_b, ", ", var_pointer, "\n"
+												"xor rcx, rcx\n"
 												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setge al\n", NULL);
+												"setge cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_LESS:
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov ", reg_b, ", ", var_pointer, "\n"
+												"xor rcx, rcx\n"
 												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setl al\n", NULL);
+												"setl cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
 												"mov ", reg_b, ", ", var_pointer, "\n"
+												"xor rcx, rcx\n"
 												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setle al\n", NULL);
+												"setle cl\n"
+												"mov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_AND:
@@ -702,7 +742,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 		case EXPRESSION_TYPE_MEMBERACCESS: {
 			char *right_expr_code = compile_expression(bin_expr->expression_right, scope);
 
-			log_debug("right_expr_code = %s\n", right_expr_code);
+			// log_debug("right_expr_code = %s\n", right_expr_code);
 
 			bin_expr_code = straddall(bin_expr_code, 
 					"push rax\n",

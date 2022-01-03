@@ -198,6 +198,10 @@ void statement_free(Statement *statement) {
 			expression_free(statement->stmt.loop_statement->condition);
 			statement_free(statement->stmt.loop_statement->body);
 			break;
+		case STATEMENT_ASSEMBLY_CODE_BLOCK:
+			free(statement->stmt.assembly_code_block_statement->code);
+			free(statement->stmt.assembly_code_block_statement);
+			break;
 	}
 
 	free(statement);

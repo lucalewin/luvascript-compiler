@@ -18,6 +18,7 @@ typedef struct ReturnStatement ReturnStatement;
 typedef struct VariableDeclarationStatement VariableDeclarationStatement;
 typedef struct ConditionalStatement ConditionalStatement;
 typedef struct LoopStatement LoopStatement;
+typedef struct AssemblyCodeBlockStatement AssemblyCodeBlockStatement;
 
 // ---------------------------------
 
@@ -27,7 +28,8 @@ typedef enum {
 	STATEMENT_RETURN,
 	STATEMENT_VARIABLE_DECLARATION,
 	STATEMENT_CONDITIONAL,
-	STATEMENT_LOOP
+	STATEMENT_LOOP,
+	STATEMENT_ASSEMBLY_CODE_BLOCK
 } statement_type;
 
 typedef struct statement {
@@ -40,6 +42,7 @@ typedef struct statement {
 		VariableDeclarationStatement *variable_decl;
 		ConditionalStatement *conditional_statement;
 		LoopStatement *loop_statement;
+		AssemblyCodeBlockStatement *assembly_code_block_statement;
 	} stmt;
 } Statement;
 
@@ -69,6 +72,10 @@ struct ConditionalStatement {
 struct LoopStatement {
 	Expression_T *condition;
 	Statement *body;
+};
+
+struct AssemblyCodeBlockStatement {
+	char *code;
 };
 
 extern const char* STATEMENT_TYPES[];
