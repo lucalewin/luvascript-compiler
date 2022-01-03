@@ -1,0 +1,3 @@
+*.lvs.asm
+*lvs.obj
+a.out
