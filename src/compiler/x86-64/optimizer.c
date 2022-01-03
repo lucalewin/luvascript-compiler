@@ -43,9 +43,11 @@ Expression_T *simplify_expression(Expression_T *expr) {
 
 			// both literals are numbers -> evaluate the expression
 
-			int32_t num_left = get_int(left->expr.literal_expr->value);
-			int32_t num_right = get_int(right->expr.literal_expr->value);
-			int32_t result;
+			char *end;
+
+			signed long long int num_left = strtoll(left->expr.literal_expr->value, &end, 10); //get_int(left->expr.literal_expr->value);
+			signed long long int num_right = strtoll(right->expr.literal_expr->value, &end, 10); //get_int(right->expr.literal_expr->value);
+			signed long long int result;
 
 			switch(bin_expr->operator) {
 				case BINARY_OPERATOR_PLUS:
@@ -60,6 +62,8 @@ Expression_T *simplify_expression(Expression_T *expr) {
 				case BINARY_OPERATOR_DIVIDE:
 					result = num_left / num_right;
 					break;
+				case BINARY_OPERATOR_MODULO:
+					return expr;
 				case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
 				case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
 					// currently not supported, because some c compilers use arithmetic shift and some use logical shift
@@ -73,18 +77,26 @@ Expression_T *simplify_expression(Expression_T *expr) {
 				case BINARY_OPERATOR_BITWISE_OR:
 					result = num_left | num_right;
 					break;
+				case BINARY_OPERATOR_LOGICAL_EQUAL:
+				case BINARY_OPERATOR_LOGICAL_NOT_EQUAL:
+				case BINARY_OPERATOR_LOGICAL_LESS:
+				case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
+				case BINARY_OPERATOR_LOGICAL_GREATHER:
+				case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+					// currently not supported
+					return expr;
 				default:
 					log_error("unexpected binary expression operator '%d'\n", bin_expr->operator);
 					return NULL;
 			}
 
-			size_t length = snprintf(NULL, 0, "%d", result);
+			size_t length = snprintf(NULL, 0, "%lld", result);
 			char *result_as_string = malloc(length + 1);
 			if (result_as_string == NULL) {
 				log_error("unable to allocate memory for string\n");
 				exit(1);
 			}
-			snprintf(result_as_string, length + 1, "%d", result);
+			snprintf(result_as_string, length + 1, "%lld", result);
 
 			Literal_T *literal = calloc(1, sizeof(Literal_T));
 			if (literal == NULL) {
