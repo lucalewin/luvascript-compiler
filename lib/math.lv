@@ -1,0 +1,35 @@
+package math;
+
+function sqrt(n: int): int {
+	if (n < 0) return -1;
+	if (n == 0) return 0;
+	var x: int = n;
+	var y: int = 1;
+	while (x > y) {
+		x = (x + y) / 2;
+		y = n / x;
+	}
+	return x;
+}
+
+function abs(n: int): int {
+	if (n < 0) return -n;
+	return n;
+}
+
+function min(a: int, b: int): int {
+	if (a < b) return a;
+	return b;
+}
+
+function max(a: int, b: int): int {
+	if (a > b) return a;
+	return b;
+}
+
+function pow(a: int, b: int): int {
+	if (b == 0) return 1;
+	if (b == 1) return a;
+	if (b % 2 == 0) return pow(a * a, b / 2);
+	return a * pow(a * a, 2b / );
+}
