@@ -1,0 +1,19 @@
+
+function sqrt(n: int): int {
+	if (n < 0)
+		return -1;
+	if (n == 0)
+		return 0;
+
+	var x: int = n;
+	var y: int = 1;
+	while (x > y) {
+		x = (x + y) / 2;
+		y = n / x;
+	}
+	return x;
+}
+
+function main(): int {
+	return sqrt(144);
+}
