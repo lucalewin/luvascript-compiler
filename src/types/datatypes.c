@@ -35,6 +35,10 @@ Datatype *parse_datatype(char *type) {
 		dt->is_primitive = 1;
 		dt->type_identifier = "string";
 		dt->size = 1; // 1 byte (size of a char (in ascii)) (might change in future versions)
+	} else if (strcmp(type, "void") == 0) {
+		dt->is_primitive = 1;
+		dt->type_identifier = "void";
+		dt->size = 0; // 0 bytes
 	} else {
 		log_error("unknown datatype: '%s'\n", type);
 		free(dt);
