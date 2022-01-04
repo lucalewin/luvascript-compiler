@@ -1,9 +1,9 @@
-#include <file.h>
+#include <util/file.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <logger.h>
+#include <logging/logger.h>
 
 char *read_file(const char* path) {
     FILE *file = fopen(path, "r");

@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <util.h>
+#include <util/util.h>
 #include <token.h>
 
 #include <logging/logger.h>
 
-#define keywords_length 19
+#define keywords_length 21
 
 char *keywords[keywords_length] = {
     "function",
@@ -31,6 +31,8 @@ char *keywords[keywords_length] = {
 	"else",
 	"while",
 	"asm",
+	"package",
+	"import",
 };
 
 ArrayList *tokenize(char *code) {
@@ -205,10 +207,10 @@ ArrayList *tokenize(char *code) {
                     break;
                 }
                 case '/': {
-                    while (*(++code) != '\n') {
-                        // skip
-                        line++;
-                    }
+                    while (*(++code) != '\0' && *code != '\n') {} // skip to end of line
+					if (*code == '\0')
+						return list;
+					line++;
                     break;
                 }
                 default:

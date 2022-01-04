@@ -2,7 +2,7 @@
 #define LUVA_AST_H
 
 #include <scope.h>
-#include <types/statement.h>
+#include <util/arraylist.h>
 
 typedef struct _ast AST;
 
@@ -11,6 +11,8 @@ struct _ast {
 	ArrayList *functions;
 	ArrayList *global_variables;
 	ArrayList *extern_functions;
+
+	ArrayList *packages;
 };
 
 void ast_free(AST *ast);

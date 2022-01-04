@@ -1,7 +1,7 @@
 #include <scope.h>
 #include <types/ast.h>
 #include <types/statement.h>
-#include <function.h>
+#include <types/function.h>
 
 /**
  * @brief 

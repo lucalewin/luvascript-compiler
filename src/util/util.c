@@ -1,11 +1,11 @@
-#include <util.h>
+#include <util/util.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include <logger.h>
+#include <logging/logger.h>
 
 // ----------------------------------------------------------
 

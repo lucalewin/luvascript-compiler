@@ -8,7 +8,7 @@
 
 #include <scope_impl.h>
 
-#include <datatypes.h>
+#include <types/datatypes.h>
 
 // global variables used by the parser
 int _index;

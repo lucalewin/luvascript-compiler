@@ -1,7 +1,7 @@
 #include <token.h>
-#include <literal.h>
-#include <expression.h>
-#include <statement.h>
+#include <types/literal.h>
+#include <types/expression.h>
+#include <types/statement.h>
 
 const char *TOKEN_TYPE_NAMES[] = {
 	[TOKEN_KEYWORD] = "token_keyword",

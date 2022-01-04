@@ -9,7 +9,7 @@ TARGET		:= $(BIN_DIR)/$(BIN_NAME)
 
 SOURCES		:= $(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c $(SRC_DIR)/*/*/*.c)
 OBJECTS		:= $(subst src/,obj/,$(SOURCES:.c=.o))
-INC_DIRS	:= -I$(INC_DIR) $(addprefix -I,$(dir $(wildcard $(INC_DIR)/*/.)))
+INC_DIRS	:= -I$(INC_DIR) # $(addprefix -I,$(dir $(wildcard $(INC_DIR)/*/.)))
 
 CC			:= gcc
 CFLAGS		:= -g -c -std=c17 -Wall -Werror

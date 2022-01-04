@@ -1,6 +1,7 @@
+#include <logging/logger.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <logger.h>
 #include <stdarg.h>
 #include <string.h>
 
