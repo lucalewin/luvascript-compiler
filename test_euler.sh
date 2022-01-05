@@ -22,7 +22,7 @@ if [ $# -eq 0 ]; then
 		echo ""
 
 		# compile the test file with the previously built project binary
-		../../bin/lvc -S "$file"
+		../../bin/lvc -S "$file" "../../lib/math.lv" "../../lib/io.lv" "../../lib/util.lv"
 
 		# execute the generated binary file
 		./a.out
@@ -43,16 +43,16 @@ else
 		echo ""
 
 		# compile the test file with the previously built project binary
-		../../bin/lvc -S problem${test}.lvs
+		../../bin/lvc -S problem${test}.lvs "../../lib/math.lv" "../../lib/io.lv" "util.lvs"
 
 		# execute the generated binary file
 		./a.out
 
 		# check if the test passed or failed
 		if [ $? -eq 0 ]; then
-			echo "Test $index passed"
+			echo "Test ${test} passed"
 		else
-			echo "Test $index failed with exit code $?"
+			echo "Test ${test} failed with exit code $?"
 		fi
 	done
 fi
