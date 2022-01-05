@@ -9,7 +9,7 @@
 
 #include <logging/logger.h>
 
-#define keywords_length 21
+#define keywords_length 22
 
 char *keywords[keywords_length] = {
     "function",
@@ -33,6 +33,7 @@ char *keywords[keywords_length] = {
 	"asm",
 	"package",
 	"import",
+	"from",
 };
 
 ArrayList *tokenize(char *code) {
@@ -365,6 +366,8 @@ ArrayList *tokenize(char *code) {
         code++;
         pos++;
     }
+
+	arraylist_add(list, token_create(NULL, TOKEN_EOF, line, pos));
 
     return list;
 }
