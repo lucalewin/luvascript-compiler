@@ -1,0 +1,9 @@
+package system;
+
+function exit(code: int): void {
+	asm {
+		; exit code is already in reg `rdi`
+		mov rax, 60		; syscall number for exit
+		syscall			; exit program
+	}
+}
