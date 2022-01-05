@@ -12,10 +12,10 @@ function sqrt(n: int): int {
 	return x;
 }
 
-function abs(n: int): int {
-	if (n < 0) return -n;
-	return n;
-}
+//function abs(n: int): int {
+//	if (n < 0) return -n;
+//	return n;
+//}
 
 function min(a: int, b: int): int {
 	if (a < b) return a;
@@ -31,5 +31,5 @@ function pow(a: int, b: int): int {
 	if (b == 0) return 1;
 	if (b == 1) return a;
 	if (b % 2 == 0) return pow(a * a, b / 2);
-	return a * pow(a * a, 2b / );
+	return a * pow(a * a, b / 2);
 }
