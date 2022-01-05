@@ -1,3 +1,5 @@
+#include <x86-64/compiler.h>
+
 // standart libraries
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,8 +21,6 @@
 #include <types/function.h>
 #include <types/datatypes.h>
 
-// headers to be implemented
-#include <compiler.h>
 #include <x86-64/optimizer.h>
 
 // ------------------------ string templates ------------------------
@@ -36,8 +36,8 @@ char *exit_template =
 
 // ------------------------- global variables --------------------------
 
-int label_counter;
-int statement_label_counter;
+int label_counter = 0;
+int statement_label_counter = 0;
 
 // ----------------------- function prototypes -------------------------
 
@@ -69,42 +69,47 @@ char *compile_variable_pointer_with_offset(VariableTemplate *var_template, Scope
 
 // --------------------- function implementations ----------------------
 
-char *compile_to_x86_64_assembly(AST *root) {
-	log_debug("compiling to x68_64 assembly\n");
-	
-	label_counter = 0;
-	statement_label_counter = 0;
+char *compile_to_x86_64_assembly(AST *ast, CommandlineOptions *options) {
+	log_info("compiling to x68_64 assembly\n");
 
-	// char *stmt_code = compile_statement(root->statement);
 	char *asm_code = calloc(1, sizeof(char));
 
-	if (root->global_variables->size > 0) {
-		asm_code = stradd(asm_code, "section .data\n");
+	for (size_t i = 0; i < ast->packages->size; i++) {
+		Package *package = arraylist_get(ast->packages, i);
 
-		for (size_t i = 0; i < root->global_variables->size; i++) {
-			asm_code = stradd(asm_code, compile_global_variable(arraylist_get(root->global_variables, i)));
+		asm_code = straddall(asm_code, 
+				";\n"
+				"; package '", package->name, "'\n"
+				";\n", NULL);
+
+		if (package->global_variables->size > 0) {
+			asm_code = stradd(asm_code, "section .data\n");
+
+			for (size_t i = 0; i < package->global_variables->size; i++) {
+				asm_code = stradd(asm_code, compile_global_variable(arraylist_get(package->global_variables, i)));
+			}
 		}
-	}
 
-	// check if main method is defined
-	if (scope_contains_function(root->global_scope, "main")) {
-		// main function is defined
-		asm_code = stradd(asm_code, header_template);
-		asm_code = stradd(asm_code, "call main\n");
-		asm_code = stradd(asm_code, "mov rdi, rax\n");
-		asm_code = stradd(asm_code, exit_template);
-	} else {
-		asm_code = stradd(asm_code, "section .text\n");
-	}
+		// check if main method is defined
+		if (scope_contains_function(package->package_scope, "main")) {
+			// main function is defined
+			asm_code = stradd(asm_code, header_template);
+			asm_code = stradd(asm_code, "call main\n");
+			asm_code = stradd(asm_code, "mov rdi, rax\n");
+			asm_code = stradd(asm_code, exit_template);
+		} else {
+			asm_code = stradd(asm_code, "section .text\n");
+		}
 
-	// compile functions
-	for (int i = 0; i < root->functions->size; i++) {
-		asm_code = stradd(asm_code, compile_function(arraylist_get(root->functions, i)));
-	}
+		// compile functions
+		for (int i = 0; i < package->functions->size; i++) {
+			asm_code = stradd(asm_code, compile_function(arraylist_get(package->functions, i)));
+		}
 
-	// define external functions
-	for (size_t i = 0; i < root->extern_functions->size; i++) {
-		asm_code = stradd(asm_code, compile_extern_function_templates(arraylist_get(root->extern_functions, i)));
+		// define external functions
+		for (size_t i = 0; i < package->extern_functions->size; i++) {
+			asm_code = stradd(asm_code, compile_extern_function_templates(arraylist_get(package->extern_functions, i)));
+		}
 	}
 
 	return asm_code;
@@ -127,8 +132,6 @@ char *compile_global_variable(Variable *glob_var) {
 		}
 		case EXPRESSION_TYPE_LIST: {
 			ExpressionList_T *list_expr = glob_var->default_value->expr.list_expr;
-
-			log_debug("list expression: size=%d\n", list_expr->expressions->size);
 
 			for (size_t i = 0; i < list_expr->expressions->size; i++) {
 				Expression_T *expr = arraylist_get(list_expr->expressions, i);
