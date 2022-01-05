@@ -1,6 +1,6 @@
 package io;
 
-function printNumber(number: int): int {
+function print_number(number: int): int {
 	asm {
 		mov		eax, edi				; function arg
 		mov		ecx, 0xa				; base 10
