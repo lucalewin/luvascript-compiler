@@ -10,7 +10,6 @@ function main(): int {
 	while(index < upperBound) {
 		if (600851475143 % index == 0) {
 			if (isPrime(index)) {
-				//print_number(index);
 				biggestPrimeFactor = index;
 			}
 		}

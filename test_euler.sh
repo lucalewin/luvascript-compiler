@@ -43,7 +43,7 @@ else
 		echo ""
 
 		# compile the test file with the previously built project binary
-		../../bin/lvc -S problem${test}.lvs "../../lib/math.lv" "../../lib/io.lv" "util.lvs"
+		../../bin/lvc -S problem${test}.lvs "../../lib/math.lv" "../../lib/io.lv" "../../lib/util.lv"
 
 		# execute the generated binary file
 		./a.out

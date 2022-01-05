@@ -5,17 +5,15 @@ from util import isPrime;
 function main(): int {
 	// get 10001th prime
 	var index: int = 0;
-	var prime: int = 0;
 	var n: int = 0;
 
 	while (index < 10001) {
 		++n;
 		if (isPrime(n)) {
 			++index;
-			prime = n;
 		}
 	}
 
-	print_number(prime);
+	print_number(n); // 104743
 	return 0;
 }
