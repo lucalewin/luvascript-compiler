@@ -24,6 +24,7 @@ void substring(char *source, char *target, int offset);
 char *stradd(char *s1, char *s2);
 char *straddall(char *src, ...);
 
+char *strdup(const char *src);
 char *allocate_string(const char *str);
 
 int str_last_index_of(char *str, char x);

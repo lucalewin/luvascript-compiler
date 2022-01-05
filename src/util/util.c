@@ -40,6 +40,13 @@ char *straddall(char *src, ...) {
 	return src;
 }
 
+char *strdup(const char *src) {
+	char *dst = malloc(strlen (src) + 1);  // Space for length plus nul
+	if (dst == NULL) return NULL;          // No memory
+	strcpy(dst, src);                      // Copy the characters
+	return dst;                            // Return the new string
+}
+
 char *allocate_string(const char *str) {
 	char *new_str = calloc(strlen(str) + 1, sizeof(char));
 	strcpy(new_str, str);
