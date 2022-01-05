@@ -9,6 +9,7 @@
 #include <types/statement.h>
 #include <types/function.h>
 #include <types/ast.h>
+#include <types/package.h>
 
 // helper functions
 
@@ -73,7 +74,7 @@ void eat(TokenType type);
  */
 void error(const char *msg);
 
-AST *parse(ArrayList *tokens);
+Package *parse(ArrayList *tokens);
 
 FunctionTemplate *expectExternFunctionTemplate();
 Function *expectFunction();

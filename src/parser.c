@@ -4,11 +4,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <util/util.h>
 #include <logging/logger.h>
 
 #include <scope_impl.h>
 
 #include <types/datatypes.h>
+#include <types/expression.h>
+#include <types/function.h>
+#include <types/statement.h>
+#include <types/variable.h>
+#include <types/package.h>
+#include <types/import.h>
 
 // global variables used by the parser
 int _index;
@@ -91,51 +98,124 @@ int isUnaryOperator(Token *t) {
 
 // function prototypes
 
+Package *expectPackage();
 Variable *parseVariable();
 
 // -----------------------------------------------------------------------------------
 
-AST *parse(ArrayList *token_list) {
-    tokens = token_list;
+Package *parse(ArrayList *token_list) {
+	tokens = token_list;
     _index = 0;
 
     // load tokens into 'current' and 'lookahead'
     next();
 
-    AST *root = calloc(1, sizeof(AST));
+    return expectPackage();
+}
 
-	root->functions = arraylist_create();
-	root->extern_functions = arraylist_create();
-	root->global_variables = arraylist_create();
+Package *expectPackage() {
+	Package *package = calloc(1, sizeof(Package));
+
+	package->functions = arraylist_create();
+	package->extern_functions = arraylist_create();
+	package->global_variables = arraylist_create();
+	package->import_stmts = arraylist_create();
+	package->imported_functions = arraylist_create();
+	package->imported_global_variables = arraylist_create();
+
+	if (is(TOKEN_KEYWORD)) {
+		if (strcmp(current->data, "package") == 0) {
+			eat(TOKEN_KEYWORD);
+			package->name = strdup(current->data);
+			eat(TOKEN_IDENTIFIER);
+			eat(TOKEN_SEMICOLON);
+		} else {
+			goto default_package;
+		}
+	} else {
+		default_package:
+		package->name = strdup("global");
+	}
+
+	// log_debug("parsing package '%s'\n", package->name);
+
+	while (is(TOKEN_KEYWORD)) {
+		if (strcmp(current->data, "import") == 0) {
+			eat(TOKEN_KEYWORD);
+			// log_debug("import package %s\n", current->data);
+			if (!is(TOKEN_IDENTIFIER)) {
+				log_error("expected package name");
+				// free allocated memory
+				package_free(package);
+				return NULL;
+			}
+
+			import_stmt_t *import = calloc(1, sizeof(import_stmt_t));
+			import->package_name = strdup(current->data);
+			arraylist_add(package->import_stmts, import);
+			eat(TOKEN_IDENTIFIER);
+
+			// arraylist_add(package->imported_packages, strdup(current->data));
+			// eat(TOKEN_IDENTIFIER);
+			eat(TOKEN_SEMICOLON);
+		} else if (strcmp(current->data, "from") == 0) {
+			eat(TOKEN_KEYWORD);
+			// log_debug("import package %s\n", current->data);
+			
+			import_stmt_t *import = calloc(1, sizeof(import_stmt_t));
+			import->package_name = strdup(current->data);
+
+			eat(TOKEN_IDENTIFIER);
+
+			if (!is(TOKEN_KEYWORD)) {
+				log_error("expected 'import' keyword but got '%s'\n", current->data);
+				// free all allocated memory
+				import_stmt_free(import);
+				package_free(package);
+				return NULL;
+			}
+
+			eat(TOKEN_KEYWORD);
+
+			if (!is(TOKEN_IDENTIFIER)) {
+				log_error("expected identifier but got '%s'\n", current->data);
+				// free all allocated memory
+				import_stmt_free(import);
+				package_free(package);
+				return NULL;
+			}
+
+			import->type_identifier = strdup(current->data);
+
+			arraylist_add(package->import_stmts, import);
+
+			eat(TOKEN_IDENTIFIER);
+			eat(TOKEN_SEMICOLON);
+		} else {
+			break;
+		}
+	}
 
 	while (_index < tokens->size) {
 		if (strcmp(current->data, "function") == 0) {
 			Function *func = expectFunction();
-			arraylist_add(root->functions, func);
+			arraylist_add(package->functions, func);
 		} else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
 			// expect global variable/constant declaration
 			Variable *glob_var = parseVariable();
-			arraylist_add(root->global_variables, glob_var);
+			arraylist_add(package->global_variables, glob_var);
 		} else if (strcmp(current->data, "extern") == 0) {
 			// expect extern function declaration
 			FunctionTemplate *extern_func_template = expectExternFunctionTemplate();
-			arraylist_add(root->extern_functions, extern_func_template);
+			arraylist_add(package->extern_functions, extern_func_template);
 		} else {
 			log_error("unexpected token '%s' with value '%s' at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->data, current->line, current->pos);
-			arraylist_free(root->functions);
-			arraylist_free(root->extern_functions);
-			arraylist_free(root->global_variables);
-			free(root);
+			package_free(package);
 			return NULL;
 		}
 	}
 
-	if (!scope_evaluate_ast(root)) {
-		log_error("an exception occured during scope evaluation\n");
-		ast_free(root);
-	}
-	
-    return root;
+	return package;
 }
 
 FunctionTemplate *expectExternFunctionTemplate() {

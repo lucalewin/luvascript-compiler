@@ -11,6 +11,7 @@
 #include <types/variable.h>
 #include <types/statement.h>
 #include <types/function.h>
+#include <types/import.h>
 
 /**
  * @brief evaluates the scopes of the ast
@@ -18,52 +19,117 @@
  * @param ast the ast to evaluate
  */
 int scope_evaluate_ast(AST *ast) {
-	log_debug("evaluating scope\n");
+	if (ast == NULL) return 1;
+
+	// evaluate imports
+	for (size_t i = 0; i < ast->packages->size; i++) {
+		Package *package = arraylist_get(ast->packages, i);
+		package->imported_functions = arraylist_create();
+		package->imported_global_variables = arraylist_create();
+
+		// log_debug("evaluating imports in package %s\n", package->name);
+		for (size_t j = 0; j < package->import_stmts->size; j++) {
+			import_stmt_t *import = arraylist_get(package->import_stmts, j);
+
+			if (import->type_identifier == NULL) {
+				// log_debug("import statement: %s\n", import->package_name);
+				break;
+			}
+
+			if (strcmp(import->package_name, package->name) == 0) {
+				log_error("import statement cannot import self\n");
+				return 1;
+			}
+
+			for (size_t k = 0; k < ast->packages->size; k++) {
+				Package *imported_package = arraylist_get(ast->packages, k);
+				if (strcmp(imported_package->name, import->package_name) != 0) {
+					continue;
+				}
+
+				// log_debug("import statement: %s\n", import->package_name);
+
+				for (size_t l = 0; l < imported_package->functions->size; l++) {
+					Function *function = arraylist_get(imported_package->functions, l);
+					if (strcmp(function->identifier, import->type_identifier) == 0) {
+						function->is_imported = 1;
+						arraylist_add(package->imported_functions, function);
+						goto type_imported;
+					}
+				}
+
+				for (size_t l = 0; l < imported_package->global_variables->size; l++) {
+					Variable *var = arraylist_get(imported_package->global_variables, l);
+					if (strcmp(var->identifier->value, import->type_identifier) == 0) {
+						// function->is_imported = 1;
+						arraylist_add(package->imported_global_variables, var);
+						goto type_imported;
+					}
+				}
+			}
+			
+			log_error("import statement: %s\n", import->package_name);
+			return 1;
+
+			type_imported: ;
+			// log_debug("import type '%s' from package '%s'\n", import->type_identifier, import->package_name);
+		}
+	}
+
+	for (size_t i = 0; i < ast->packages->size; i++) {
+		Package *package = arraylist_get(ast->packages, i);
+		if (scope_evaluate_package(package) != 0) {
+			log_error("error evaluating package %s\n", package->name);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int scope_evaluate_package(Package *package) {
+	// log_debug("evaluating scope of package '%s'\n", package->name);
 
 	// initialize a empty global scope
-	ast->global_scope = scope_new();
-	ast->global_scope->parent = NULL;
+	package->package_scope = scope_new();
+	package->package_scope->parent = NULL;
 
 	// convert variables to variable templates + add them to the global scope
-	for (size_t i = 0; i < ast->global_variables->size; i++) {
-		Variable *var = arraylist_get(ast->global_variables, i);
-		arraylist_add(ast->global_scope->global_variable_templates, convert_to_variable_template(var));
+	for (size_t i = 0; i < package->global_variables->size; i++) {
+		Variable *var = arraylist_get(package->global_variables, i);
+		arraylist_add(package->package_scope->global_variable_templates, convert_to_variable_template(var));
 	}
 
 	// convert functions to function templates + add them to the global scope
-	for (size_t i = 0; i < ast->functions->size; i++) {
-		Function *func = arraylist_get(ast->functions, i);
-
-		FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));
-		func_template->identifier = func->identifier;
-		func_template->return_type = func->return_type;
-		func_template->param_datatypes = arraylist_create();
-
-		// convert function parameters to variable templates
-		for (size_t j = 0; j < func->parameters->size; j++) {
-			Variable *param = arraylist_get(func->parameters, j);
-			VariableTemplate *var_template = convert_to_variable_template(param);
-			arraylist_add(func_template->param_datatypes, var_template);
-		}
-
-		arraylist_add(ast->global_scope->function_templates, func_template);
+	for (size_t i = 0; i < package->functions->size; i++) {
+		Function *func = arraylist_get(package->functions, i);
+		FunctionTemplate *func_template = convert_to_function_template(func);
+		arraylist_add(package->package_scope->function_templates, func_template);
 	}
+
+	// convert imported functions to function templates + add them to the global scope
+	for (size_t i = 0; i < package->imported_functions->size; i++) {
+		Function *func = arraylist_get(package->imported_functions, i);
+		FunctionTemplate *func_template = convert_to_function_template(func);
+		arraylist_add(package->package_scope->function_templates, func_template);
+	}
+
 
 	// external functions are already function templates -> add them directly to the global scope
-	arraylist_addall(ast->global_scope->function_templates, ast->extern_functions);
+	arraylist_addall(package->package_scope->function_templates, package->extern_functions);
 
 	// evaluate scopes for all functions
-	for (size_t i = 0; i < ast->functions->size; i++) {
-		Function *func = arraylist_get(ast->functions, i);
-		func->scope = scope_copy(ast->global_scope);
-		func->scope->parent = ast->global_scope;
+	for (size_t i = 0; i < package->functions->size; i++) {
+		Function *func = arraylist_get(package->functions, i);
+		func->scope = scope_copy(package->package_scope);
+		func->scope->parent = package->package_scope;
 		if (!scope_evaluate_function(func)) {
 			// some error occurred while evaluating the function
-			return 0;
+			return 1;
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 /**
@@ -91,7 +157,7 @@ int scope_evaluate_function(Function *function) {
 
 		if (!scope_evaluate_statement(stmt)) {
 			// some error occurred while evaluating the statement
-			log_debug("error while evaluating statement\n");
+			log_error("error while evaluating statement\n");
 			return 0;
 		}
 	}
@@ -197,6 +263,10 @@ int scope_evaluate_statement(Statement *stmt) {
  */
 Scope *scope_new() {
 	Scope *scope = calloc(1, sizeof(Scope));
+	if (scope == NULL) {
+		log_error("could not allocate memory for scope\n");
+		return NULL;
+	}
 	scope->global_variable_templates = arraylist_create();
 	scope->local_variable_templates = arraylist_create();
 	scope->function_templates = arraylist_create();
@@ -244,6 +314,26 @@ void scope_free(Scope *scope) {
 	arraylist_free(scope->local_variable_templates);
 	arraylist_free(scope->function_templates);
 	free(scope);
+}
+
+void scope_merge(Scope *dest, Scope *src) {
+	if (src == NULL) return;
+	if (dest == NULL) return;
+	for (size_t i = 0; i < src->global_variable_templates->size; i++) {
+		arraylist_add(dest->global_variable_templates, arraylist_get(src->global_variable_templates, i));
+	}
+	for (size_t i = 0; i < src->local_variable_templates->size; i++) {
+		arraylist_add(dest->local_variable_templates, arraylist_get(src->local_variable_templates, i));
+	}
+	for (size_t i = 0; i < src->function_templates->size; i++) {
+		arraylist_add(dest->function_templates, arraylist_get(src->function_templates, i));
+	}
+	if (dest->parent != NULL && src->parent != NULL) {
+		scope_merge(dest->parent, src->parent);
+	}
+	// arraylist_addall(dest->global_variable_templates, src->global_variable_templates);
+	// arraylist_addall(dest->local_variable_templates, src->local_variable_templates);
+	// arraylist_addall(dest->function_templates, src->function_templates);
 }
 
 /**

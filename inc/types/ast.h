@@ -8,10 +8,6 @@ typedef struct _ast AST;
 
 struct _ast {
 	Scope *global_scope;
-	ArrayList *functions;
-	ArrayList *global_variables;
-	ArrayList *extern_functions;
-
 	ArrayList *packages;
 };
 

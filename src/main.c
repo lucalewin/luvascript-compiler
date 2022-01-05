@@ -5,6 +5,7 @@
 
 // utility functions
 #include <options.h>
+#include <scope_impl.h>
 #include <util/cmd.h>
 #include <util/util.h>
 #include <util/arraylist.h>
@@ -12,16 +13,14 @@
 #include <logging/debug.h>
 #include <logging/logger.h>
 
+// types
+#include <types/package.h>
+#include <types/ast.h>
+
 // core library functions
 #include <lexer.h>
 #include <parser.h>
 #include <compiler.h>
-
-// default filename of the generated binary file if no output filename is specified
-#define DEFAULT_BINARY_NAME "a.out"
-#define VERSION "0.1.0-alpha"
-
-void print_help();
 
 int main(int argc, char **argv) {
 	// validate command line arguments
@@ -34,44 +33,72 @@ int main(int argc, char **argv) {
 	// parse commandline arguments
 	CommandlineOptions *options = parse_commandline_arguments(argc, argv);
 
-	// check if a scource file is specified
-	if (options->input_file_name == NULL) {
-		log_error("no input file specified\n");
+	if (options->source_files->size == 0) {
+		log_error("no source files specified\n");
 		log_error("type 'lvc -h' for help\n");
 		return -1;
 	}
 
-	// read code from source file
-	char* file_contents = read_file(options->input_file_name);
-	if (file_contents == NULL) {
+	// compile the source files
+	AST *ast = calloc(1, sizeof(AST));
+	ast->packages = arraylist_create();
+
+	for (size_t i = 0; i < options->source_files->size; i++) {
+		char *source_file_name = arraylist_get(options->source_files, i);
+		char *source_code = read_file(source_file_name);
+		
+		// log_debug("parsing source file %s\n", arraylist_get(options->source_files, i));
+
+		ArrayList *tokens = tokenize(source_code);
+		Package *package = parse(tokens);
+
+		arraylist_add(ast->packages, package);
+
+		// log_debug("parsing complete for source file %s\n", source_file_name);
+
+		free(source_code);
+		for (size_t i = 0; i < tokens->size; i++)
+			token_free(arraylist_get(tokens, i));
+		arraylist_free(tokens);
+	}
+
+	// if packages have the same name, merge them
+	for (size_t i = 0; i < ast->packages->size; i++) {
+		Package *package = arraylist_get(ast->packages, i);
+		for (size_t j = i + 1; j < ast->packages->size; j++) {
+			Package *other_package = arraylist_get(ast->packages, j);
+			if (strcmp(package->name, other_package->name) == 0) {
+				// log_debug("merging packages '%s' and '%s'\n", package->name, other_package->name);
+				package_merge(package, other_package);
+				arraylist_remove_at_index(ast->packages, j);
+				j--;
+			}
+		}
+	}
+
+	if (scope_evaluate_ast(ast) != 0) {
+		// free allocated memory
 		options_free(options);
-		exit(1);
+		ast_free(ast);
+		return -1;
 	}
 
-	// tokenize code
-	ArrayList *tokens = tokenize(file_contents);
-	free(file_contents);
+	// generate assembly code
+	char *assembly_code = compile(ast, options);
 
-	// parse tokens to an ast
-	AST *root = parse(tokens);
-	for (size_t i = 0; i < tokens->size; i++) {
-		Token *token = arraylist_get(tokens, i);
-		token_free(token);
+	if (options->output_file_name == NULL) {
+		log_error("output_file_name is not specified\n");
+		// free allocated memory
+		options_free(options);
+		ast_free(ast);
+		return -1;
 	}
-	arraylist_free(tokens);
-
-	// compile ast to x86_64 assembly
-	char *asm_code = compile_to_x86_64_assembly(root);
-	ast_free(root);
 
 	// create filename of the assembly file
-	char *asm_file_name = stradd(options->input_file_name, ".asm");
+	char *asm_file_name = stradd(options->output_file_name, ".asm");
 
-	// create / write asm file
-	write_file(asm_file_name, asm_code);
-
-	// free allocated memory for asm_code
-	free(asm_code);
+	// write assembly code to file
+	write_file(asm_file_name, assembly_code);
 
 	char *assembler = "nasm";
 	char *file_format = "-f elf64";
@@ -108,60 +135,7 @@ int main(int argc, char **argv) {
 
 	free(asm_file_name);
 
-	log_info("successfully compiled '%s'\n", options->input_file_name);
+	log_info("successfully compiled to '%s'\n", options->output_file_name);
 
 	return 0;
-}
-
-/**
- * @brief parses the command line arguments
- * 
- * @param argc the number of arguments
- * @param argv the arguments
- * @return CommandlineOptions* 
- */
-CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
-	CommandlineOptions *options = calloc(1, sizeof(CommandlineOptions));
-
-	// assign default values to options
-	options->input_file_name = NULL;
-	options->output_file_name = DEFAULT_BINARY_NAME;
-	options->link = 1; // true
-	options->generate_assembly = 0; // false
-
-	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-c") == 0) { // -c
-			options->link = 0; // don't link
-		} else if (strcmp(argv[i], "-S") == 0) {
-			options->generate_assembly = 1; // generate assembly file
-		} else if (strcmp(argv[i], "-o") == 0) { // -o
-			if (i + 1 < argc) {
-				options->output_file_name = calloc(strlen(argv[i + 1]), sizeof(char));
-				strcpy(options->output_file_name, argv[i + 1]);
-				i++;
-			}
-		} else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) { // -h, --help
-			print_help();
-			exit(0);
-		} else if (strcmp(argv[i], "--version") == 0) { // --version
-			printf("lvc version %s\n", VERSION);
-			exit(0);
-		} else {
-			if (options->input_file_name != NULL) {
-				free(options->input_file_name);
-			}
-			options->input_file_name = calloc(strlen(argv[i]), sizeof(char));
-			strcpy(options->input_file_name, argv[i]);
-		}
-	}
-
-	return options;
-}
-
-/**
- * @brief 
- * TODO: add help for compiler flags
- */
-void print_help() {
-	printf(YELLOW "usage" RESET ": lvc <inputfile>\n");
 }
