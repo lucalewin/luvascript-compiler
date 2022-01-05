@@ -12,6 +12,7 @@ typedef struct _function {
 	ArrayList *body_statements;
 	Scope *scope;
 	unsigned int is_extern : 1;
+	unsigned int is_imported : 1;
 } Function;
 
 typedef struct _func_template {
@@ -19,6 +20,8 @@ typedef struct _func_template {
 	ArrayList *param_datatypes;
 	Datatype *return_type;
 } FunctionTemplate;
+
+FunctionTemplate *convert_to_function_template(Function *function);
 
 void function_free(Function *function);
 void function_template_free(FunctionTemplate *template);
