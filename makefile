@@ -38,7 +38,7 @@ uninstall:
 
 $(OBJECTS): obj/%.o : src/%.c
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $< -o $@ $(INC_DIRS)
+	$(CC) $(CFLAGS) $(INC_DIRS) $< -o $@
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@
