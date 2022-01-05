@@ -2,6 +2,7 @@
 #include <types/ast.h>
 #include <types/statement.h>
 #include <types/function.h>
+#include <types/package.h>
 
 /**
  * @brief 
@@ -9,6 +10,14 @@
  * @param ast 
  */
 int scope_evaluate_ast(AST *ast);
+
+/**
+ * @brief 
+ * 
+ * @param package 
+ * @return int: 1 if successful, 0 otherwise
+ */
+int scope_evaluate_package(Package *package);
 
 /**
  * @brief 
@@ -46,6 +55,8 @@ Scope *scope_copy(Scope *scope);
 Scope *scope_join(Scope *scope, Scope *other);
 
 void scope_free(Scope *scope);
+
+void scope_merge(Scope *dest, Scope *src);
 
 /**
  * @brief get the base pointer offset on the stack where the var is located
