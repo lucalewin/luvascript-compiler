@@ -5,6 +5,9 @@
 #include <types/function.h>
 #include <types/statement.h>
 #include <types/variable.h>
+#include <types/package.h>
+#include <types/import.h>
+#include <options.h>
 
 #include <scope_impl.h>
 #include <util/arraylist.h>
@@ -17,27 +20,10 @@
  * @param ast the ast to free
  */
 void ast_free(AST *ast) {
-	if (ast == NULL) {
-		return;
-	}
-
+	if (ast == NULL) return;
 	scope_free(ast->global_scope);
-
-	for (size_t i = 0; i < ast->functions->size; i++) {
-		Function *function = arraylist_get(ast->functions, i);
-		function_free(function);
-	}
-
-	for (size_t i = 0; i < ast->global_variables->size; i++) {
-		Variable *variable = arraylist_get(ast->global_variables, i);
-		variable_free(variable);
-	}
-
-	for (size_t i = 0; i < ast->extern_functions->size; i++) {
-		FunctionTemplate *function_template = arraylist_get(ast->extern_functions, i);
-		function_template_free(function_template);
-	}
-
+	for (size_t i = 0; i < ast->packages->size; i++)
+		package_free(arraylist_get(ast->packages, i));
 	free(ast);
 }
 
@@ -47,12 +33,9 @@ void ast_free(AST *ast) {
  * @param datatype the datatype to free
  */
 void datatype_free(Datatype *datatype) {
-	if (datatype == NULL) {
-		return;
-	}
-	if (!datatype->is_primitive) {
+	if (datatype == NULL) return;
+	if (!datatype->is_primitive)
 		free(datatype->type_identifier);
-	}
 	free(datatype);
 }
 
@@ -222,3 +205,40 @@ void variable_free(Variable *variable) {
 	free(variable);
 }
 
+void package_free(Package *package) {
+	free(package->name);
+	scope_free(package->package_scope);
+
+	// for (size_t i = 0; i < package->imported_packages->size; i++) {
+	// 	Package *imported_package = arraylist_get(package->imported_packages, i);
+	// 	package_free(imported_package);
+	// }
+
+	for (size_t i = 0; i < package->functions->size; i++) {
+		Function *function = arraylist_get(package->functions, i);
+		function_free(function);
+	}
+
+	for (size_t i = 0; i < package->global_variables->size; i++) {
+		FunctionTemplate *function_template = arraylist_get(package->global_variables, i);
+		function_template_free(function_template);
+	}
+
+	for (size_t i = 0; i < package->extern_functions->size; i++) {
+		Variable *variable = arraylist_get(package->extern_functions, i);
+		variable_free(variable);
+	}
+}
+
+void options_free(CommandlineOptions *options) {
+	free(options->input_file_name);
+	free(options->output_file_name);
+	arraylist_free(options->library_paths);
+	free(options);
+}
+
+void import_stmt_free(import_stmt_t *import_stmt) {
+	free(import_stmt->package_name);
+	free(import_stmt->type_identifier);
+	free(import_stmt);
+}
