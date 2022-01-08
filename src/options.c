@@ -7,7 +7,7 @@
 
 // default filename of the generated binary file if no output filename is specified
 #define DEFAULT_BINARY_NAME "a.out"
-#define VERSION "0.1.0-alpha"
+#define VERSION "0.2.0"
 
 void print_help();
 
