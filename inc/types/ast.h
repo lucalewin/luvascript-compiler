@@ -11,6 +11,7 @@ struct _ast {
 	ArrayList *packages;
 };
 
+AST *ast_new();
 void ast_free(AST *ast);
 
 #endif // LUVA_AST_H
