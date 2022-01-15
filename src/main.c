@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
 	// compile the source files
 	AST *ast = calloc(1, sizeof(AST));
 	ast->packages = arraylist_create();
+	ast->global_scope = NULL;
 
 	for (size_t i = 0; i < options->source_files->size; i++) {
 		char *source_file_name = arraylist_get(options->source_files, i);
@@ -49,8 +50,23 @@ int main(int argc, char **argv) {
 		
 		// log_debug("parsing source file %s\n", arraylist_get(options->source_files, i));
 
-		ArrayList *tokens = tokenize(source_code);
-		Package *package = parse(tokens);
+		ArrayList *tokens = tokenize(source_code, source_file_name);
+		if (tokens == NULL) {
+			// free allocated memory
+			// `source_file_name` does not need to be freed because it comes from the commandline
+			free(source_code);
+			ast_free(ast);
+			return -1;
+		}
+		
+		Package *package = parse(tokens, source_file_name);
+		if (package == NULL) {
+			// free allocated memory
+			// `source_file_name` does not need to be freed because it comes from the commandline
+			free(source_code);
+			ast_free(ast);
+			return -1;
+		}
 
 		arraylist_add(ast->packages, package);
 
