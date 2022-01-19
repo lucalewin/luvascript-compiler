@@ -10,6 +10,6 @@
  * @param code the content of the source file
  * @return ArrayList* of Token*
  */
-ArrayList *tokenize(char *code);
+ArrayList *tokenize(char *code, const char *file);
 
 #endif // LUVA_LEXER_H

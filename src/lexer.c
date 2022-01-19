@@ -36,7 +36,7 @@ char *keywords[keywords_length] = {
 	"from",
 };
 
-ArrayList *tokenize(char *code) {
+ArrayList *tokenize(char *code, const char *file) {
     ArrayList *list = arraylist_create();
 
     int line = 1, pos = 1;
@@ -84,7 +84,14 @@ ArrayList *tokenize(char *code) {
 			code++; // increment because *code is currently pointing to the first '
 
 			if (*(code + 1) != '\'') {
-				log_error("unexpected character '%c' at [%d:%d], end of char literal\n", *code, line, pos);
+				printf("%s:%d:%d: " RED "error: " RESET "invalid character literal\n", file, line, pos);
+				// free allocated memory
+				for (size_t i = 0; i < list->size; i++) {
+					token_free(arraylist_get(list, i));
+				}
+				arraylist_free(list);
+
+				return NULL;
 			}
 
 			char *character = calloc(2, sizeof(char));
@@ -120,7 +127,14 @@ ArrayList *tokenize(char *code) {
 						pos++;
 					}
 					if (*code != '{') {
-						log_error("unexpected token '%c' at [%d:%d], expected '{'\n", *code, line, pos);
+						printf("%s:%d:%d: " RED "error: " RESET "unexpected token '%c'\n", file, line, pos, *code);
+						// free allocated memory
+						for (size_t i = 0; i < list->size; i++) {
+							token_free(arraylist_get(list, i));
+						}
+						arraylist_free(list);
+						free(identifier);
+						return NULL;
 					}
 
 					// get length of assembly code block
@@ -361,7 +375,13 @@ ArrayList *tokenize(char *code) {
         } else if (*code == '?') {
             arraylist_add(list, token_create(allocate_string("?"), TOKEN_QUESTION_MARK, line, pos));
         } else {
-            printf("CHAR: %c\n", *code);
+			printf("%s:%d:%d: " RED "error:" RESET " unknown token '%c' [0x01]\n", file, line, pos, *code);
+			// free allocated memory
+			for (size_t i = 0; i < list->size; i++) {
+				token_free(arraylist_get(list, i));
+			}
+			arraylist_free(list);
+			return NULL;
         }
         code++;
         pos++;

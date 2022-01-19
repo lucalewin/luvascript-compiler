@@ -74,7 +74,7 @@ void eat(TokenType type);
  */
 void error(const char *msg);
 
-Package *parse(ArrayList *tokens);
+Package *parse(ArrayList *tokens, const char *filename);
 
 FunctionTemplate *expectExternFunctionTemplate();
 Function *expectFunction();

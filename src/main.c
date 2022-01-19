@@ -48,6 +48,11 @@ int main(int argc, char **argv) {
 		char *source_file_name = arraylist_get(options->source_files, i);
 		char *source_code = read_file(source_file_name);
 		
+		if (source_code == NULL) {
+			printf("    " RED "error: " RESET "cannot read file '%s'\n", source_file_name);
+			continue;
+		}
+
 		// log_debug("parsing source file %s\n", arraylist_get(options->source_files, i));
 
 		ArrayList *tokens = tokenize(source_code, source_file_name);
