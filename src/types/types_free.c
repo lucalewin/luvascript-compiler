@@ -19,13 +19,7 @@
  * 
  * @param ast the ast to free
  */
-void ast_free(AST *ast) {
-	if (ast == NULL) return;
-	scope_free(ast->global_scope);
-	for (size_t i = 0; i < ast->packages->size; i++)
-		package_free(arraylist_get(ast->packages, i));
-	free(ast);
-}
+
 
 /**
  * @brief free a datatype

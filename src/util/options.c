@@ -7,7 +7,7 @@
 
 // default filename of the generated binary file if no output filename is specified
 #define DEFAULT_BINARY_NAME "a.out"
-#define VERSION "0.2.0"
+#define VERSION "0.3.0-alpha-1"
 
 void print_help();
 
@@ -28,6 +28,7 @@ CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
 	options->library_paths = arraylist_create();
 	options->link = 1; // true
 	options->generate_assembly = 0; // false
+	options->is_library = 0; // false
 
 	// parse command line arguments
 	for (size_t i = 1; i < argc; i++) {
@@ -57,17 +58,9 @@ CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
 			} else if (strcmp(argv[i], "-c") == 0) {
 				// compile to object file
 				options->link = 0;
-			} else if (strcmp(argv[i], "-lib") == 0) {
-				if (i + 1 < argc) {
-					// log_debug("adding library path '%s'\n", argv[i + 1]);
-					arraylist_add(options->library_paths, argv[i + 1]);
-					i++;
-				} else {
-					log_error("no library path specified\n");
-					log_error("type 'lvc --help:-lib' for help\n");
-					options_free(options);
-					exit(1);
-				}
+			} else if (strcmp(argv[i], "-shared") == 0) {
+				// compile to shared library
+				options->is_library = 1;
 			} else {
 				log_error("unknown option '%s'\n", argv[i]);
 				log_error("type 'lvc -h' for help\n");

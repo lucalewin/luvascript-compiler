@@ -10,6 +10,7 @@ typedef struct commandline_options {
 	ArrayList *library_paths;
 	unsigned int link : 1;
 	unsigned int generate_assembly : 1;
+	unsigned int is_library : 1;
 } CommandlineOptions;
 
 CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]);
