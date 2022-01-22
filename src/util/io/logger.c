@@ -9,7 +9,7 @@ void priv_print(const char *prefix, const char *message, va_list args);
 
 void priv_print(const char *prefix, const char *message, va_list args) {
     const char *format = "%s %s";
-    char *fmt = malloc(strlen(prefix) + strlen(message) + 1);
+    char *fmt = malloc(strlen(prefix) + strlen(message) + 2);
     sprintf(fmt, format, prefix, message);
     vprintf(fmt, args);
     free(fmt);
