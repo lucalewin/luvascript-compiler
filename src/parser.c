@@ -103,9 +103,12 @@ Variable *parseVariable();
 
 // -----------------------------------------------------------------------------------
 
-Package *parse(ArrayList *token_list) {
+const char *_filename;
+
+Package *parse(ArrayList *token_list, const char *filename) {
 	tokens = token_list;
     _index = 0;
+	_filename = filename;
 
     // load tokens into 'current' and 'lookahead'
     next();
@@ -126,8 +129,15 @@ Package *expectPackage() {
 	if (is(TOKEN_KEYWORD)) {
 		if (strcmp(current->data, "package") == 0) {
 			eat(TOKEN_KEYWORD);
+			if (!is(TOKEN_IDENTIFIER)) {
+				printf("%s:%d:%d: " RED "error: " RESET "expected package name, but got '%s'\n", _filename, current->line, current->pos, current->data);
+				// free allocated memory
+				package_free(package);
+				return NULL;
+			}
 			package->name = strdup(current->data);
-			eat(TOKEN_IDENTIFIER);
+			// eat(TOKEN_IDENTIFIER);
+			next();
 			eat(TOKEN_SEMICOLON);
 		} else {
 			goto default_package;
@@ -144,7 +154,7 @@ Package *expectPackage() {
 			eat(TOKEN_KEYWORD);
 			// log_debug("import package %s\n", current->data);
 			if (!is(TOKEN_IDENTIFIER)) {
-				log_error("expected package name");
+				printf("%s:%d:%d: " RED "error: " RESET "expected package name\n", _filename, current->line, current->pos);
 				// free allocated memory
 				package_free(package);
 				return NULL;
@@ -154,31 +164,28 @@ Package *expectPackage() {
 			import->package_name = strdup(current->data);
 			arraylist_add(package->import_stmts, import);
 			eat(TOKEN_IDENTIFIER);
-
-			// arraylist_add(package->imported_packages, strdup(current->data));
-			// eat(TOKEN_IDENTIFIER);
 			eat(TOKEN_SEMICOLON);
 		} else if (strcmp(current->data, "from") == 0) {
 			eat(TOKEN_KEYWORD);
-			// log_debug("import package %s\n", current->data);
-			
 			import_stmt_t *import = calloc(1, sizeof(import_stmt_t));
 			import->package_name = strdup(current->data);
 
 			eat(TOKEN_IDENTIFIER);
 
-			if (!is(TOKEN_KEYWORD)) {
-				log_error("expected 'import' keyword but got '%s'\n", current->data);
+			if (!is(TOKEN_KEYWORD) || strcmp(current->data, "import") != 0) {
+				printf("%s:%d:%d: " RED "error: " RESET "expected 'import' keyword, but got '%s'\n", _filename, current->line, current->pos, current->data);
 				// free all allocated memory
 				import_stmt_free(import);
 				package_free(package);
 				return NULL;
 			}
 
-			eat(TOKEN_KEYWORD);
+			next(); // eat 'import' keyword
 
 			if (!is(TOKEN_IDENTIFIER)) {
-				log_error("expected identifier but got '%s'\n", current->data);
+				printf("%s:%d:%d: " RED "error: " RESET "expected variable or function identifier, but got '%s'\n", 
+						_filename, current->line,
+						current->pos, current->data);
 				// free all allocated memory
 				import_stmt_free(import);
 				package_free(package);
@@ -199,17 +206,31 @@ Package *expectPackage() {
 	while (_index < tokens->size) {
 		if (strcmp(current->data, "function") == 0) {
 			Function *func = expectFunction();
+			if (func == NULL) {
+				package_free(package);
+				log_debug("error: " RESET " expected variable or function identifier, but got '%s'\n", current->data);
+				return NULL;
+			}
 			arraylist_add(package->functions, func);
 		} else if (strcmp(current->data, "var") == 0 || strcmp(current->data, "const") == 0) {
 			// expect global variable/constant declaration
 			Variable *glob_var = parseVariable();
+			if (glob_var == NULL) {
+				package_free(package);
+				return NULL;
+			}
 			arraylist_add(package->global_variables, glob_var);
 		} else if (strcmp(current->data, "extern") == 0) {
 			// expect extern function declaration
 			FunctionTemplate *extern_func_template = expectExternFunctionTemplate();
+			if (extern_func_template == NULL) {
+				// free allocated memory
+				package_free(package);
+				return NULL;
+			}
 			arraylist_add(package->extern_functions, extern_func_template);
 		} else {
-			log_error("unexpected token '%s' with value '%s' at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->data, current->line, current->pos);
+			printf("%s:%d:%d: " RED "error: " RESET "unexpected token '%s'\n", _filename, current->line, current->pos, current->data);
 			package_free(package);
 			return NULL;
 		}
@@ -220,15 +241,20 @@ Package *expectPackage() {
 
 FunctionTemplate *expectExternFunctionTemplate() {
 	eat(TOKEN_KEYWORD);
-	expect(TOKEN_KEYWORD); // 'function'
-	if (strcmp(current->data, "function") != 0) {
-		log_error("expected keyword 'function' at [%d:%d] but got '%s' with value '%s' instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type], current->data);
-		exit(1);
+	// expect(TOKEN_KEYWORD); // 'function'
+	if (!is(TOKEN_KEYWORD) || strcmp(current->data, "function") != 0) {
+		printf("%s:%d:%d: " RED "error: " RESET "expected 'function' keyword, but got '%s'\n", 
+					_filename, current->line, current->pos, current->data);
+		return NULL;
 	}
 	next();
 
 	// function identifier
-	expect(TOKEN_IDENTIFIER);
+	if (!is(TOKEN_IDENTIFIER)) {
+		printf("%s:%d:%d: " RED "error: " RESET "expected function identifier, but got '%s'\n", 
+					_filename, current->line, current->pos, current->data);
+		return NULL;
+	}
 
 	FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));
 	if (func_template == NULL) {
@@ -245,7 +271,13 @@ FunctionTemplate *expectExternFunctionTemplate() {
     strcpy(func_template->identifier, current->data);
 	next();
 
-	eat(TOKEN_LPAREN);
+	// eat(TOKEN_LPAREN);
+	if (!is(TOKEN_LPAREN)) {
+		printf("%s:%d:%d: " RED "error: " RESET "expected '(', but got '%s'\n", _filename, current->line, current->pos, current->data);
+		function_template_free(func_template);
+		return NULL;
+	}
+	next();
 
 	// parse argument types (if any are defined)
 
@@ -253,11 +285,18 @@ FunctionTemplate *expectExternFunctionTemplate() {
 
 	if (!is(TOKEN_RPAREN)) {
 		while (1) {
-			if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENTIFIER)) {
-				log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
+			if (!(is(TOKEN_KEYWORD) || is(TOKEN_IDENTIFIER))) {
+				printf("%s:%d:%d: " RED "error: " RESET "expected type, but got '%s'\n", _filename, current->line, current->pos, current->data);
+				function_template_free(func_template);
+				return NULL;
 			}
 
 			Datatype *type = parse_datatype(current->data);
+			if (type == NULL) {
+				printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
+				function_template_free(func_template);
+				return NULL;
+			}
 			// TODO: check if type is an array type
 			arraylist_add(func_template->param_datatypes, type);
 
@@ -276,6 +315,11 @@ FunctionTemplate *expectExternFunctionTemplate() {
 	eat(TOKEN_COLON);
 
 	Datatype *return_type = parse_datatype(current->data);
+	if (return_type == NULL) {
+		printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
+		function_template_free(func_template);
+		return NULL;
+	}
 	// TODO: check if return type is an array type
 
 	func_template->return_type = return_type;
@@ -290,31 +334,44 @@ FunctionTemplate *expectExternFunctionTemplate() {
 Function *expectFunction() {
 	if (!is(TOKEN_KEYWORD) && strcmp(current->data, "function") != 0) {	
 		log_error("expected function declaration at [%d:%d] but got '%s' with value '%s' instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type], current->data);
-		exit(1);
+		printf("%s:%d:%d: " RED "error: " RESET "expected function declaration\n", _filename, current->line, current->pos);
+		return NULL;
 	}
-
 	next();
 
 	// expecting function name
-	expect(TOKEN_IDENTIFIER);
+	if (!is(TOKEN_IDENTIFIER)) {
+		printf("%s:%d:%d: " RED "error: " RESET "expected function identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);
+		return NULL;
+	}
 
 	Function *function = calloc(1, sizeof(Function));
 	if (function == NULL) {
 		log_error("unable to allocate memory for function\n");
-		exit(1);
+		return NULL;
 	}
 
 	function->identifier = calloc(strlen(current->data), sizeof(char));
+	function->body_statements = NULL;
+	function->return_type = NULL;
+	function->parameters = NULL;
+	function->scope = NULL;
+
 	if (function->identifier == NULL) {
 		free(function);
 		log_error("calloc failed: unable to allocate memory for function identifier\n");
-		exit(1);
+		return NULL;
 	}
     strcpy(function->identifier, current->data);
 	next();
 
 	// function paramerter
-	eat(TOKEN_LPAREN);
+	if (!is(TOKEN_LPAREN)) {
+		printf("%s:%d:%d: " RED "error: " RESET "expected '(', but got '%s'\n", _filename, current->line, current->pos, current->data);
+		function_free(function);
+		return NULL;
+	}
+	next();
 
 	function->parameters = arraylist_create();
 
@@ -323,7 +380,11 @@ Function *expectFunction() {
 			Variable *parameter = calloc(1, sizeof(Variable));
 			
 			if (!is(TOKEN_IDENTIFIER)) {
-				expect(TOKEN_IDENTIFIER);
+				printf("%s:%d:%d: " RED "error: " RESET "expected identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);
+				// free allocated memory
+				function_free(function);
+				log_error("herhe\n");
+				return NULL;
 			}
 
 			parameter->identifier = calloc(1, sizeof(Literal_T));
@@ -353,8 +414,13 @@ Function *expectFunction() {
 				free(function);
 				free(parameter->identifier->value);
 				free(parameter);
-				log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
-				exit(1);
+				// log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
+				printf("%s:%d:%d: " RED "error: " RESET "expected type identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);// free allocated memory
+
+				// free allocated memory
+				function_free(function);
+
+				return NULL;
 			}
 
 			parameter->datatype = parse_datatype(current->data);

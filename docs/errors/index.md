@@ -1,0 +1,7 @@
+# Luvascript Compiler Errors
+
+## Errors thrown by the lexer
+- [0x0001](./0x0001)
+- [0x0002](./0x0002)
+- [0x0003](./0x0003)
+- [0x0004](./0x0004)

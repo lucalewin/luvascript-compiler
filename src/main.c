@@ -57,10 +57,30 @@ int main(int argc, char **argv) {
 
 		char *source_code = read_file(source_file_name);
 		
+		if (source_code == NULL) {
+			printf("    " RED "error: " RESET "cannot read file '%s'\n", source_file_name);
+			continue;
+		}
+
 		// log_debug("parsing source file %s\n", arraylist_get(options->source_files, i));
 
-		ArrayList *tokens = tokenize(source_code);
-		Package *package = parse(tokens);
+		ArrayList *tokens = tokenize(source_code, source_file_name);
+		if (tokens == NULL) {
+			// free allocated memory
+			// `source_file_name` does not need to be freed because it comes from the commandline
+			free(source_code);
+			ast_free(ast);
+			return -1;
+		}
+		
+		Package *package = parse(tokens, source_file_name);
+		if (package == NULL) {
+			// free allocated memory
+			// `source_file_name` does not need to be freed because it comes from the commandline
+			free(source_code);
+			ast_free(ast);
+			return -1;
+		}
 
 		arraylist_add(ast->packages, package);
 

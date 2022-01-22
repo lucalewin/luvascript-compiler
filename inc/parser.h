@@ -76,7 +76,7 @@ void error(const char *msg);
 
 AST *parse_header(ArrayList *tokens);
 
-Package *parse(ArrayList *tokens);
+Package *parse(ArrayList *tokens, const char *filename);
 
 FunctionTemplate *expectExternFunctionTemplate();
 Function *expectFunction();

@@ -40,7 +40,7 @@ Datatype *parse_datatype(char *type) {
 		dt->type_identifier = "void";
 		dt->size = 0; // 0 bytes
 	} else {
-		log_error("unknown datatype: '%s'\n", type);
+		// log_error("unknown datatype: '%s'\n", type);
 		free(dt);
 		return NULL;
 	}

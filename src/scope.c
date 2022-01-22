@@ -310,6 +310,9 @@ Scope *scope_join(Scope *scope, Scope *other) {
  * @param scope the scope to be freed
  */
 void scope_free(Scope *scope) {
+	if (scope == NULL) {
+		return;
+	}
 	arraylist_free(scope->global_variable_templates);
 	arraylist_free(scope->local_variable_templates);
 	arraylist_free(scope->function_templates);
