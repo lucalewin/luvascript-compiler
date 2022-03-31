@@ -24,3 +24,12 @@ void package_merge(Package *dest, Package *src) {
 	arraylist_addall(dest->imported_global_variables, src->imported_global_variables);
 	scope_merge(dest->package_scope, src->package_scope);
 }
+
+void package_template_free(struct package_template *package_template)
+{
+	free(package_template->name);
+	arraylist_free(package_template->global_function_identifiers);
+	arraylist_free(package_template->global_variable_identifiers);
+	arraylist_free(package_template->extern_function_identifiers);
+	free(package_template);
+}

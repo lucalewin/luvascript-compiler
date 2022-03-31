@@ -22,7 +22,16 @@ struct package {
 	ArrayList *imported_global_variables;
 };
 
+struct package_template {
+	char *name;
+	ArrayList *global_function_identifiers;
+	ArrayList *global_variable_identifiers;
+	ArrayList *extern_function_identifiers;
+};
+
 void package_free(Package *package);
 void package_merge(Package *dest, Package *src);
+
+void package_template_free(struct package_template *package_template);
 
 #endif // __LUVA_PACKAGE_H__

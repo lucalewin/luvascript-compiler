@@ -5,6 +5,6 @@
 #include <options.h>
 
 // char *compile(AST *ast, CommandlineOptions *options);
-void compile(const char *filename, CommandlineOptions *options);
+void compile(const char *assembly_code, CommandlineOptions *options);
 
 #endif

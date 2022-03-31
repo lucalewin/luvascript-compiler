@@ -14,7 +14,7 @@ int exec(const char *cmd, ...) {
     char *buffer;
     char *temp;
 
-    buffer = malloc(strlen(cmd));
+    buffer = calloc(strlen(cmd) + 1, sizeof(char));
     strcpy(buffer, cmd);
     va_start(args, cmd);
 

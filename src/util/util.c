@@ -55,6 +55,24 @@ char *allocate_string(const char *str) {
 
 // ----------------------------------------------------------
 
+int strendswith(const char *str, const char *suffix)
+{
+	if (str == NULL || suffix == NULL)
+	{
+		return FALSE;
+	}
+
+	size_t str_len = strlen(str);
+	size_t suffix_len = strlen(suffix);
+
+	if (suffix_len > str_len)
+	{
+		return FALSE;
+	}
+
+	return strcmp(str + str_len - suffix_len, suffix) == 0;
+}
+
 int str_last_index_of(char *str, char x) { 
     // Traverse from right 
     int str_len = strlen(str);

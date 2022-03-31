@@ -3,7 +3,9 @@
 
 // ----------------------------------------------------------------
 
-#define bool int
+#ifndef bool
+	#define bool int
+#endif
 
 #ifndef TRUE
     #define TRUE 1
@@ -26,6 +28,8 @@ char *straddall(char *src, ...);
 
 char *strdup(const char *src);
 char *allocate_string(const char *str);
+
+int strendswith(const char *str, const char *suffix);
 
 int str_last_index_of(char *str, char x);
 

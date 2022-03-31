@@ -10,6 +10,8 @@
 #define WHITE  "\x1B[37m"
 #define RESET  "\x1B[0m"
 
+#define IRED   "\x1B[91m"
+
 void log_info(const char *message, ...);
 void log_warning(const char *message, ...);
 void log_error(const char *message, ...);

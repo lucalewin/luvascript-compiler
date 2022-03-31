@@ -8,6 +8,7 @@
 // utility libraries
 #include <util/util.h>
 #include <util/cmd.h>
+#include <util/string.h>
 #include <logging/logger.h>
 
 #include <scope_impl.h>
@@ -67,6 +68,9 @@ char *compile_list_expression(ExpressionList_T *list_expr, Scope *scope);
 char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope);
 char *compile_variable_pointer_with_offset(VariableTemplate *var_template, Scope *scope);
 
+char *dereference_pointer_variable(VariableTemplate *var_template, Scope *scope);
+char *reference_pointer_variable(VariableTemplate *var_template, Scope *scope);
+
 // --------------------- function implementations ----------------------
 
 char *compile_to_x86_64_assembly(AST *ast, CommandlineOptions *options) {
@@ -122,9 +126,11 @@ char *compile_global_variable(Variable *glob_var) {
 	switch (glob_var->default_value->type) {
 		case EXPRESSION_TYPE_LITERAL: {
 			if (glob_var->default_value->expr.literal_expr->type == LITERAL_STRING) {
-				variable_value = "\"";
+				// use backquote for escaping the literal string in nasm syntax
+				variable_value = "`";
 				variable_value = stradd(variable_value, glob_var->default_value->expr.literal_expr->value);
-				variable_value = stradd(variable_value, "\"");
+				variable_value = stradd(variable_value, "`");
+				variable_value = stradd(variable_value, ",0");
 			} else {
 				variable_value = glob_var->default_value->expr.literal_expr->value;
 			}
@@ -204,6 +210,13 @@ char *compile_function(Function *function) {
 		}
 	}
 
+	// compile statements
+	char *stmts_code = calloc(1, sizeof(char));
+	for (size_t i = 0; i < function->body_statements->size; i++) {
+		Statement *stmt = arraylist_get(function->body_statements, i);
+		stmts_code = stradd(stmts_code, compile_statement(stmt));
+	}
+
 	if (size_for_stack_align != 0) {
 		function_code = stradd(function_code, "push rbp\n"); // save old value of RBP
 		function_code = stradd(function_code, "mov rbp, rsp\n");
@@ -217,39 +230,70 @@ char *compile_function(Function *function) {
 	switch (function->parameters->size) {
 		case 6: {
 			Variable *param = arraylist_get(function->parameters, 5);
-			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = straddall(function_code, "], r9\t; func-param ", param->identifier->value, "\n", NULL);
+			VariableTemplate *template = convert_to_variable_template(param);
+
+			char *pointer = compile_variable_pointer(template, function->scope);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_R9, template->datatype->size);
+			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+
+			variable_template_free(template);
+			free(pointer);
 		}
 		case 5: {
 			Variable *param = arraylist_get(function->parameters, 4);
-			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = straddall(function_code, "], r8\t; func-param ", param->identifier->value, "\n", NULL);
+			VariableTemplate *template = convert_to_variable_template(param);
+
+			char *pointer = compile_variable_pointer(template, function->scope);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_R8, template->datatype->size);
+			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+
+			variable_template_free(template);
+			free(pointer);
 		}
 		case 4: {
 			Variable *param = arraylist_get(function->parameters, 3);
-			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = straddall(function_code, "], ecx\t; func-param ", param->identifier->value, "\n", NULL);
+			VariableTemplate *template = convert_to_variable_template(param);
+
+			char *pointer = compile_variable_pointer(template, function->scope);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_ECX, template->datatype->size);
+			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+
+			variable_template_free(template);
+			free(pointer);
 		}
 		case 3: {
 			Variable *param = arraylist_get(function->parameters, 2);
-			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = straddall(function_code, "], edx\t; func-param ", param->identifier->value, "\n", NULL);
+			VariableTemplate *template = convert_to_variable_template(param);
+
+			char *pointer = compile_variable_pointer(template, function->scope);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_EDX, template->datatype->size);
+			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+
+			variable_template_free(template);
+			free(pointer);
 		}
 		case 2: {
 			Variable *param = arraylist_get(function->parameters, 1);
-			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = straddall(function_code, "], esi\t; func-param ", param->identifier->value, "\n", NULL);
+			VariableTemplate *template = convert_to_variable_template(param);
+
+			char *pointer = compile_variable_pointer(template, function->scope);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_ESI, template->datatype->size);
+			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+
+			variable_template_free(template);
+			free(pointer);
 		}
 		case 1: {
 			Variable *param = arraylist_get(function->parameters, 0);
-			function_code = stradd(function_code, "mov DWORD[rbp-");
-			function_code = stradd(function_code, int_to_string(scope_get_variable_rbp_offset(function->scope, param->identifier->value)));
-			function_code = straddall(function_code, "], edi\t; func-param ", param->identifier->value, "\n", NULL);
+			VariableTemplate *template = convert_to_variable_template(param);
+
+			char *pointer = compile_variable_pointer(template, function->scope);
+			log_debug("compile_function(): pointer: %s\n", pointer);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_EDI, template->datatype->size);
+			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+
+			variable_template_free(template);
+			free(pointer);
 		}
 		case 0:
 			break;
@@ -257,12 +301,7 @@ char *compile_function(Function *function) {
 			break;
 	}
 
-	// compile statements
-	char *stmts_code = calloc(1, sizeof(char));
-	for (size_t i = 0; i < function->body_statements->size; i++) {
-		Statement *stmt = arraylist_get(function->body_statements, i);
-		stmts_code = stradd(stmts_code, compile_statement(stmt));
-	}
+	
 	function_code = stradd(function_code, stmts_code);
 
 	return function_code;
@@ -270,6 +309,7 @@ char *compile_function(Function *function) {
 
 char *compile_statement(Statement *stmt) {
 	// log_debug("compile_statement(): statement type = %s\n", STATEMENT_TYPES[stmt->type]);
+
 	switch(stmt->type) {
 		case STATEMENT_RETURN:
 			return compile_return_statement(stmt->stmt.return_statement, stmt->scope);
@@ -362,10 +402,38 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 
 	char *var_decl_code = compile_expression(var->default_value, scope);
 
-	var_decl_code = straddall(var_decl_code, 
-					"mov ", 
-					compile_variable_pointer_with_offset(convert_to_variable_template(var), scope), 
-					", ", 
+	VariableTemplate *var_template = convert_to_variable_template(var);
+
+	// calculate offset on the stack of the new variable
+	int offset = 8;
+	for (size_t i = 0; i < scope->local_variable_templates->size; i++) {
+		VariableTemplate *var_template = arraylist_get(scope->local_variable_templates, i);
+		if (strcmp(var_decl_stmt->variable->identifier->value, var_template->identifier) == 0) {
+			break;
+		}
+		offset += var_template->datatype->size;
+	}
+
+	//
+	switch (var_template->datatype->size) {
+		case 1: // BYTE
+			var_decl_code = straddall(var_decl_code, "mov BYTE[rbp-", int_to_string(offset), "],", NULL);
+			break;
+		case 2: // WORD
+			var_decl_code = straddall(var_decl_code, "mov WORD[rbp-", int_to_string(offset), "],", NULL);
+			break;
+		case 4: // DWORD
+			var_decl_code = straddall(var_decl_code, "mov DWORD[rbp-", int_to_string(offset), "],", NULL);
+			break;
+		case 8: // QWORD
+			var_decl_code = straddall(var_decl_code, "mov QWORD[rbp-", int_to_string(offset), "],", NULL);
+			break;
+		default:
+			log_error("unknown datatype size: %d\n", var_template->datatype->size);
+			exit(1);
+	}
+
+	var_decl_code = straddall(var_decl_code,
 					getRegisterWithOpCodeSize(REGISTER_EAX, var->datatype->size), 
 					"\t; variable: ", var->identifier->value, "\n", NULL);
 
@@ -422,7 +490,6 @@ char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scop
 char *compile_loop_statement(LoopStatement *loop_stmt, Scope *scope) {
 	// compile condition expression
 	char *cond_expr_code = compile_expression(loop_stmt->condition, scope);
-
 	// compile loop body
 	char *loop_body_code = compile_statement(loop_stmt->body);
 
@@ -494,7 +561,16 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 
 			switch (literal->type) {
 				case LITERAL_BOOLEAN: // a boolean is also just a number (0 or 1)
-				case LITERAL_NUMBER: {
+				case LITERAL_NUMBER:
+				case LITERAL_CHARACTER: // a character is also a number
+				{
+					if (literal->type == LITERAL_CHARACTER) {
+						char *char_code = int_to_string((int) *(literal->value));
+						free(literal->value);
+						literal->value = char_code;
+						// log_debug("compile_binary_expression(): char_code = %s\n", char_code);
+					}
+					
 					switch (bin_expr->operator) {
 						case BINARY_OPERATOR_PLUS:
 							bin_expr_code = straddall(bin_expr_code, "add rax, ", literal->value, "\n", NULL);
@@ -733,7 +809,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					break;
 				} // case LITERAL_IDENTIFIER
 				default:
-					log_error("[4] compile_binary_expression(): literal type '%d' is not supported yet\n", literal->type);
+					log_error("[4] compile_binary_expression(): literal type '%s' is not supported yet\n", LITERAL_TYPES[literal->type]);
 					exit(1);
 			} // switch (literal->type)
 			break;
@@ -851,6 +927,8 @@ char *compile_nested_expression(NestedExpression_T *nested_expr, Scope *scope) {
 char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 	char *literal_expr_code = calloc(1, sizeof(char));
 
+	// log_debug("[6] compile_literal_expression(): literal type '%d' = %s\n", literal->type, literal->value);
+
 	switch (literal->type) {
 		case LITERAL_BOOLEAN: // a boolean is also just a number (0 or 1)
 		case LITERAL_NUMBER: {
@@ -868,10 +946,22 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 
 			VariableTemplate *var_template = scope_get_variable_by_name(scope, literal->value);
 
+			// if (var_template->datatype->is_pointer == 1) {
+			// 	log_debug("[7] compile_literal_expression(): variable '%s' is a pointer\n", literal->value);
+			// } else {
+			// 	log_debug("[7] compile_literal_expression(): variable '%s' is NOT a pointer\n", literal->value);
+			// }
+
 			literal_expr_code = straddall(literal_expr_code, "mov ", 
-							getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size), ", ", 
+							getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->is_pointer ? 8 : var_template->datatype->size), ", ", 
 							compile_variable_pointer(var_template, scope), "\n", NULL);
 
+			break;
+		}
+		case LITERAL_STRING: {
+			printf("    " RED "error: " RESET "string literals are not supported yet\n");
+			// TODO(lucalewin): add string literals to global list
+			// then add those strings to the global .data section
 			break;
 		}
 		case LITERAL_CHARACTER: {
@@ -880,9 +970,9 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 			literal_expr_code = stradd(literal_expr_code, "'\n");
 			break;
 		}
-		default:
-			log_error("unsupported literal type %d\n", literal->type);
-			exit(1);
+		// default:
+		// 	log_error("unsupported literal type %d\n", literal->type);
+		// 	exit(1);
 	}
 
 	return literal_expr_code;
@@ -890,6 +980,8 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 
 char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 	char *unary_expr_code = calloc(1, sizeof(char));
+
+	// log_debug("[6] compile_unary_expression(): unary operator '%d'\n", unary_expr->operator);
 
 	switch (unary_expr->operator) {
 		case UNARY_OPERATOR_NEGATE: {
@@ -984,8 +1076,13 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 					"mov rsi, rax\n", NULL);
 		}
 		case 1: {
+			Expression_T *expr = arraylist_get(func_call_expr->argument_expression_list->expressions, 0);
+			log_debug("expression_type = %s\n", EXPRESSION_TYPES[expr->type]);
+			char *expr_code = compile_expression(expr, scope);
+			log_debug("compile_function_call_expression(): expr_code = %s\n", expr_code);
+			
 			func_call_expr_code = straddall(func_call_expr_code,
-					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 0), scope), 
+					expr_code, 
 					"mov rdi, rax\n", NULL);
 			break;
 		}
@@ -1005,11 +1102,13 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope) {
 	// parse expression on the right hand side of the assignment operator
 
+	log_debug("compile_assignment_expression(): assignment_expr->identifier = %s\n", assignment_expr->identifier);
+
 	char *assignment_expr_code;
 	
 	if (assignment_expr->assignment_value->type == EXPRESSION_TYPE_LIST) {
 		// TODO(lucalewin): implement
-
+		log_error("compiling for assignment expression with list is not supported yet!\n");
 	}
 	assignment_expr_code = compile_expression(assignment_expr->assignment_value, scope);
 
@@ -1039,8 +1138,18 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 			return NULL;
 		}
 
+		char *var_pointer = NULL;
+
 		// char *var_address = scope_get_variable_address(scope, identifier->value);
-		char *var_pointer = compile_variable_pointer(template, scope);
+		if (template->datatype->is_pointer == 1) {
+			log_debug("[12] compile_literal_expression(): variable '%s' is a pointer\n", identifier->value);
+			var_pointer = scope_get_variable_address(scope, identifier->value);
+			
+		} else {
+			log_debug("[12] compile_literal_expression(): variable '%s' is NOT a pointer\n", identifier->value);
+			var_pointer = compile_variable_pointer(template, scope);
+		}
+		// char *var_pointer = compile_variable_pointer(template, scope);
 		char *reg_a = getRegisterWithOpCodeSize(REGISTER_EAX, template->datatype->size);
 		char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, template->datatype->size);
 
@@ -1089,9 +1198,18 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 char *compile_array_access_expression(ArrayAccessExpression_T *array_access_expr, Scope *scope) {
 	VariableTemplate *template = scope_get_variable_by_name(scope, array_access_expr->identifier->value);
 
-	return straddall(
-			compile_expression(array_access_expr->index_expression, scope),
+	// for (size_t i = 0; i < scope->global_variable_templates->size; i++) {
+	// 	// print name and address of all variables
+	// 	VariableTemplate *template = arraylist_get(scope->global_variable_templates, i);
+	// 	printf("%s: %s\n", template->identifier, scope_get_variable_address(scope, template->identifier));
+	// }
+
+	char *array_access_expr_code = compile_expression(array_access_expr->index_expression, scope);
+
+	array_access_expr_code = straddall(array_access_expr_code, 
 			"mov rax, [", scope_get_variable_address(scope, array_access_expr->identifier->value), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
+
+	return array_access_expr_code;
 }
 
 char *compile_member_access_expression(MemberAccessExpression_T *member_access_expr, Scope *scope) {
@@ -1111,6 +1229,10 @@ char *compile_list_expression(ExpressionList_T *list_expr, Scope *scope) {
 
 char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 	char *var_address = scope_get_variable_address(scope, var_template->identifier);
+
+	// if (var_template->datatype->is_pointer) {
+	// 	return var_template->identifier;
+	// }
 
 	switch (var_template->datatype->size) {
 		case 1: // BYTE
@@ -1143,4 +1265,26 @@ char *compile_variable_pointer_with_offset(VariableTemplate *var_template, Scope
 			log_error("unknown datatype size: %d\n", var_template->datatype->size);
 			exit(1);
 	}
+}
+
+char *dereference_pointer_variable(VariableTemplate *var_template, Scope *scope) {
+	char *var_address = scope_get_variable_address(scope, var_template->identifier);
+
+	switch (var_template->datatype->size) {
+		case 1: // BYTE
+			return straddall("BYTE[", var_address, "]", NULL);
+		case 2: // WORD
+			return straddall("WORD[", var_address, "]", NULL);
+		case 4: // DWORD
+			return straddall("DWORD[", var_address, "]", NULL);
+		case 8: // QWORD
+			return straddall("QWORD[", var_address, "]", NULL);
+		default:
+			log_error("unknown datatype size: %d\n", var_template->datatype->size);
+			exit(1);
+	}
+}
+
+char *reference_pointer_variable(VariableTemplate *var_template, Scope *scope) {
+	return scope_get_variable_address(scope, var_template->identifier);
 }

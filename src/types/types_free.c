@@ -15,25 +15,6 @@
 #include <logging/logger.h>
 
 /**
- * @brief free a ast
- * 
- * @param ast the ast to free
- */
-
-
-/**
- * @brief free a datatype
- * 
- * @param datatype the datatype to free
- */
-void datatype_free(Datatype *datatype) {
-	if (datatype == NULL) return;
-	if (!datatype->is_primitive)
-		free(datatype->type_identifier);
-	free(datatype);
-}
-
-/**
  * @brief free an expression
  * 
  * @param expression the expression to free
@@ -87,53 +68,6 @@ void expression_free(Expression_T *expression) {
 	}
 
 	free(expression);
-}
-
-/**
- * @brief free a function
- * 
- * @param function the function to free
- */
-void function_free(Function *function) {
-	if (function == NULL) return;
-
-	free(function->identifier);
-
-	if (function->parameters != NULL) {
-		for (size_t i = 0; i < function->parameters->size; i++) {
-			Variable *parameter = arraylist_get(function->parameters, i);
-			variable_free(parameter);
-		}
-		arraylist_free(function->parameters);
-	}
-	if (function->body_statements != NULL) {
-		for (size_t i = 0; i < function->body_statements->size; i++) {
-			Statement *statement = arraylist_get(function->body_statements, i);
-			statement_free(statement);
-		}
-		arraylist_free(function->body_statements);
-	}
-
-	log_debug("HEHEEH\n");
-
-	datatype_free(function->return_type);
-	scope_free(function->scope);
-
-	free(function);
-}
-
-/**
- * @brief free a function template
- * 
- * @param function_template the function template to free
- */
-void function_template_free(FunctionTemplate *function_template) {
-	free(function_template->identifier);
-
-	for (size_t i = 0; i < function_template->param_datatypes->size; i++) {
-		Datatype *datatype = arraylist_get(function_template->param_datatypes, i);
-		datatype_free(datatype);
-	}
 }
 
 /**
@@ -192,21 +126,6 @@ void statement_free(Statement *statement) {
 	}
 
 	free(statement);
-}
-
-/**
- * @brief free a variable
- * 
- * @param variable the variable to free
- */
-void variable_free(Variable *variable) {
-	if (variable == NULL) {
-		return;
-	}
-	datatype_free(variable->datatype);
-	literal_free(variable->identifier);
-	expression_free(variable->default_value);
-	free(variable);
 }
 
 void package_free(Package *package) {

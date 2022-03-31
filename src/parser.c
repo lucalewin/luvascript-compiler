@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <util/util.h>
+#include <util/string.h>
 #include <logging/logger.h>
 
 #include <scope_impl.h>
@@ -104,6 +105,7 @@ Variable *parseVariable();
 // -----------------------------------------------------------------------------------
 
 const char *_filename;
+
 
 Package *parse(ArrayList *token_list, const char *filename) {
 	tokens = token_list;
@@ -624,9 +626,9 @@ Statement *expectStatement() {
 			log_error("expectStatement(): cannot allocate memory for block\n");
 			return NULL;
 		}
-		block->code = calloc(strlen(current->data), sizeof(char));
+		block->code = calloc(strlen(current->data) + 1, sizeof(char));
 		strcpy(block->code, current->data);
-		
+
 		eat(TOKEN_ASSEMBLY_CODE_BLOCK);
 
 		Statement *statement = calloc(1, sizeof(Statement));
@@ -1169,7 +1171,7 @@ Expression_T *expectEqualitiyExpression() {
 	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
 	binary_expression->expression_left = expr;
 	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr;
+	Expression_T *temp_expr = NULL;
 
 	while (is(TOKEN_RELATIONAL_EQUAL) || is(TOKEN_RELATIONAL_NOT_EQUAL)) {
 		temp->operator = is(TOKEN_RELATIONAL_EQUAL) ? BINARY_OPERATOR_LOGICAL_EQUAL : BINARY_OPERATOR_LOGICAL_NOT_EQUAL;
@@ -1205,7 +1207,7 @@ Expression_T *expectRelationalExpression() {
 	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
 	binary_expression->expression_left = expr;
 	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr;
+	Expression_T *temp_expr = NULL;
 
 	while (is(TOKEN_RELATIONAL_GREATER) ||
 				is(TOKEN_RELATIONAL_GREATER_OR_EQUAL) ||
@@ -1256,7 +1258,7 @@ Expression_T *expectShiftExpression() {
 	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
 	binary_expression->expression_left = expr;
 	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr;
+	Expression_T *temp_expr = NULL;
 
 	while (is(TOKEN_BITWISE_LEFT_SHIFT) || is(TOKEN_BITWISE_RIGHT_SHIFT)) {
 		temp->operator = is(TOKEN_BITWISE_LEFT_SHIFT) ? BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT : BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT;
@@ -1289,7 +1291,7 @@ Expression_T *expectAdditiveExpression() {
     BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
     binary_expression->expression_left = expr;
     BinaryExpression_T *temp = binary_expression;
-    Expression_T *temp_expr;
+    Expression_T *temp_expr = NULL;
 
     while (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
         temp->operator = is(TOKEN_PLUS) ? BINARY_OPERATOR_PLUS : BINARY_OPERATOR_MINUS;
@@ -1322,7 +1324,7 @@ Expression_T *expectMultiplicativeExpression() {
     BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
     binary_expression->expression_left = expr;
     BinaryExpression_T *temp = binary_expression;
-    Expression_T *temp_expr;
+    Expression_T *temp_expr = NULL;
 
     while (is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_PERCENT)) {
         // temp->operator = is(TOKEN_ASTERISK) ? BINARY_OPERATOR_MULTIPLY : BINARY_OPERATOR_DIVIDE;

@@ -23,21 +23,23 @@ char *read_file(const char* path) {
 
     // read file
     char *buffer = (char*) malloc(sizeof(char) * (size + 1));
-    fread(buffer, 1, size, file);
+	// ignore return value of fread
+    if (fread(buffer, 1, size, file));
     buffer[size] = '\0';
     fclose(file);
 
     return buffer;
 }
 
-void write_file(const char* path, char *text) {
+int file_write(const char* path, const char *text) {
     FILE *file = fopen(path, "w");
     if (!file) {
-        log_error("write_file(): could not open file '%s'\n", path);
-        return;
+        // log_error("write_file(): could not open file '%s'\n", path);
+        return 0;
     }
     fputs(text, file);
     fclose(file);
+	return 1;
 }
 
 int file_exists(const char *path) {
@@ -47,6 +49,16 @@ int file_exists(const char *path) {
 		return 1;
 	}
 	return 0;
+}
+
+int file_remove(const char* path)
+{
+	if (remove(path) != 0)
+	{
+		log_error("could not remove file '%s'\n", path);
+		return 0;
+	}
+	return 1;
 }
 
 // list all files in the current directory

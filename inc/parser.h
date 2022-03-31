@@ -74,7 +74,13 @@ void eat(TokenType type);
  */
 void error(const char *msg);
 
-AST *parse_header(ArrayList *tokens);
+/**
+ * @brief parses the source file
+ * 
+ * @param tokens 
+ * @return ArrayList* of `struct package_template` 
+ */
+ArrayList *parse_header(ArrayList *tokens);
 
 Package *parse(ArrayList *tokens, const char *filename);
 

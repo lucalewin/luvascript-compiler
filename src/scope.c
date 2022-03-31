@@ -12,13 +12,15 @@
 #include <types/statement.h>
 #include <types/function.h>
 #include <types/import.h>
+#include <types/package.h>
+#include <types/module.h>
 
 /**
  * @brief evaluates the scopes of the ast
  * 
  * @param ast the ast to evaluate
  */
-int scope_evaluate_ast(AST *ast) {
+int scope_evaluate_ast(AST *ast, ArrayList *modules) {
 	if (ast == NULL) return 1;
 
 	// evaluate imports
@@ -419,6 +421,7 @@ char *scope_get_variable_address(Scope *scope, char *var_name) {
 		log_error("undefined variable '%s'\n", var_name);
 		return NULL;
 	}
+
 
 	char *address;
 

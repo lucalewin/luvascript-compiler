@@ -1,5 +1,6 @@
 #include <options.h>
 
+#include <stdbool.h>
 #include <string.h>
 
 #include <util/util.h>
@@ -26,9 +27,11 @@ CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
 	options->source_files = arraylist_create();
 	options->output_file_name = NULL;
 	options->library_paths = arraylist_create();
-	options->link = 1; // true
-	options->generate_assembly = 0; // false
-	options->is_library = 0; // false
+	options->link = true;
+	options->generate_assembly = false;
+	options->is_shared_library = false;
+	options->is_static_library = false;
+	options->nostdlib = false;
 
 	// parse command line arguments
 	for (size_t i = 1; i < argc; i++) {
@@ -54,13 +57,19 @@ CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
 				}
 			} else if (strcmp(argv[i], "-S") == 0) {
 				// generate assembly
-				options->generate_assembly = 1;
+				options->generate_assembly = true;
 			} else if (strcmp(argv[i], "-c") == 0) {
 				// compile to object file
-				options->link = 0;
+				options->link = false;
 			} else if (strcmp(argv[i], "-shared") == 0) {
 				// compile to shared library
-				options->is_library = 1;
+				options->is_shared_library = true;
+			} else if (strcmp(argv[i], "-static") == 0) {
+				// compile to static library
+				options->is_static_library = true;
+			} else if (strcmp(argv[i], "-nostdlib") == 0) {
+				// do not include standard library
+				options->nostdlib = true;
 			} else {
 				log_error("unknown option '%s'\n", argv[i]);
 				log_error("type 'lvc -h' for help\n");

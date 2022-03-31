@@ -1,4 +1,7 @@
 #include <scope.h>
+
+#include <util/arraylist.h>
+
 #include <types/ast.h>
 #include <types/statement.h>
 #include <types/function.h>
@@ -9,7 +12,7 @@
  * 
  * @param ast 
  */
-int scope_evaluate_ast(AST *ast);
+int scope_evaluate_ast(AST *ast, ArrayList *modules);
 
 /**
  * @brief 
