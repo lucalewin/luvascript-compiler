@@ -1,5 +1,33 @@
-from math import sqrt;
+// This test calculates the length of a string.
+// Then a syscall is performed to print the string to the console.
+// "Hello World!" is printed to the console.
+// return code is the length of the string (14)
 
-function main(): int {
-	return sqrt(169);
+
+const text: string = "Hello, World!\n";
+
+function main(): i8 {
+	print(text);
+	return string_length(text);
+}
+
+function print(str: string): i8 {
+	write(1, str, string_length(str)); // 1 = stdout
+	return 0;
+}
+
+function string_length(str: string): i64 {
+	var i: i64 = 0;
+	while (str[i] != '\0') {
+		++i;
+	}
+	return i;
+}
+
+function write(fd: i32, ptr: string, count: i64): i32 {
+	asm {
+		mov rax, 1 ; SYS_write = 1
+		syscall
+	}
+	return 0;
 }
