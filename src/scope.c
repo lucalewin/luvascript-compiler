@@ -355,7 +355,14 @@ int scope_get_variable_rbp_offset(Scope *scope, char *var_name) {
 		if (strcmp(var_name, var_template->identifier) == 0) {
 			return offset + 8;
 		}
-		offset += var_template->datatype->size;
+		
+		if (var_template->datatype->is_array) {
+			offset += var_template->datatype->array_size * var_template->datatype->size;
+		} else if(var_template->datatype->is_pointer) {
+			offset += 8;
+		} else {
+			offset += var_template->datatype->size;
+		}
 	}
 
 	// in bytes 0..7 the old value of rbp is store -> add 8 bytes to avoid overwriting old value of rbp
