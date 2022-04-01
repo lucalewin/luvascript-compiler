@@ -1,6 +1,9 @@
 # vscode config files
 .vscode/
 
+# mkdocs site files (github pages)
+site/
+
 # Prerequisites
 *.d
 

@@ -1,0 +1,56 @@
+# Project information
+site_name: Luvascript Documentation
+site_url: https://lucr4ft.github.io/luvascript-compiler/
+site_author: Luca Lewin
+
+# Repository
+repo_name: lucr4ft/luvascript-compiler
+repo_url: https://github.com/lucr4ft/luvascript-compiler
+edit_uri: ""
+
+copyright: Copyright &copy; 2022 Luca Lewin
+
+theme:
+  name: material
+
+    # Static files
+  static_templates:
+    - 404.html
+
+  # Don't include MkDocs' JavaScript
+  include_search_page: false
+  search_index_only: true
+
+  # Default values, taken from mkdocs_theme.yml
+  language: en
+  features:
+    - content.code.annotate
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+
+  palette:
+    scheme: slate
+    primary: purple
+    accent: purple
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+      minify_css: true
+      minify_js: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started/index.md
+  - Installation: installation/index.md
+  - Compiler: compiler/index.md
+  - Language Reference: language-reference/index.md
+  - Language Specifications: language-specifications/index.md
