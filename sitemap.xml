@@ -96,7 +96,7 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://lucr4ft.github.io/luvascript-compiler/language-reference/order-of-opartions/</loc>
+         <loc>https://lucr4ft.github.io/luvascript-compiler/language-reference/order-of-operations/</loc>
          <lastmod>2022-04-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -106,7 +106,7 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://lucr4ft.github.io/luvascript-compiler/language-specifications/v0.1.0/</loc>
+         <loc>https://lucr4ft.github.io/luvascript-compiler/language-specifications/0.1.0/</loc>
          <lastmod>2022-04-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
