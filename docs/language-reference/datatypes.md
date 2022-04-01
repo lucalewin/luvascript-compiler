@@ -15,4 +15,5 @@
 | `f32` | 4 bytes |
 | `f64` | 8 bytes |
 | `bool` | 1 byte |
-| `string` | variable |
+| `char` | 1 byte |
+| `string` | 8 bytes (pointer) (actual size depends on length of the string) |
