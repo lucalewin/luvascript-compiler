@@ -61,6 +61,21 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://lucr4ft.github.io/luvascript-compiler/installation/linux/</loc>
+         <lastmod>2022-04-01</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://lucr4ft.github.io/luvascript-compiler/installation/macos/</loc>
+         <lastmod>2022-04-01</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://lucr4ft.github.io/luvascript-compiler/installation/windows/</loc>
+         <lastmod>2022-04-01</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/language-reference/</loc>
          <lastmod>2022-04-01</lastmod>
          <changefreq>daily</changefreq>
