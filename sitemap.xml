@@ -2,132 +2,132 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/calling-convention/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/options/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/conventions/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/conventions/luvascript-calling-convention/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/messages/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/messages/errors/0x0001/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/messages/errors/0x0002/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/messages/errors/0x0003/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/messages/errors/0x0004/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/messages/warnings/0x0001/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/source-docs/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/compiler/source-docs/src/parser/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/getting-started/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/installation/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/installation/linux/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/installation/macos/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/installation/windows/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/language-reference/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/language-reference/datatypes/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/language-reference/external-functions/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/language-reference/inline-assembly/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/language-reference/order-of-operations/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/language-specifications/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://lucr4ft.github.io/luvascript-compiler/language-specifications/0.1.0/</loc>
-         <lastmod>2022-04-02</lastmod>
+         <lastmod>2022-04-03</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
