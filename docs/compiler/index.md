@@ -1,4 +1,4 @@
 # Luvascript Compiler
 
-* [Luvascript Calling Convention (LCC)](calling-convention.md)
+* [Luvascript Naming Convention (LNC)](./conventions/luvascript-naming-convention.md)
 * [Compiler Messages](messages/index.md)

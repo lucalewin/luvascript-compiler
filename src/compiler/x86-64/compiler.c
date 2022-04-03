@@ -97,10 +97,17 @@ char *compile_to_x86_64_assembly(AST *ast, CommandlineOptions *options) {
 		// check if main method is defined
 		if (scope_contains_function(package->package_scope, "main")) {
 			// main function is defined
+			FunctionTemplate *main_func_temp = scope_get_function_by_name(package->package_scope, "main");
+
+			char *main_func_lcc_identifier = function_to_lcc_identifier(main_func_temp);
+
 			asm_code = stradd(asm_code, header_template);
-			asm_code = stradd(asm_code, "call main\n");
-			asm_code = stradd(asm_code, "mov rdi, rax\n");
+			asm_code = stradd(asm_code, "call ");
+			asm_code = stradd(asm_code, main_func_lcc_identifier);
+			asm_code = stradd(asm_code, "\nmov rdi, rax\n");
 			asm_code = stradd(asm_code, exit_template);
+
+			free(main_func_lcc_identifier);
 		} else {
 			asm_code = stradd(asm_code, "section .text\n");
 		}
@@ -166,37 +173,49 @@ char *compile_global_variable(Variable *glob_var) {
 			return NULL;
 	}
 
+	char *var_lcc_identifier = variable_to_lcc_identifier(convert_to_variable_template(glob_var));
+	char *asm_code = calloc(strlen(var_lcc_identifier) + 1, sizeof(char));
+	strcpy(asm_code, var_lcc_identifier);
+
+	free(var_lcc_identifier);
+
 	switch (glob_var->datatype->size) {
 		case 1: // BYTE
-			return straddall(glob_var->identifier->value, " db ", variable_value, "\n", NULL);
-
+			asm_code = straddall(asm_code, " db ", variable_value, "\n", NULL);
+			break;
 		case 2: // WORD
-			return straddall(glob_var->identifier->value, " dw ", variable_value, "\n", NULL);
-
+			asm_code = straddall(asm_code, " dw ", variable_value, "\n", NULL);
+			break;
 		case 4: // DWORD
-			return straddall(glob_var->identifier->value, " dd ", variable_value, "\n", NULL);
-
+			asm_code = straddall(asm_code, " dd ", variable_value, "\n", NULL);
+			break;
 		case 8: // QWORD
-			return straddall(glob_var->identifier->value, " dq ", variable_value, "\n", NULL);
-			
+			asm_code = straddall(asm_code, " dq ", variable_value, "\n", NULL);
+			break;
 		default:
 			log_error("unknown variable size\n");
 			exit(1);
 	}
+
+	free(variable_value);
+
+	return asm_code;
 }
 
 char *compile_extern_function_templates(FunctionTemplate *func_template) {
-	return straddall("extern ", func_template->identifier, "\n", NULL);
+	// return straddall("extern ", func_template->identifier, "\n", NULL);
+	return straddall("extern ", function_to_lcc_identifier(func_template), "\n", NULL);
 }
 
 char *compile_function(Function *function) {
 	char *function_code = calloc(1, sizeof(char));
-
-	// log_debug("compile_function(): compiling function '%s'\n", function->identifier);
+	char *func_lcc_ident = function_to_lcc_identifier(convert_to_function_template(function));
 
 	function_code = straddall(function_code,
-	"global ", function->identifier,
-	"\n", function->identifier, ":\n", NULL);
+	"global ", func_lcc_ident,
+	"\n", func_lcc_ident, ":\n", NULL);
+
+	free(func_lcc_ident);
 
 	// align stack
 
@@ -1027,12 +1046,44 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 
 	// check if parameter count matches
 	// TODO(lucalewin): check if parameter types match
-	FunctionTemplate *func_template = scope_get_function_by_name(scope, func_call_expr->function_identifier);
-	if (func_template->param_datatypes->size != func_call_expr->argument_expression_list->expressions->size) {
-		log_error("expected %d arguments for function '%s' but got %d instead\n", 
-				func_template->param_datatypes->size, 
-				func_template->identifier, 
-				func_call_expr->argument_expression_list->expressions->size);
+	// FunctionTemplate *func_template = scope_get_function_by_name(scope, func_call_expr->function_identifier);
+	// if (func_template->param_datatypes->size != func_call_expr->argument_expression_list->expressions->size) {
+	// 	log_error("expected %d arguments for function '%s' but got %d instead\n", 
+	// 			func_template->param_datatypes->size, 
+	// 			func_template->identifier, 
+	// 			func_call_expr->argument_expression_list->expressions->size);
+	// 	return NULL;
+	// }
+
+	// get the function template of the called function
+	FunctionTemplate *func_template = NULL;
+	for (size_t i = 0; i < scope->function_templates->size; i++) {
+		func_template = arraylist_get(scope->function_templates, i);
+
+		// check if function identifier matches with the one in the function call
+		if (strcmp(func_template->identifier, func_call_expr->function_identifier) == 0) {
+			// check if parameter count matches
+			if (func_template->param_datatypes->size != func_call_expr->argument_expression_list->expressions->size) {
+				// parameter count mismatch
+				// continue with next function template
+				continue;
+			}
+
+			// TODO: check if parameter types match
+			// !!! IMPORTANT
+			// for (size_t j = 0; j < func_template->param_datatypes->size; j++) {
+			// 	FIXME
+			// 	Datatype *param_datatype = arraylist_get(func_template->param_datatypes, j);
+			// }
+
+			// found matching function
+			break;
+		}
+	}
+
+	if (func_template == NULL) {
+		// no function matching the function call was found
+		log_error("function '%s' does not exist in the current scope\n", func_call_expr->function_identifier);
 		return NULL;
 	}
 
@@ -1083,7 +1134,11 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 			exit(1);
 	}
 
-	func_call_expr_code = straddall(func_call_expr_code, "call ", func_call_expr->function_identifier, "\n", NULL);
+	char *func_lcc_ident = function_to_lcc_identifier(func_template);
+
+	func_call_expr_code = straddall(func_call_expr_code, "call ", func_lcc_ident, "\n", NULL);
+
+	free(func_lcc_ident);
 
 	return func_call_expr_code;
 }
@@ -1208,7 +1263,7 @@ char *compile_array_access_expression(ArrayAccessExpression_T *array_access_expr
 	{
 		// the accessed variable is a global variable
 		array_access_expr_code = straddall(array_access_expr_code, 
-				"mov rax, [", scope_get_variable_address(scope, array_access_expr->identifier->value), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
+				"mov rax, [", variable_to_lcc_identifier(template), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
 	}
 
 	return array_access_expr_code;
@@ -1230,15 +1285,21 @@ char *compile_list_expression(ExpressionList_T *list_expr, Scope *scope) {
 // ------------------------------------------------------------------------------------------------
 
 char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
-	char *var_address = scope_get_variable_address(scope, var_template->identifier);
-
+	// check if the variable is a global or local variable
 	if (scope_contains_global_variable(scope, var_template->identifier)) {
-		if (var_template->datatype->is_pointer == 0) {
-			return dereference_pointer_variable(var_template, scope);
+		// the variable is a global variable which means the var_address is a label
+		if (var_template->datatype->is_pointer || var_template->datatype->is_array) {
+			// the variable is a global pointer or array which means the var_address is a label
+			// Therefore we need to convert the address to an lcc identifier
+			return variable_to_lcc_identifier(var_template);
 		}
-		return var_address;
+		// the variable is not a pointer or an array and can be directly dereferenced
+		return dereference_pointer_variable(var_template, scope);
 	}
 
+	// else: the variable is a local variable
+
+	char *var_address = scope_get_variable_address(scope, var_template->identifier);
 	if (var_template->datatype->is_pointer) {
 		return straddall("QWORD[", var_address, "]", NULL);
 	}
@@ -1247,7 +1308,17 @@ char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 }
 
 char *dereference_pointer_variable(VariableTemplate *var_template, Scope *scope) {
-	char *var_address = scope_get_variable_address(scope, var_template->identifier);
+	log_debug("dereference_pointer_variable(): var_template->identifier: %s\n", var_template->identifier);
+	char *var_address = NULL; // scope_get_variable_address(scope, var_template->identifier);
+
+	if (scope_contains_global_variable(scope, var_template->identifier)) {
+		// the variable is a global variable which means the var_address is a label
+		// Therefore we need to convert the address to an lcc identifier
+		var_address = variable_to_lcc_identifier(var_template);
+	} else {
+		// the variable is a local variable
+		var_address = scope_get_variable_address(scope, var_template->identifier);
+	}
 
 	switch (var_template->datatype->size) {
 		case 1: // BYTE

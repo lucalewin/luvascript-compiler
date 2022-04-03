@@ -1,5 +1,14 @@
 # Luvascript Changelog
 
+## Luvascript v0.3.0
+
+### New Language Features
+- String variables can now be used as function arguments
+- Added support for string escaping
+
+### Other Changes
+- Implemented the Luvascript Naming Convention (LNC)
+
 ## Luvascript v0.2.0
 ### New Language Features
 - added primitive datatypes `char` and `string`

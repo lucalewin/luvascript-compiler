@@ -6,7 +6,7 @@
 * `stdlib.h`
 * `string.h`
 * ...
-* [`parser.h`](../inc/parser.h.md)
+* `parser.h`
 
 ## Function Prototypes
 

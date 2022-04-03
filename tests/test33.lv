@@ -1,0 +1,11 @@
+function main(): i32 {
+    return test() + test(12);
+}
+
+function test(): i32 {
+    return 10;
+}
+
+function test(n: i32): i32 {
+    return n;
+}
