@@ -13,32 +13,6 @@ This is prevented by adding a `_func_` prefix to the function name.
 
     You can use the same function name for different functions, but the parameter types of the functions must be different.
 
-    !!! success
-
-        ```luvascript
-        function test(value: i32): bool {
-            return value == 0;
-        }
-
-        function test(value: i64): bool {
-            return value == 0;
-        }
-        ```
-        In this case you can use the same function name for different functions, because the parameter types of `value` are different.
-
-    !!! failure
-
-        ```luvascript
-        function test(value: i32): bool {
-            return value == 0;
-        }
-
-        function test(value: i32): bool {
-            return value == 0;
-        }
-        ```
-        In this case you can not use the same function name for different functions, because the parameter types of `value` are the same.
-
 ## Examples
 
 !!! success
