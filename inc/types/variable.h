@@ -23,6 +23,8 @@ struct _VariableTemplate {
 
 VariableTemplate *convert_to_variable_template(Variable *variable);
 
+char *variable_to_lcc_identifier(VariableTemplate *var_template);
+
 void variable_free(Variable *variable);
 void variable_template_free(VariableTemplate *variable_template);
 

@@ -23,6 +23,8 @@ typedef struct _func_template {
 
 FunctionTemplate *convert_to_function_template(Function *function);
 
+char *function_to_lcc_identifier(FunctionTemplate *function_template);
+
 void function_free(Function *function);
 void function_template_free(FunctionTemplate *template);
 
