@@ -43,7 +43,7 @@ extern function <identifier> ( <parameters> ): <return_type> {
 }
 ```
 
-See also: [External Functions](../syntax/external_functions.md)
+See also: [External Functions](../../language-reference/external-functions.md)
 
 ## Format
 

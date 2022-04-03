@@ -4,7 +4,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/t0g7nftrb6413tp7/branch/develop?svg=true)](https://ci.appveyor.com/project/lucalewin/luvascript-compiler/branch/develop)
 
 ## LuvaScript Docs
-Take a look at the [LuvaScript Documentation](docs/index.md)
+Take a look at the [LuvaScript Documentation](https://lucr4ft.github.io/luvascript-compiler/)
 
 ## How to install
 

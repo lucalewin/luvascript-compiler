@@ -26,7 +26,7 @@ theme:
   features:
     - content.code.annotate
     - navigation.indexes
-    - navigation.sections
+    # - navigation.sections
     - navigation.tabs
     - navigation.top
     - navigation.tracking
@@ -47,10 +47,32 @@ plugins:
       minify_css: true
       minify_js: true
 
+markdown_extensions:
+  - admonition
+
 nav:
   - Home: index.md
   - Getting started: getting-started/index.md
-  - Installation: installation/index.md
-  - Compiler: compiler/index.md
-  - Language Reference: language-reference/index.md
-  - Language Specifications: language-specifications/index.md
+  - Installation:
+    - Install on Windows: installation/windows.md
+    - Install on Linux: installation/linux.md
+    - Install on MacOS: installation/macos.md
+  - Compiler:
+    - Overview: compiler/index.md
+    - Options: compiler/options.md
+    - Conventions:
+      - compiler/conventions/index.md
+      - Luvascript Calling Convention: compiler/conventions/luvascript-calling-convention.md
+    - Compiler Messages: compiler/messages/index.md
+    - Source Documentation:
+      - compiler/source-docs/index.md
+      - Files: compiler/source-docs/
+  - Language Reference:
+    - Overview: language-reference/index.md
+    - Order of Operations: language-reference/order-of-operations.md
+    - Datatypes: language-reference/datatypes.md
+    - External Functions: language-reference/external-functions.md
+    - Inline Assembly: language-reference/inline-assembly.md
+  - Language Specifications:
+    - Overview: language-specifications/index.md
+    - Version 0.1.0: language-specifications/0.1.0.md
