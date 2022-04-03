@@ -1,6 +1,6 @@
 # Luvascript Language Reference
 
-* [Order of Operations](./order-of-opartions.md)
+* [Order of Operations](./order-of-operations.md)
 * [Datatypes](./datatypes.md)
 * [External Functions](./external-functions.md)
 * [Inline Assembly](./inline-assembly.md)

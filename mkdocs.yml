@@ -49,11 +49,13 @@ plugins:
 
 markdown_extensions:
   - admonition
+  - pymdownx.superfences
 
 nav:
   - Home: index.md
   - Getting started: getting-started/index.md
   - Installation:
+    - installation/index.md
     - Install on Windows: installation/windows.md
     - Install on Linux: installation/linux.md
     - Install on MacOS: installation/macos.md
@@ -62,11 +64,10 @@ nav:
     - Options: compiler/options.md
     - Conventions:
       - compiler/conventions/index.md
-      - Luvascript Calling Convention: compiler/conventions/luvascript-calling-convention.md
+      - Luvascript Naming Convention: compiler/conventions/luvascript-naming-convention.md
     - Compiler Messages: compiler/messages/index.md
     - Source Documentation:
       - compiler/source-docs/index.md
-      - Files: compiler/source-docs/
   - Language Reference:
     - Overview: language-reference/index.md
     - Order of Operations: language-reference/order-of-operations.md

@@ -49,7 +49,7 @@ See also: [External Functions](../../language-reference/external-functions.md)
 
 General format:
 
-`_func_<function_name>_<parameters>_<return_type>`
+`_func_<function_name>__<parameters>`, where `<function_name>` is the name of the function and `<parameters>` is the parameter types separated by `_`.
 
 ### Example
 
@@ -59,4 +59,4 @@ function test(text: string, count: i64): bool {
     return text.length == count;
 }
 ```
-will be converted to `_func_test_string_i64_bool`
+will be converted to `_func_test__string_i64`
