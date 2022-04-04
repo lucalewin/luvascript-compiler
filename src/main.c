@@ -15,6 +15,7 @@
 
 #include <lexer.h>
 #include <parser.h>
+#include <typechecker.h>
 #include <generator.h>
 #include <compiler.h>
 
@@ -100,6 +101,15 @@ int main(int argc, char **argv)
 	// evaluate the scopes of the packages
 	if (scope_evaluate_ast(ast, modules) != 0) {
 		// free allocated memory
+		options_free(options);
+		ast_free(ast);
+		return -1;
+	}
+
+	// check types
+	if (check_types(ast) == 0) {
+		// free allocated memory
+		log_debug("check_types failed\n");
 		options_free(options);
 		ast_free(ast);
 		return -1;
