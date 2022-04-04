@@ -22,6 +22,18 @@ ArrayListPtr arraylist_create() {
 
 // ---------------------------------------------------------------------
 
+size_t arraylist_size(ArrayList *list) {
+    return list->size;
+}
+
+// ---------------------------------------------------------------------
+
+size_t arraylist_capacity(ArrayList *list) {
+    return list->capacity;
+}
+
+// ---------------------------------------------------------------------
+
 void arraylist_add(ArrayList *arr, void *item) {
     while (arr->size >= arr->capacity) {
         // printf("REALLOCATING\n");

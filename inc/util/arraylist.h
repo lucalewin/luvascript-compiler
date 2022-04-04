@@ -22,6 +22,8 @@ struct _ArrayList {
 // -----------------------------------------
 
 ArrayList *arraylist_create();
+size_t arraylist_size(ArrayList *list);
+size_t arraylist_capacity(ArrayList *list);
 void arraylist_add(ArrayList *arr, void *item);
 void arraylist_addall(ArrayList *arr, ArrayList *other);
 void *arraylist_get(ArrayList *arr, int index);
