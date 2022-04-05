@@ -717,8 +717,8 @@ Statement *expectJumpStatement() {
 			ret_stmt->expression = NULL;
 		} else {
 			ret_stmt->expression = expectExpression();
-			statement->stmt.return_statement = ret_stmt;
 		}
+		statement->stmt.return_statement = ret_stmt;
         eat(TOKEN_SEMICOLON);
     } else {
         free(statement);
