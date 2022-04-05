@@ -391,7 +391,7 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
 	// log_debug("before expression compilation\n");
 
-	char *ret_stmt_code = compile_expression(ret_stmt->expression, scope);
+	char *ret_stmt_code = ret_stmt->expression == NULL ? "" : compile_expression(ret_stmt->expression, scope);
 
 	// log_debug("after expression compilation\n");
 
@@ -1308,8 +1308,7 @@ char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 }
 
 char *dereference_pointer_variable(VariableTemplate *var_template, Scope *scope) {
-	log_debug("dereference_pointer_variable(): var_template->identifier: %s\n", var_template->identifier);
-	char *var_address = NULL; // scope_get_variable_address(scope, var_template->identifier);
+	char *var_address = NULL;
 
 	if (scope_contains_global_variable(scope, var_template->identifier)) {
 		// the variable is a global variable which means the var_address is a label

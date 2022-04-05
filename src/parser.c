@@ -713,8 +713,12 @@ Statement *expectJumpStatement() {
         next();
         statement->type = STATEMENT_RETURN;
         ReturnStatement *ret_stmt = calloc(1, sizeof(ReturnStatement));
-        ret_stmt->expression = expectExpression();
-        statement->stmt.return_statement = ret_stmt;
+		if (is(TOKEN_SEMICOLON)) {
+			ret_stmt->expression = NULL;
+		} else {
+			ret_stmt->expression = expectExpression();
+			statement->stmt.return_statement = ret_stmt;
+		}
         eat(TOKEN_SEMICOLON);
     } else {
         free(statement);
