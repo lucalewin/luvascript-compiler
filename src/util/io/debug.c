@@ -89,6 +89,19 @@ void print_statement(Statement *statement) {
 			printf("}");
 			break;
 		}
+        case STATEMENT_CONDITIONAL: {
+            ConditionalStatement *conditional_stmt = statement->stmt.conditional_statement;
+            printf("\"condition\":{");
+            print_expression(conditional_stmt->condition);
+            printf("},\"true_branch\":{");
+            print_statement(conditional_stmt->true_branch);
+            if (conditional_stmt->false_branch != NULL) {
+                printf("},\"false_branch\":{");
+                print_statement(conditional_stmt->false_branch);
+            }
+            printf("}");
+            break;
+        }
         default:
             log_error("unknown statement type: %d", statement->type);
             break;
