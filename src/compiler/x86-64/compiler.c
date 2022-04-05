@@ -389,11 +389,7 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 }
 
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
-	// log_debug("before expression compilation\n");
-
 	char *ret_stmt_code = ret_stmt->expression == NULL ? "" : compile_expression(ret_stmt->expression, scope);
-
-	// log_debug("after expression compilation\n");
 
 	// reset base pointer
 	size_t size_for_stack_align = 0;
@@ -1146,7 +1142,7 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope) {
 	// parse expression on the right hand side of the assignment operator
 
-	log_debug("compile_assignment_expression(): assignment_expr->identifier = %s\n", assignment_expr->identifier);
+	// log_debug("compile_assignment_expression(): assignment_expr->identifier = %s\n", assignment_expr->identifier);
 
 	char *assignment_expr_code;
 	
@@ -1186,11 +1182,9 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 
 		// char *var_address = scope_get_variable_address(scope, identifier->value);
 		if (template->datatype->is_pointer == 1) {
-			log_debug("[12] compile_literal_expression(): variable '%s' is a pointer\n", identifier->value);
 			var_pointer = scope_get_variable_address(scope, identifier->value);
 			
 		} else {
-			log_debug("[12] compile_literal_expression(): variable '%s' is NOT a pointer\n", identifier->value);
 			var_pointer = compile_variable_pointer(template, scope);
 		}
 		// char *var_pointer = compile_variable_pointer(template, scope);
