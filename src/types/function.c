@@ -11,8 +11,8 @@ FunctionTemplate *convert_to_function_template(Function *func) {
 	// convert function parameters to variable templates
 	for (size_t j = 0; j < func->parameters->size; j++) {
 		Variable *param = arraylist_get(func->parameters, j);
-		VariableTemplate *var_template = convert_to_variable_template(param);
-		arraylist_add(func_template->param_datatypes, var_template);
+		// VariableTemplate *var_template = convert_to_variable_template(param);
+		arraylist_add(func_template->param_datatypes, param->type);
 	}
 	return func_template;
 }
@@ -29,8 +29,8 @@ char *function_to_lcc_identifier(FunctionTemplate *function_template) {
 	size_t param_count = function_template->param_datatypes->size;
 	size_t param_ident_length = 0;
 	for (size_t i = 0; i < param_count; i++) {
-		VariableTemplate *var_template = arraylist_get(function_template->param_datatypes, i);
-		param_ident_length += strlen(var_template->datatype->type_identifier);
+		Datatype *datatype = arraylist_get(function_template->param_datatypes, i);
+		param_ident_length += strlen(datatype->type_identifier);
 	}
 	// 2 + param_count is the amount of underscores in the identifier
 	size_t identifier_length = func_ident_length + param_ident_length + 2 + param_count + 5;
@@ -39,9 +39,9 @@ char *function_to_lcc_identifier(FunctionTemplate *function_template) {
 	strcat(identifier, function_template->identifier);
 	strcat(identifier, "_");
 	for (size_t i = 0; i < param_count; i++) {
-		VariableTemplate *var_template = arraylist_get(function_template->param_datatypes, i);
+		Datatype *datatype = arraylist_get(function_template->param_datatypes, i);
 		strcat(identifier, "_");
-		strcat(identifier, var_template->datatype->type_identifier);
+		strcat(identifier, datatype->type_identifier);
 	}
 	return identifier;
 }
