@@ -194,7 +194,7 @@ char *compile_global_variable(Variable *glob_var) {
 
 	free(var_lcc_identifier);
 
-	switch (glob_var->datatype->size) {
+	switch (glob_var->type->size) {
 		case 1: // BYTE
 			asm_code = straddall(asm_code, " db ", variable_value, "\n", NULL);
 			break;
@@ -414,7 +414,8 @@ char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
 	}
 
 	if (size_for_stack_align != 0) {
-		ret_stmt_code = stradd(ret_stmt_code, "\tmov rsp, rbp\n\tpop rbp\n");
+		// ret_stmt_code = stradd(ret_stmt_code, "\tmov rsp, rbp\n\tpop rbp\n");
+		ret_stmt_code = stradd(ret_stmt_code, "\tleave\n");
 	}
 
 	ret_stmt_code = stradd(ret_stmt_code, "\tret\n");
@@ -461,7 +462,7 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 	}
 
 	var_decl_code = straddall(var_decl_code,
-					getRegisterWithOpCodeSize(REGISTER_EAX, var->datatype->size), 
+					getRegisterWithOpCodeSize(REGISTER_EAX, var->type->size), 
 					"\t; variable: ", var->identifier->value, "\n", NULL);
 
 	return var_decl_code;
@@ -659,10 +660,9 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 						case BINARY_OPERATOR_LOGICAL_GREATHER:
 							bin_expr_code = straddall(bin_expr_code, 
 												"\tmov rbx, ", literal->value, "\n"
-												"\txor rcx, rcx\n"
 												"\tcmp rax, rbx\n"
-												"\tsetg cl\n"
-												"\tmov rax, rcx\n", NULL);
+												"\tsetg al\n"
+												"\tmovzx rax, al\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
@@ -784,10 +784,9 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 						case BINARY_OPERATOR_LOGICAL_GREATHER:
 							bin_expr_code = straddall(bin_expr_code, 
 												"\tmov ", reg_b, ", ", var_pointer, "\n"
-												"\txor rcx, rcx\n"
 												"\tcmp ", reg_a, ",",  reg_b, "\n"
 												"\tsetg cl\n"
-												"\tmov rax, rcx\n", NULL);
+												"\tmovzx rax, cl\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
@@ -1080,17 +1079,34 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 				continue;
 			}
 
-			// TODO: check if parameter types match
-			// !!! IMPORTANT
-			// for (size_t j = 0; j < func_template->param_datatypes->size; j++) {
-			// 	FIXME
-			// 	Datatype *param_datatype = arraylist_get(func_template->param_datatypes, j);
-			// }
+			// check if parameter types match
+			for (size_t j = 0; j < func_template->param_datatypes->size; j++) {
+				Datatype *param_dt = arraylist_get(func_template->param_datatypes, j);
+				Datatype *arg_dt = arraylist_get(func_call_expr->argument_datatypes, j);
 
-			// found matching function
-			break;
+				// compare datatypes
+				if (arg_dt == NULL || param_dt == NULL) {
+					return NULL;	
+				}
+
+				if (datatype_is_number(param_dt) && datatype_is_number(arg_dt)) {
+					if (arg_dt->size > param_dt->size) {
+						goto next_function;
+					}
+				} else if (types_equal(param_dt, arg_dt)) {
+
+				} else {
+					goto next_function;
+				}
+			}
+
+			goto found_function;
 		}
+
+		next_function: ;
 	}
+
+	found_function: ;
 
 	if (func_template == NULL) {
 		// no function matching the function call was found
