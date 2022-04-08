@@ -10,7 +10,7 @@ VariableTemplate *convert_to_variable_template(Variable *variable) {
 	VariableTemplate *template = calloc(1, sizeof(VariableTemplate));
 
 	template->identifier = variable->identifier->value;
-	template->datatype = variable->datatype;
+	template->datatype = variable->type;
 	template->is_constant = variable->is_constant;
 
 	return template;
@@ -39,7 +39,7 @@ void variable_free(Variable *variable) {
 	if (variable == NULL) {
 		return;
 	}
-	datatype_free(variable->datatype);
+	datatype_free(variable->type);
 	literal_free(variable->identifier);
 	expression_free(variable->default_value);
 	free(variable);

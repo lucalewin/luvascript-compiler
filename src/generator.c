@@ -44,7 +44,7 @@ char *generate_header(AST *ast, CommandlineOptions *options) {
 			header_code = straddall(
 					header_code,
 					variable->is_constant ? "const " : "var ",
-					variable->identifier, ":", variable->datatype->type_identifier, ";\n", NULL);
+					variable->identifier, ":", variable->type->type_identifier, ";\n", NULL);
 		}
 	}
 
