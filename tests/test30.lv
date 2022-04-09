@@ -1,5 +1,5 @@
 const hello_world_str: string = "Hello, World!";
 
-function main(): int {
+function main(): char {
 	return hello_world_str[5];
 }

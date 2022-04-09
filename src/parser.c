@@ -425,7 +425,7 @@ Function *expectFunction() {
 				return NULL;
 			}
 
-			parameter->datatype = parse_datatype(current->data);
+			parameter->type = parse_datatype(current->data);
 			next();
 
 			parameter->default_value = NULL;
@@ -518,32 +518,32 @@ Variable *parseVariable() {
 		return NULL;
 	}
 
-	variable->datatype = parse_datatype(current->data);
+	variable->type = parse_datatype(current->data);
 	next();
 	int array_size_specified = 0;
 	if (is(TOKEN_LBRACKET)) {
 		eat(TOKEN_LBRACKET);
 		// arraysize is specified
 		if (is(TOKEN_NUMBER)) {
-			variable->datatype->array_size = atoi(current->data);
+			variable->type->array_size = atoi(current->data);
 			array_size_specified = 1;
 			next();
 		}
 		eat(TOKEN_RBRACKET);
-		variable->datatype->is_array = 1;
+		variable->type->is_array = 1;
 	}
 
 	if (is(TOKEN_SEMICOLON)) {
 		if (variable->is_constant) {
 			log_error("parseVariable(): expected constant expression at [%d:%d]\n", current->line, current->pos);
-			datatype_free(variable->datatype);
+			datatype_free(variable->type);
 			free(variable);
 			free(identifier->value);
 			free(identifier);
 			return NULL;
 		}
 
-		if (variable->datatype->is_array) {
+		if (variable->type->is_array) {
 			log_error("parseVariable(): incomplete type '%s' at [%d:%d]\nether initialize array or specify array-size\n", current->line, current->pos);
 			variable_free(variable);
 			return NULL;
@@ -552,7 +552,7 @@ Variable *parseVariable() {
 		eat(TOKEN_SEMICOLON);
 		Literal_T *default_value = calloc(1, sizeof(Literal_T));
 		if (default_value == NULL) {
-			datatype_free(variable->datatype);
+			datatype_free(variable->type);
 			free(variable);
 			free(identifier->value);
 			free(identifier);
@@ -581,17 +581,17 @@ Variable *parseVariable() {
 		// default value assignment
 		eat(TOKEN_ASSIGNMENT_SIMPLE);
 
-		if (variable->datatype->is_array) {
+		if (variable->type->is_array) {
 			eat(TOKEN_LBRACKET);
 			variable->default_value = expectExpressionList();
 			if (array_size_specified) {
-				if (variable->default_value->expr.list_expr->expressions->size != variable->datatype->array_size) {
+				if (variable->default_value->expr.list_expr->expressions->size != variable->type->array_size) {
 					log_error("parseVariable(): array-size mismatch at [%d:%d]\n", current->line, current->pos);
 					variable_free(variable);
 					return NULL;
 				}
 			} else {
-				variable->datatype->array_size = variable->default_value->expr.list_expr->expressions->size;
+				variable->type->array_size = variable->default_value->expr.list_expr->expressions->size;
 			}
 			eat(TOKEN_RBRACKET);
 		} else {
@@ -713,8 +713,12 @@ Statement *expectJumpStatement() {
         next();
         statement->type = STATEMENT_RETURN;
         ReturnStatement *ret_stmt = calloc(1, sizeof(ReturnStatement));
-        ret_stmt->expression = expectExpression();
-        statement->stmt.return_statement = ret_stmt;
+		if (is(TOKEN_SEMICOLON)) {
+			ret_stmt->expression = NULL;
+		} else {
+			ret_stmt->expression = expectExpression();
+		}
+		statement->stmt.return_statement = ret_stmt;
         eat(TOKEN_SEMICOLON);
     } else {
         free(statement);
@@ -1215,10 +1219,10 @@ Expression_T *expectRelationalExpression() {
 				is(TOKEN_RELATIONAL_LESS_OR_EQUAL)) {
 		switch (current->type) {
 			case TOKEN_RELATIONAL_GREATER:
-				temp->operator = BINARY_OPERATOR_LOGICAL_GREATHER;
+				temp->operator = BINARY_OPERATOR_LOGICAL_GREATER;
 				break;
 			case TOKEN_RELATIONAL_GREATER_OR_EQUAL:
-				temp->operator = BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL;
+				temp->operator = BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL;
 				break;
 			case TOKEN_RELATIONAL_LESS:
 				temp->operator = BINARY_OPERATOR_LOGICAL_LESS;
@@ -1294,7 +1298,7 @@ Expression_T *expectAdditiveExpression() {
     Expression_T *temp_expr = NULL;
 
     while (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
-        temp->operator = is(TOKEN_PLUS) ? BINARY_OPERATOR_PLUS : BINARY_OPERATOR_MINUS;
+        temp->operator = is(TOKEN_PLUS) ? BINARY_OPERATOR_ADD : BINARY_OPERATOR_SUBTRACT;
         next();
         temp->expression_right = expectMultiplicativeExpression();
         binary_expression = temp;

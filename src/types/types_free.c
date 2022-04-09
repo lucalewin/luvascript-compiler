@@ -129,8 +129,12 @@ void statement_free(Statement *statement) {
 }
 
 void package_free(Package *package) {
+	if (package == NULL) {
+		return;
+	}
 	free(package->name);
 	scope_free(package->package_scope);
+
 
 	// for (size_t i = 0; i < package->imported_packages->size; i++) {
 	// 	Package *imported_package = arraylist_get(package->imported_packages, i);
@@ -145,13 +149,13 @@ void package_free(Package *package) {
 		arraylist_free(package->functions);
 	}
 
-	for (size_t i = 0; i < package->global_variables->size; i++) {
-		FunctionTemplate *function_template = arraylist_get(package->global_variables, i);
+	for (size_t i = 0; i < package->extern_functions->size; i++) {
+		FunctionTemplate *function_template = arraylist_get(package->extern_functions, i);
 		function_template_free(function_template);
 	}
 
-	for (size_t i = 0; i < package->extern_functions->size; i++) {
-		Variable *variable = arraylist_get(package->extern_functions, i);
+	for (size_t i = 0; i < package->global_variables->size; i++) {
+		Variable *variable = arraylist_get(package->global_variables, i);
 		variable_free(variable);
 	}
 }

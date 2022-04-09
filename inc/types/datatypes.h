@@ -13,7 +13,12 @@ typedef struct _datatype {
 	unsigned long long int array_size;
 } Datatype;
 
+int types_equal(const Datatype *a, const Datatype *b);
+int datatype_is_number(const Datatype *datatype);
+
 Datatype *parse_datatype(char *type);
+Datatype *copy_datatype(const Datatype *datatype);
+
 void datatype_free(Datatype *datatype);
 
 #endif

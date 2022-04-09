@@ -3,6 +3,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <util/arraylist.h>
+#include <util/util.h>
+
+int types_equal(const Datatype *a, const Datatype *b) {
+	if (a == NULL || b == NULL) return 0;
+	if (a->type_identifier == NULL || b->type_identifier == NULL) {
+		return 0;
+	}
+	return strcmp(a->type_identifier, b->type_identifier) == 0;
+}
+
+int datatype_is_number(const Datatype *datatype) {
+	if (datatype == NULL) return 0;
+	if (strcmp(datatype->type_identifier, "byte") == 0 || 
+				strcmp(datatype->type_identifier, "short") == 0 || 
+				strcmp(datatype->type_identifier, "int") == 0 || 
+				strcmp(datatype->type_identifier, "long") == 0) {
+		// TODO: check for unsigned numbers
+		return 1;
+	}
+	return 0;
+}
+
 Datatype *parse_datatype(char *type) {
 	Datatype *dt = calloc(1, sizeof(Datatype));
 
@@ -48,10 +71,23 @@ Datatype *parse_datatype(char *type) {
 		dt->is_pointer = 0;
 		dt->size = 0; // 0 bytes
 	} else {
-		// log_error("unknown datatype: '%s'\n", type);
+		log_error("unknown datatype: '%s'\n", type);
 		free(dt);
 		return NULL;
 	}
+
+	return dt;
+}
+
+Datatype *copy_datatype(const Datatype *datatype) {
+	Datatype *dt = calloc(1, sizeof(Datatype));
+
+	dt->is_primitive = datatype->is_primitive;
+	dt->is_array = datatype->is_array;
+	dt->is_pointer = datatype->is_pointer;
+	dt->size = datatype->size;
+	dt->array_size = datatype->array_size;
+	dt->type_identifier = strdup(datatype->type_identifier);
 
 	return dt;
 }

@@ -50,10 +50,10 @@ Expression_T *simplify_expression(Expression_T *expr) {
 			signed long long int result;
 
 			switch(bin_expr->operator) {
-				case BINARY_OPERATOR_PLUS:
+				case BINARY_OPERATOR_ADD:
 					result = num_left + num_right;
 					break;
-				case BINARY_OPERATOR_MINUS:
+				case BINARY_OPERATOR_SUBTRACT:
 					result = num_left - num_right;
 					break;
 				case BINARY_OPERATOR_MULTIPLY:
@@ -81,8 +81,8 @@ Expression_T *simplify_expression(Expression_T *expr) {
 				case BINARY_OPERATOR_LOGICAL_NOT_EQUAL:
 				case BINARY_OPERATOR_LOGICAL_LESS:
 				case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
-				case BINARY_OPERATOR_LOGICAL_GREATHER:
-				case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+				case BINARY_OPERATOR_LOGICAL_GREATER:
+				case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
 					// currently not supported
 					return expr;
 				default:

@@ -9,7 +9,7 @@ typedef struct _Variable Variable;
 typedef struct _VariableTemplate VariableTemplate;
 
 struct _Variable {
-	Datatype *datatype;
+	Datatype *type;
 	Literal_T *identifier;
 	Expression_T *default_value;
 	unsigned int is_constant : 1;
@@ -22,6 +22,7 @@ struct _VariableTemplate {
 };
 
 VariableTemplate *convert_to_variable_template(Variable *variable);
+VariableTemplate *copy_variable_template(VariableTemplate *template_variable);
 
 char *variable_to_lcc_identifier(VariableTemplate *var_template);
 

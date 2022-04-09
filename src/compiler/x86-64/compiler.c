@@ -27,13 +27,13 @@
 // ------------------------ string templates ------------------------
 
 char *header_template =
-"section .text\n"
+"section .text\n\n"
 "global _start\n"
-"_start:\n\0";
+"_start:\n";
 
 char *exit_template = 
-"mov rax, 60\n"
-"syscall\n";
+"\tmov rax, 60\n"
+"\tsyscall\n\n";
 
 // ------------------------- global variables --------------------------
 
@@ -102,9 +102,9 @@ char *compile_to_x86_64_assembly(AST *ast, CommandlineOptions *options) {
 			char *main_func_lcc_identifier = function_to_lcc_identifier(main_func_temp);
 
 			asm_code = stradd(asm_code, header_template);
-			asm_code = stradd(asm_code, "call ");
+			asm_code = stradd(asm_code, "\tcall ");
 			asm_code = stradd(asm_code, main_func_lcc_identifier);
-			asm_code = stradd(asm_code, "\nmov rdi, rax\n");
+			asm_code = stradd(asm_code, "\n\tmov rdi, rax\n");
 			asm_code = stradd(asm_code, exit_template);
 
 			free(main_func_lcc_identifier);
@@ -112,16 +112,31 @@ char *compile_to_x86_64_assembly(AST *ast, CommandlineOptions *options) {
 			asm_code = stradd(asm_code, "section .text\n");
 		}
 
+		char *function_code = calloc(1, sizeof(char));
+		char *global_function_decl_code = "global ";
+
 		// compile functions
 		for (int i = 0; i < package->functions->size; i++) {
-			asm_code = stradd(asm_code, compile_function(arraylist_get(package->functions, i)));
+			Function *func = arraylist_get(package->functions, i);
+
+			if (i > 0) {
+				global_function_decl_code = stradd(global_function_decl_code, ", ");
+			}
+			global_function_decl_code = stradd(global_function_decl_code, function_to_lcc_identifier(convert_to_function_template(func)));
+
+			function_code = stradd(function_code, compile_function(func));
 		}
+
+		global_function_decl_code = stradd(global_function_decl_code, "\n\n");
 
 		// define external functions
 		for (size_t i = 0; i < package->extern_functions->size; i++) {
-			asm_code = stradd(asm_code, compile_extern_function_templates(arraylist_get(package->extern_functions, i)));
+			function_code = stradd(function_code, compile_extern_function_templates(arraylist_get(package->extern_functions, i)));
 		}
+		
+		asm_code = straddall(asm_code, global_function_decl_code, function_code, NULL);
 	}
+
 
 	return asm_code;
 }
@@ -179,7 +194,7 @@ char *compile_global_variable(Variable *glob_var) {
 
 	free(var_lcc_identifier);
 
-	switch (glob_var->datatype->size) {
+	switch (glob_var->type->size) {
 		case 1: // BYTE
 			asm_code = straddall(asm_code, " db ", variable_value, "\n", NULL);
 			break;
@@ -212,8 +227,8 @@ char *compile_function(Function *function) {
 	char *func_lcc_ident = function_to_lcc_identifier(convert_to_function_template(function));
 
 	function_code = straddall(function_code,
-	"global ", func_lcc_ident,
-	"\n", func_lcc_ident, ":\n", NULL);
+	// "global ", func_lcc_ident, "\n",
+	func_lcc_ident, ":\n", NULL);
 
 	free(func_lcc_ident);
 
@@ -239,9 +254,9 @@ char *compile_function(Function *function) {
 	}
 
 	if (size_for_stack_align != 0) {
-		function_code = stradd(function_code, "push rbp\n"); // save old value of RBP
-		function_code = stradd(function_code, "mov rbp, rsp\n");
-		function_code = stradd(function_code, "sub rsp, "); // align stack
+		function_code = stradd(function_code, "\tpush rbp\n"); // save old value of RBP
+		function_code = stradd(function_code, "\tmov rbp, rsp\n");
+		function_code = stradd(function_code, "\tsub rsp, "); // align stack
 		function_code = stradd(function_code, int_to_string(size_for_stack_align + 8)); // size in bytes
 		function_code = stradd(function_code, "\n");
 	}
@@ -255,7 +270,7 @@ char *compile_function(Function *function) {
 
 			char *pointer = compile_variable_pointer(template, function->scope);
 			char *reg = getRegisterWithOpCodeSize(REGISTER_R9, template->datatype->is_pointer ? 8 : template->datatype->size);
-			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
 			free(pointer);
@@ -266,7 +281,7 @@ char *compile_function(Function *function) {
 
 			char *pointer = compile_variable_pointer(template, function->scope);
 			char *reg = getRegisterWithOpCodeSize(REGISTER_R8, template->datatype->is_pointer ? 8 : template->datatype->size);
-			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
 			free(pointer);
@@ -277,7 +292,7 @@ char *compile_function(Function *function) {
 
 			char *pointer = compile_variable_pointer(template, function->scope);
 			char *reg = getRegisterWithOpCodeSize(REGISTER_ECX, template->datatype->is_pointer ? 8 : template->datatype->size);
-			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
 			free(pointer);
@@ -288,7 +303,7 @@ char *compile_function(Function *function) {
 
 			char *pointer = compile_variable_pointer(template, function->scope);
 			char *reg = getRegisterWithOpCodeSize(REGISTER_EDX, template->datatype->is_pointer ? 8 : template->datatype->size);
-			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
 			free(pointer);
@@ -299,7 +314,7 @@ char *compile_function(Function *function) {
 
 			char *pointer = compile_variable_pointer(template, function->scope);
 			char *reg = getRegisterWithOpCodeSize(REGISTER_ESI, template->datatype->is_pointer ? 8 : template->datatype->size);
-			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
 			free(pointer);
@@ -310,7 +325,7 @@ char *compile_function(Function *function) {
 
 			char *pointer = compile_variable_pointer(template, function->scope);
 			char *reg = getRegisterWithOpCodeSize(REGISTER_EDI, template->datatype->is_pointer ? 8 : template->datatype->size);
-			function_code = straddall(function_code, "mov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
+			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
 			free(pointer);
@@ -322,7 +337,7 @@ char *compile_function(Function *function) {
 	}
 
 	
-	function_code = stradd(function_code, stmts_code);
+	function_code = straddall(function_code, stmts_code, "\n", NULL);
 
 	return function_code;
 }
@@ -372,7 +387,7 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 		compound_code = straddall(compound_code, 
 				// "push rbp\n"
 				// "mov rbp, rsp\n"
-				"sub rsp, ", int_to_string(size_for_stack_align), "\n", NULL);
+				"\tsub rsp, ", int_to_string(size_for_stack_align), "\n", NULL);
 	}
 
 	for (size_t i = 0; i < compound_stmt->nested_statements->size; i++) {
@@ -382,18 +397,14 @@ char *compile_compound_statement(CompoundStatement *compound_stmt, Scope *scope)
 
 	if (size_for_stack_align != 0) {
 		// compound_code = stradd(compound_code, "mov rsp, rbp\npop rbp\n");
-		compound_code = straddall(compound_code, "add rsp, ", int_to_string(size_for_stack_align), "\n", NULL);
+		compound_code = straddall(compound_code, "\tadd rsp, ", int_to_string(size_for_stack_align), "\n", NULL);
 	}
 
 	return compound_code;
 }
 
 char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
-	// log_debug("before expression compilation\n");
-
-	char *ret_stmt_code = compile_expression(ret_stmt->expression, scope);
-
-	// log_debug("after expression compilation\n");
+	char *ret_stmt_code = ret_stmt->expression == NULL ? "" : compile_expression(ret_stmt->expression, scope);
 
 	// reset base pointer
 	size_t size_for_stack_align = 0;
@@ -403,10 +414,11 @@ char *compile_return_statement(ReturnStatement *ret_stmt, Scope *scope) {
 	}
 
 	if (size_for_stack_align != 0) {
-		ret_stmt_code = stradd(ret_stmt_code, "mov rsp, rbp\npop rbp\n");
+		// ret_stmt_code = stradd(ret_stmt_code, "\tmov rsp, rbp\n\tpop rbp\n");
+		ret_stmt_code = stradd(ret_stmt_code, "\tleave\n");
 	}
 
-	ret_stmt_code = stradd(ret_stmt_code, "ret\n");
+	ret_stmt_code = stradd(ret_stmt_code, "\tret\n");
 
 	return ret_stmt_code;
 }
@@ -430,27 +442,27 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 	// is added
 	int offset = scope_get_variable_rbp_offset(scope, var_decl_stmt->variable->identifier->value);
 
-	//
+	// TODO(lucalewin): simplify this
 	switch (var_template->datatype->size) {
 		case 1: // BYTE
-			var_decl_code = straddall(var_decl_code, "mov BYTE[rbp-", int_to_string(offset), "],", NULL);
+			var_decl_code = straddall(var_decl_code, "\tmov BYTE[rbp-", int_to_string(offset), "],", NULL);
 			break;
 		case 2: // WORD
-			var_decl_code = straddall(var_decl_code, "mov WORD[rbp-", int_to_string(offset), "],", NULL);
+			var_decl_code = straddall(var_decl_code, "\tmov WORD[rbp-", int_to_string(offset), "],", NULL);
 			break;
 		case 4: // DWORD
-			var_decl_code = straddall(var_decl_code, "mov DWORD[rbp-", int_to_string(offset), "],", NULL);
+			var_decl_code = straddall(var_decl_code, "\tmov DWORD[rbp-", int_to_string(offset), "],", NULL);
 			break;
 		case 8: // QWORD
-			var_decl_code = straddall(var_decl_code, "mov QWORD[rbp-", int_to_string(offset), "],", NULL);
+			var_decl_code = straddall(var_decl_code, "\tmov QWORD[rbp-", int_to_string(offset), "],", NULL);
 			break;
 		default:
-			log_error("unknown datatype size: %d\n", var_template->datatype->size);
+			log_error("unknown datatype size [#1]: %d\n", var_template->datatype->size);
 			exit(1);
 	}
 
 	var_decl_code = straddall(var_decl_code,
-					getRegisterWithOpCodeSize(REGISTER_EAX, var->datatype->size), 
+					getRegisterWithOpCodeSize(REGISTER_EAX, var->type->size), 
 					"\t; variable: ", var->identifier->value, "\n", NULL);
 
 	return var_decl_code;
@@ -477,8 +489,8 @@ char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scop
 		return straddall(
 					"; condition\n", 
 					cond_expr_code, 
-					"cmp eax, 0\n"
-					"je ", label_condition_false, "\n", 
+					"\tcmp eax, 0\n"
+					"\tje ", label_condition_false, "\n", 
 					true_branch_code, 
 					label_condition_false, ":\n", NULL);
 	}
@@ -494,10 +506,10 @@ char *compile_conditional_statement(ConditionalStatement *cond_stmt, Scope *scop
 
 	return straddall(
 				cond_expr_code, 
-				"cmp eax, 0\n"
-				"je ", label_condition_false, "\n", 
+				"\tcmp eax, 0\n"
+				"\tje ", label_condition_false, "\n", 
 				true_branch_code, 
-				"jmp ", end_of_conditional_statement, "\n", 
+				"\tjmp ", end_of_conditional_statement, "\n", 
 				label_condition_false, ":\n", 
 				false_branch_code,
 				end_of_conditional_statement, ":\n", NULL);
@@ -516,10 +528,10 @@ char *compile_loop_statement(LoopStatement *loop_stmt, Scope *scope) {
 	return straddall(
 				label_condition, ":\t; while () {\n", 
 				cond_expr_code, 
-				"cmp eax, 0\n"
-				"je ", label_condition_false, "\n", 
+				"\tcmp eax, 0\n"
+				"\tje ", label_condition_false, "\n", 
 				loop_body_code, 
-				"jmp ", label_condition, "\t;}\n",
+				"\tjmp ", label_condition, "\t;}\n",
 				label_condition_false ,":\n", NULL);
 }
 
@@ -588,97 +600,96 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					}
 					
 					switch (bin_expr->operator) {
-						case BINARY_OPERATOR_PLUS:
-							bin_expr_code = straddall(bin_expr_code, "add rax, ", literal->value, "\n", NULL);
+						case BINARY_OPERATOR_ADD:
+							bin_expr_code = straddall(bin_expr_code, "\tadd rax, ", literal->value, "\n", NULL);
 							break;
-						case BINARY_OPERATOR_MINUS:
-							bin_expr_code = straddall(bin_expr_code, "sub rax, ", literal->value, "\n", NULL);
+						case BINARY_OPERATOR_SUBTRACT:
+							bin_expr_code = straddall(bin_expr_code, "\tsub rax, ", literal->value, "\n", NULL);
 							break;
 						case BINARY_OPERATOR_MULTIPLY:
-							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nimul rbx\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tmov rbx, ", literal->value, "\n\timul rbx\n", NULL);
 							break;
 						case BINARY_OPERATOR_DIVIDE:
-							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nxor rdx, rdx\nidiv rbx\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tmov rbx, ", literal->value, "\n\txor rdx, rdx\n\tidiv rbx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_MODULO:
-							bin_expr_code = straddall(bin_expr_code, "mov rbx, ", literal->value, "\nxor rdx, rdx\nidiv rbx\nmov rax, rdx\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tmov rbx, ", literal->value, "\n\txor rdx, rdx\n\tidiv rbx\n\tmov rax, rdx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
-							bin_expr_code = straddall(bin_expr_code, "sal rax, ", literal->value, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tsal rax, ", literal->value, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
-							bin_expr_code = straddall(bin_expr_code, "sar rax, ", literal->value, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tsar rax, ", literal->value, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_AND:
-							bin_expr_code = straddall(bin_expr_code, "and rax, ", literal->value, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tand rax, ", literal->value, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_XOR:
-							bin_expr_code = straddall(bin_expr_code, "xor rax, ", literal->value, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\txor rax, ", literal->value, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_OR:
-							bin_expr_code = straddall(bin_expr_code, "or rax, ", literal->value, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tor rax, ", literal->value, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_EQUAL: {
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov rbx, ", literal->value, "\n"
-												"xor rcx, rcx\n"
-												"cmp rax, rbx\n"
-												"sete cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov rbx, ", literal->value, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp rax, rbx\n"
+												"\tsete cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 						}
 
 						case BINARY_OPERATOR_LOGICAL_NOT_EQUAL: {
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov rbx, ", literal->value, "\n"
-												"xor rcx, rcx\n"
-												"cmp rax, rbx\n"
-												"setne cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov rbx, ", literal->value, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp rax, rbx\n"
+												"\tsetne cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 						}
 
-						case BINARY_OPERATOR_LOGICAL_GREATHER:
+						case BINARY_OPERATOR_LOGICAL_GREATER:
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov rbx, ", literal->value, "\n"
-												"xor rcx, rcx\n"
-												"cmp rax, rbx\n"
-												"setg cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov rbx, ", literal->value, "\n"
+												"\tcmp rax, rbx\n"
+												"\tsetg al\n"
+												"\tmovzx rax, al\n", NULL);
 							break;
 
-						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+						case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov rbx, ", literal->value, "\n"
-												"xor rcx, rcx\n"
-												"cmp rax, rbx\n"
-												"setge cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov rbx, ", literal->value, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp rax, rbx\n"
+												"\tsetge cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_LESS:
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov rbx, ", literal->value, "\n"
-												"xor rcx, rcx\n"
-												"cmp rax, rbx\n"
-												"setl cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov rbx, ", literal->value, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp rax, rbx\n"
+												"\tsetl cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov rbx, ", literal->value, "\n"
-												"xor rcx, rcx\n"
-												"cmp rax, rbx\n"
-												"setle cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov rbx, ", literal->value, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp rax, rbx\n"
+												"\tsetle cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 
 						// case BINARY_OPERATOR_LOGICAL_AND:
@@ -710,108 +721,107 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, var_template->datatype->size);
 
 					switch (bin_expr->operator) {
-						case BINARY_OPERATOR_PLUS:
-							bin_expr_code = straddall(bin_expr_code, "add ", reg_a, ", ", var_pointer, "\n", NULL);
+						case BINARY_OPERATOR_ADD:
+							bin_expr_code = straddall(bin_expr_code, "\tadd ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
-						case BINARY_OPERATOR_MINUS:
-							bin_expr_code = straddall(bin_expr_code, "sub ", reg_a, ", ", var_pointer, "\n", NULL);
+						case BINARY_OPERATOR_SUBTRACT:
+							bin_expr_code = straddall(bin_expr_code, "\tsub ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_MULTIPLY:
-							bin_expr_code = straddall(bin_expr_code, "mov ", reg_b, ", ", var_pointer, "\nimul ", reg_b, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tmov ", reg_b, ", ", var_pointer, "\n\timul ", reg_b, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_DIVIDE:
-							bin_expr_code = straddall(bin_expr_code, "xor rbx, rbx\nmov ", reg_b, ", ", var_pointer, "\nxor rdx, rdx\nidiv rbx\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\txor rbx, rbx\n\tmov ", reg_b, ", ", var_pointer, "\n\txor rdx, rdx\n\tidiv rbx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_MODULO:
-							bin_expr_code = straddall(bin_expr_code, "mov ", reg_b, ", ", var_pointer, "\nxor rdx, rdx\nidiv rbx\nmov rax, rdx\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tmov ", reg_b, ", ", var_pointer, "\n\txor rdx, rdx\n\tidiv rbx\n\tmov rax, rdx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
-							bin_expr_code = straddall(bin_expr_code, "sal ", reg_a, ", ", var_pointer, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tsal ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
-							bin_expr_code = straddall(bin_expr_code, "sar ", reg_a, ", ", var_pointer, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tsar ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_AND:
-							bin_expr_code = straddall(bin_expr_code, "and ", reg_a, ", ", var_pointer, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tand ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_XOR:
-							bin_expr_code = straddall(bin_expr_code, "xor ", reg_a, ", ", var_pointer, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\txor ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_BITWISE_OR:
-							bin_expr_code = straddall(bin_expr_code, "or ", reg_a, ", ", var_pointer, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tor ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_EQUAL: {
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov ", reg_b, ", ", var_pointer, "\n"
-												"xor rcx, rcx\n"
-												"cmp ", reg_a, ",",  reg_b, "\n"
-												"sete cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov ", reg_b, ", ", var_pointer, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp ", reg_a, ",",  reg_b, "\n"
+												"\tsete cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 						}
 
 						case BINARY_OPERATOR_LOGICAL_NOT_EQUAL: {
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov ", reg_b, ", ", var_pointer, "\n"
-												"xor rcx, rcx\n"
-												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setne cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov ", reg_b, ", ", var_pointer, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp ", reg_a, ",",  reg_b, "\n"
+												"\tsetne cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 						}
 
-						case BINARY_OPERATOR_LOGICAL_GREATHER:
+						case BINARY_OPERATOR_LOGICAL_GREATER:
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov ", reg_b, ", ", var_pointer, "\n"
-												"xor rcx, rcx\n"
-												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setg cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov ", reg_b, ", ", var_pointer, "\n"
+												"\tcmp ", reg_a, ",",  reg_b, "\n"
+												"\tsetg cl\n"
+												"\tmovzx rax, cl\n", NULL);
 							break;
 
-						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+						case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov ", reg_b, ", ", var_pointer, "\n"
-												"xor rcx, rcx\n"
-												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setge cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov ", reg_b, ", ", var_pointer, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp ", reg_a, ",",  reg_b, "\n"
+												"\tsetge cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_LESS:
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov ", reg_b, ", ", var_pointer, "\n"
-												"xor rcx, rcx\n"
-												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setl cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov ", reg_b, ", ", var_pointer, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp ", reg_a, ",",  reg_b, "\n"
+												"\tsetl cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
-												"mov ", reg_b, ", ", var_pointer, "\n"
-												"xor rcx, rcx\n"
-												"cmp ", reg_a, ",",  reg_b, "\n"
-												"setle cl\n"
-												"mov rax, rcx\n", NULL);
+												"\tmov ", reg_b, ", ", var_pointer, "\n"
+												"\txor rcx, rcx\n"
+												"\tcmp ", reg_a, ",",  reg_b, "\n"
+												"\tsetle cl\n"
+												"\tmov rax, rcx\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_AND:
-							bin_expr_code = straddall(bin_expr_code, "and ", reg_a, ", ", var_pointer, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tand ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						case BINARY_OPERATOR_LOGICAL_OR:
-							bin_expr_code = straddall(bin_expr_code, "or ", reg_a, ", ", var_pointer, "\n", NULL);
+							bin_expr_code = straddall(bin_expr_code, "\tor ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
 						default:
@@ -840,86 +850,86 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 			// log_debug("right_expr_code = %s\n", right_expr_code);
 
 			bin_expr_code = straddall(bin_expr_code, 
-					"push rax\n",
+					"\tpush rax\n",
 					right_expr_code,
-					"mov rbx, rax\n",
-					"pop rax\n", NULL);
+					"\tmov rbx, rax\n",
+					"\tpop rax\n", NULL);
 
 			switch (bin_expr->operator) {
-				case BINARY_OPERATOR_PLUS:
-					bin_expr_code = stradd(bin_expr_code, "add rax, rbx\n");
+				case BINARY_OPERATOR_ADD:
+					bin_expr_code = stradd(bin_expr_code, "\tadd rax, rbx\n");
 					break;
 
-				case BINARY_OPERATOR_MINUS:
-					bin_expr_code = stradd(bin_expr_code, "sub rax, rbx\n");
+				case BINARY_OPERATOR_SUBTRACT:
+					bin_expr_code = stradd(bin_expr_code, "\tsub rax, rbx\n");
 					break;
 
 				case BINARY_OPERATOR_MULTIPLY:
-					bin_expr_code = stradd(bin_expr_code, "imul rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\timul rbx\n");
 					break;
 
 				case BINARY_OPERATOR_DIVIDE:
-					bin_expr_code = stradd(bin_expr_code, "idiv rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\tidiv rbx\n");
 					break;
 
 				case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
-					bin_expr_code = stradd(bin_expr_code, "sal rax, rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\tsal rax, rbx\n");
 					break;
 
 				case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
-					bin_expr_code = stradd(bin_expr_code, "sar rax, rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\tsar rax, rbx\n");
 					break;
 
 				case BINARY_OPERATOR_BITWISE_AND:
-					bin_expr_code = stradd(bin_expr_code, "and rax, rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\tand rax, rbx\n");
 					break;
 
 				case BINARY_OPERATOR_BITWISE_XOR:
-					bin_expr_code = stradd(bin_expr_code, "xor rax, rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\txor rax, rbx\n");
 					break;
 
 				case BINARY_OPERATOR_BITWISE_OR:
-					bin_expr_code = stradd(bin_expr_code, "or rax, rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\tor rax, rbx\n");
 					break;
 
 				case BINARY_OPERATOR_LOGICAL_EQUAL:
 					bin_expr_code = straddall(bin_expr_code,
-										"cmp rax, rbx\n"
-										"sete al\n", NULL);
+										"\tcmp rax, rbx\n"
+										"\tsete al\n", NULL);
 					break;
 				case BINARY_OPERATOR_LOGICAL_NOT_EQUAL:
 					bin_expr_code = straddall(bin_expr_code,
-										"cmp rax, rbx\n"
-										"setne al\n", NULL);
+										"\tcmp rax, rbx\n"
+										"\tsetne al\n", NULL);
 					break;
-				case BINARY_OPERATOR_LOGICAL_GREATHER:
+				case BINARY_OPERATOR_LOGICAL_GREATER:
 					bin_expr_code = straddall(bin_expr_code,
-										"cmp rax, rbx\n"
-										"setg al\n", NULL);
+										"\tcmp rax, rbx\n"
+										"\tsetg al\n", NULL);
 					break;
-				case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+				case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
 					bin_expr_code = straddall(bin_expr_code,
-										"cmp rax, rbx\n"
-										"setge al\n", NULL);
+										"\tcmp rax, rbx\n"
+										"\tsetge al\n", NULL);
 					break;
 				case BINARY_OPERATOR_LOGICAL_LESS:
 					bin_expr_code = straddall(bin_expr_code,
-										"cmp rax, rbx\n"
-										"setl al\n", NULL);
+										"\tcmp rax, rbx\n"
+										"\tsetl al\n", NULL);
 					break;
 
 				case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
 					bin_expr_code = straddall(bin_expr_code,
-										"cmp rax, rbx\n"
-										"setle al\n", NULL);
+										"\tcmp rax, rbx\n"
+										"\tsetle al\n", NULL);
 					break;
 
 				case BINARY_OPERATOR_LOGICAL_AND:
-					bin_expr_code = stradd(bin_expr_code, "and rax, rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\tand rax, rbx\n");
 					break;
 
 				case BINARY_OPERATOR_LOGICAL_OR:
-					bin_expr_code = stradd(bin_expr_code, "or rax, rbx\n");
+					bin_expr_code = stradd(bin_expr_code, "\tor rax, rbx\n");
 					break;
 
 				default:
@@ -948,7 +958,7 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 	switch (literal->type) {
 		case LITERAL_BOOLEAN: // a boolean is also just a number (0 or 1)
 		case LITERAL_NUMBER: {
-			literal_expr_code = stradd(literal_expr_code, "mov rax, ");
+			literal_expr_code = stradd(literal_expr_code, "\tmov rax, ");
 			literal_expr_code = stradd(literal_expr_code, literal->value);
 			literal_expr_code = stradd(literal_expr_code, "\n");
 			break;
@@ -968,7 +978,7 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 			// 	log_debug("[7] compile_literal_expression(): variable '%s' is NOT a pointer\n", literal->value);
 			// }
 
-			literal_expr_code = straddall(literal_expr_code, "mov ", 
+			literal_expr_code = straddall(literal_expr_code, "\tmov ", 
 							getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->is_pointer ? 8 : var_template->datatype->size), ", ", 
 							compile_variable_pointer(var_template, scope), "\n", NULL);
 
@@ -981,7 +991,7 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 			break;
 		}
 		case LITERAL_CHARACTER: {
-			literal_expr_code = stradd(literal_expr_code, "mov eax, '");
+			literal_expr_code = stradd(literal_expr_code, "\tmov eax, '");
 			literal_expr_code = stradd(literal_expr_code, literal->value);
 			literal_expr_code = stradd(literal_expr_code, "'\n");
 			break;
@@ -1002,7 +1012,7 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 	switch (unary_expr->operator) {
 		case UNARY_OPERATOR_NEGATE: {
 			if (unary_expr->identifier->type == LITERAL_NUMBER) {
-				unary_expr_code = stradd(unary_expr_code, "mov rax, ");
+				unary_expr_code = stradd(unary_expr_code, "\tmov rax, ");
 				unary_expr_code = stradd(unary_expr_code, unary_expr->identifier->value);
 				unary_expr_code = stradd(unary_expr_code, "\n");
 			} else if (unary_expr->identifier->type == LITERAL_IDENTIFIER) {
@@ -1013,7 +1023,7 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 				log_error("unary negation with string-literal is not supported\n");
 				exit(1);
 			}
-			unary_expr_code = stradd(unary_expr_code, "neg rax\n");
+			unary_expr_code = stradd(unary_expr_code, "\tneg rax\n");
 			break;
 		}
 		case UNARY_OPERATOR_INCREMENT: {
@@ -1025,8 +1035,8 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 			char *var_pointer = compile_variable_pointer(var_template, scope);
 			
 			unary_expr_code = straddall(unary_expr_code, 
-						"inc ", var_pointer, "\n" 
-						"mov ", getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size), ", ", var_pointer, "\n", NULL);
+						"\tinc ", var_pointer, "\n" 
+						"\tmov ", getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size), ", ", var_pointer, "\n", NULL);
 			break;
 		}
 		default:
@@ -1069,17 +1079,34 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 				continue;
 			}
 
-			// TODO: check if parameter types match
-			// !!! IMPORTANT
-			// for (size_t j = 0; j < func_template->param_datatypes->size; j++) {
-			// 	FIXME
-			// 	Datatype *param_datatype = arraylist_get(func_template->param_datatypes, j);
-			// }
+			// check if parameter types match
+			for (size_t j = 0; j < func_template->param_datatypes->size; j++) {
+				Datatype *param_dt = arraylist_get(func_template->param_datatypes, j);
+				Datatype *arg_dt = arraylist_get(func_call_expr->argument_datatypes, j);
 
-			// found matching function
-			break;
+				// compare datatypes
+				if (arg_dt == NULL || param_dt == NULL) {
+					return NULL;	
+				}
+
+				if (datatype_is_number(param_dt) && datatype_is_number(arg_dt)) {
+					if (arg_dt->size > param_dt->size) {
+						goto next_function;
+					}
+				} else if (types_equal(param_dt, arg_dt)) {
+
+				} else {
+					goto next_function;
+				}
+			}
+
+			goto found_function;
 		}
+
+		next_function: ;
 	}
+
+	found_function: ;
 
 	if (func_template == NULL) {
 		// no function matching the function call was found
@@ -1095,27 +1122,27 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 		case 6: {
 			func_call_expr_code = straddall(func_call_expr_code,
 					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 5), scope), 
-					"mov r9, rax\n", NULL);
+					"\tmov r9, rax\n", NULL);
 		}
 		case 5: {
 			func_call_expr_code = straddall(func_call_expr_code,
 					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 4), scope), 
-					"mov r8, rax\n", NULL);
+					"\tmov r8, rax\n", NULL);
 		}
 		case 4: {
 			func_call_expr_code = straddall(func_call_expr_code,
 					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 3), scope), 
-					"mov rcx, rax\n", NULL);
+					"\tmov rcx, rax\n", NULL);
 		}
 		case 3: {
 			func_call_expr_code = straddall(func_call_expr_code,
 					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 2), scope), 
-					"mov rdx, rax\n", NULL);
+					"\tmov rdx, rax\n", NULL);
 		}
 		case 2: {
 			func_call_expr_code = straddall(func_call_expr_code,
 					compile_expression(arraylist_get(func_call_expr->argument_expression_list->expressions, 1), scope), 
-					"mov rsi, rax\n", NULL);
+					"\tmov rsi, rax\n", NULL);
 		}
 		case 1: {
 			Expression_T *expr = arraylist_get(func_call_expr->argument_expression_list->expressions, 0);
@@ -1123,7 +1150,7 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 			
 			func_call_expr_code = straddall(func_call_expr_code,
 					expr_code, 
-					"mov rdi, rax\n", NULL);
+					"\tmov rdi, rax\n", NULL);
 			break;
 		}
 		case 0:
@@ -1136,7 +1163,7 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 
 	char *func_lcc_ident = function_to_lcc_identifier(func_template);
 
-	func_call_expr_code = straddall(func_call_expr_code, "call ", func_lcc_ident, "\n", NULL);
+	func_call_expr_code = straddall(func_call_expr_code, "\tcall ", func_lcc_ident, "\n", NULL);
 
 	free(func_lcc_ident);
 
@@ -1146,7 +1173,7 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Scope *scope) {
 	// parse expression on the right hand side of the assignment operator
 
-	log_debug("compile_assignment_expression(): assignment_expr->identifier = %s\n", assignment_expr->identifier);
+	// log_debug("compile_assignment_expression(): assignment_expr->identifier = %s\n", assignment_expr->identifier);
 
 	char *assignment_expr_code;
 	
@@ -1186,47 +1213,46 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 
 		// char *var_address = scope_get_variable_address(scope, identifier->value);
 		if (template->datatype->is_pointer == 1) {
-			log_debug("[12] compile_literal_expression(): variable '%s' is a pointer\n", identifier->value);
 			var_pointer = scope_get_variable_address(scope, identifier->value);
 			
 		} else {
-			log_debug("[12] compile_literal_expression(): variable '%s' is NOT a pointer\n", identifier->value);
 			var_pointer = compile_variable_pointer(template, scope);
 		}
+
 		// char *var_pointer = compile_variable_pointer(template, scope);
 		char *reg_a = getRegisterWithOpCodeSize(REGISTER_EAX, template->datatype->size);
 		char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, template->datatype->size);
 
 		switch (assignment_expr->operator) {
 			case ASSIGNMENT_OPERATOR_DEFAULT:
-				assignment_expr_code = straddall(assignment_expr_code, "mov ", var_pointer, ", ", reg_a, "\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "\tmov ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_ADD:
-				assignment_expr_code = straddall(assignment_expr_code, "add ", var_pointer, ", ", reg_a, "\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "\tadd ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_SUBTRACT:
-				assignment_expr_code = straddall(assignment_expr_code, "sub ", var_pointer, ", ", reg_a, "\n", NULL);
+				assignment_expr_code = straddall(assignment_expr_code, "\tsub ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_MULTIPLY:
 				assignment_expr_code = straddall(assignment_expr_code, 
-							"imul ", var_pointer, "\n"
-							"mov ", var_pointer, ", ", reg_a, "\n", NULL);
+							"\timul ", var_pointer, "\n"
+							"\tmov ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
 			case ASSIGNMENT_OPERATOR_DIVIDE:
 				assignment_expr_code = straddall(assignment_expr_code, 
-							"mov ", reg_b, ", ", reg_a, "\n"
-							"mov ", reg_a, ", ", var_pointer, "\n"
-							"idiv ", reg_b, "\n"
-							"mov ", var_pointer, ", ", reg_a, "\n", NULL);
+							"\tmov ", reg_b, ", ", reg_a, "\n"
+							"\tmov ", reg_a, ", ", var_pointer, "\n"
+							"\tidiv ", reg_b, "\n"
+							"\tmov ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
-			default:
-				log_error("unknown assignment operator: %d\n", assignment_expr->operator);
-				exit(1);
+			// default:
+			// 	log_error("unknown assignment operator: %d\n", assignment_expr->operator);
+			// 	exit(1);
 		}
 	} else if (assignment_expr->identifier->type == EXPRESSION_TYPE_UNARY) {
 		log_error("assignment expressions with unary expressions as identifier are not implemented yet\n");
@@ -1256,14 +1282,14 @@ char *compile_array_access_expression(ArrayAccessExpression_T *array_access_expr
 	{
 		// the accessed variable is a local variable
 		array_access_expr_code = straddall(array_access_expr_code,
-				"mov rbx, [", var_address, "]\n"
-				"mov rax, [rbx+", int_to_string(template->datatype->size), "*rax]\n", NULL);
+				"\tmov rbx, [", var_address, "]\n"
+				"\tmov rax, [rbx+", int_to_string(template->datatype->size), "*rax]\n", NULL);
 	}
 	else
 	{
 		// the accessed variable is a global variable
 		array_access_expr_code = straddall(array_access_expr_code, 
-				"mov rax, [", variable_to_lcc_identifier(template), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
+				"\tmov rax, [", variable_to_lcc_identifier(template), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
 	}
 
 	return array_access_expr_code;
@@ -1279,7 +1305,7 @@ char *compile_member_access_expression(MemberAccessExpression_T *member_access_e
 }
 
 char *compile_list_expression(ExpressionList_T *list_expr, Scope *scope) {
-	return "not rax\t; test\n";
+	return "\tnot rax\t; test\n";
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1308,8 +1334,7 @@ char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 }
 
 char *dereference_pointer_variable(VariableTemplate *var_template, Scope *scope) {
-	log_debug("dereference_pointer_variable(): var_template->identifier: %s\n", var_template->identifier);
-	char *var_address = NULL; // scope_get_variable_address(scope, var_template->identifier);
+	char *var_address = NULL;
 
 	if (scope_contains_global_variable(scope, var_template->identifier)) {
 		// the variable is a global variable which means the var_address is a label
@@ -1330,8 +1355,8 @@ char *dereference_pointer_variable(VariableTemplate *var_template, Scope *scope)
 		case 8: // QWORD
 			return straddall("QWORD[", var_address, "]", NULL);
 		default:
-			log_error("unknown datatype size: %d\n", var_template->datatype->size);
-			exit(1);
+			log_error("unknown datatype size [#2]: %d (var_name=%s)\n", var_template->datatype->size, var_template->identifier);
+			return NULL;
 	}
 }
 

@@ -48,6 +48,19 @@ void print_expression(Expression_T *expression) {
             printf("}");
             break;
         }
+        case EXPRESSION_TYPE_FUNCTIONCALL: {
+            printf("{\"name\":\"%s\",\"arguments\":[", expression->expr.func_call_expr->function_identifier);
+            for (int i = 0; i < arraylist_size(expression->expr.func_call_expr->argument_expression_list->expressions); i++) {
+                printf("{");
+                print_expression(arraylist_get(expression->expr.func_call_expr->argument_expression_list->expressions, i));
+                printf("}");
+                if (i < arraylist_size(expression->expr.func_call_expr->argument_expression_list->expressions) - 1) {
+                    printf(",");
+                }
+            }
+            printf("]}");
+            break;
+        }
         default:
             break;
     }
@@ -84,13 +97,32 @@ void print_statement(Statement *statement) {
             break;
 		case STATEMENT_VARIABLE_DECLARATION: {
 			Variable *var = statement->stmt.variable_decl->variable;
-			printf("\"identifier\":\"%s\",\"type\":%s,\"default_value\":{", var->identifier->value, var->datatype->type_identifier);
+			printf("\"identifier\":\"%s\",\"type\":%s,\"default_value\":{", var->identifier->value, var->type->type_identifier);
 			print_expression(var->default_value);
 			printf("}");
 			break;
 		}
+        case STATEMENT_CONDITIONAL: {
+            ConditionalStatement *conditional_stmt = statement->stmt.conditional_statement;
+            printf("\"condition\":{");
+            print_expression(conditional_stmt->condition);
+            printf("},\"true_branch\":{");
+            print_statement(conditional_stmt->true_branch);
+            if (conditional_stmt->false_branch != NULL) {
+                printf("},\"false_branch\":{");
+                print_statement(conditional_stmt->false_branch);
+            }
+            printf("}");
+            break;
+        }
         default:
             log_error("unknown statement type: %d", statement->type);
             break;
     }
+}
+
+void print_variable(Variable *var) {
+    printf("{\"identifier\":\"%s\",\"type\":%s,\"default_value\":{", var->identifier->value, var->type->type_identifier);
+    print_expression(var->default_value);
+    printf("}}");
 }

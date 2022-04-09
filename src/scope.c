@@ -282,10 +282,31 @@ Scope *scope_new() {
  * @return Scope* the new scope
  */
 Scope *scope_copy(Scope *scope) {
-	Scope *copy = calloc(1, sizeof(Scope));
-	copy->global_variable_templates = arraylist_copy(scope->global_variable_templates);
-	copy->local_variable_templates = arraylist_copy(scope->local_variable_templates);
-	copy->function_templates = arraylist_copy(scope->function_templates);
+	// Scope *copy = calloc(1, sizeof(Scope));
+	// copy->global_variable_templates = arraylist_copy(scope->global_variable_templates);
+	// copy->local_variable_templates = arraylist_copy(scope->local_variable_templates);
+	// copy->function_templates = arraylist_copy(scope->function_templates);
+	// return copy;
+	Scope *copy = scope_new();
+
+	for (size_t i = 0; i < scope->global_variable_templates->size; i++) {
+		VariableTemplate *var_template = arraylist_get(scope->global_variable_templates, i);
+		VariableTemplate *var_template_copy = copy_variable_template(var_template);
+		arraylist_add(copy->global_variable_templates, var_template_copy);
+	}
+
+	for (size_t i = 0; i < scope->local_variable_templates->size; i++) {
+		VariableTemplate *var_template = arraylist_get(scope->local_variable_templates, i);
+		VariableTemplate *var_template_copy = copy_variable_template(var_template);
+		arraylist_add(copy->local_variable_templates, var_template_copy);
+	}
+
+	for (size_t i = 0; i < scope->function_templates->size; i++) {
+		FunctionTemplate *func_template = arraylist_get(scope->function_templates, i);
+		FunctionTemplate *func_template_copy = copy_function_template(func_template);
+		arraylist_add(copy->function_templates, func_template_copy);
+	}
+
 	return copy;
 }
 

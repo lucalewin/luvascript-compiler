@@ -62,6 +62,7 @@ struct NestedExpression {
 struct FunctionCallExpression {
 	char *function_identifier;
 	ExpressionList_T *argument_expression_list;
+	ArrayList *argument_datatypes;
 };
 
 struct AssignmentExpression {

@@ -1,4 +1,4 @@
-function main(): int {
+function main(): bool {
 	var x: int = 20;
 	var y: int = 10;
 

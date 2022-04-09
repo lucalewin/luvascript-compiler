@@ -6,14 +6,13 @@
 
 const text: string = "Hello, World!\n";
 
-function main(): i8 {
+function main(): i64 {
 	print(text);
 	return string_length(text);
 }
 
-function print(str: string): i8 {
+function print(str: string): void {
 	write(1, str, string_length(str)); // 1 = stdout
-	return 0;
 }
 
 function string_length(str: string): i64 {
