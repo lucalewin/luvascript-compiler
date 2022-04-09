@@ -2,6 +2,7 @@
 #include <types/literal.h>
 #include <types/expression.h>
 #include <types/statement.h>
+#include <types/operator.h>
 
 const char *TOKEN_TYPE_NAMES[] = {
 	[TOKEN_KEYWORD] = "token_keyword",
@@ -84,4 +85,25 @@ const char* STATEMENT_TYPES[] = {
 	[STATEMENT_CONDITIONAL] = "conditional_statement",
 	[STATEMENT_LOOP] = "loop_statement",
 	[STATEMENT_ASSEMBLY_CODE_BLOCK] = "assembly_code_block_statement",
+};
+
+const char *BINARY_OPERATOR_TYPES[] = {
+	[BINARY_OPERATOR_ADD] = "+",
+	[BINARY_OPERATOR_SUBTRACT] = "-",
+	[BINARY_OPERATOR_MULTIPLY] = "*",
+	[BINARY_OPERATOR_DIVIDE] = "/",
+	[BINARY_OPERATOR_MODULO] = "%",
+	[BINARY_OPERATOR_BITWISE_AND] = "&",
+	[BINARY_OPERATOR_BITWISE_OR] = "|",
+	[BINARY_OPERATOR_BITWISE_XOR] = "^",
+	[BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT] = "<<",
+	[BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT] = ">>",
+	[BINARY_OPERATOR_LOGICAL_LESS] = "<",
+	[BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL] = "<=",
+	[BINARY_OPERATOR_LOGICAL_GREATER] = ">",
+	[BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL] = ">=",
+	[BINARY_OPERATOR_LOGICAL_EQUAL] = "==",
+	[BINARY_OPERATOR_LOGICAL_NOT_EQUAL] = "!=",
+	[BINARY_OPERATOR_LOGICAL_AND] = "&&",
+	[BINARY_OPERATOR_LOGICAL_OR] = "||",
 };
