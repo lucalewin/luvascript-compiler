@@ -1311,8 +1311,24 @@ char *compile_list_expression(ExpressionList_T *list_expr, Scope *scope) {
 // ------------------------------------------------------------------------------------------------
 
 char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
-	// check if the variable is a global or local variable
-	if (scope_contains_global_variable(scope, var_template->identifier)) {
+
+	if (!scope_contains_variable(scope, var_template->identifier)) {
+		log_error("#4 undefined variable '%s'\n", var_template->identifier);
+		return NULL;
+	}
+
+	if (scope_contains_local_variable(scope, var_template->identifier)) {
+		// the variable is a local variable
+
+		log_debug("variable '%s' is a local variable\n", var_template->identifier);
+
+		char *var_address = scope_get_variable_address(scope, var_template->identifier);
+		if (var_template->datatype->is_pointer) {
+			return straddall("QWORD[", var_address, "]", NULL);
+		}
+
+		return dereference_pointer_variable(var_template, scope);
+	} else {
 		// the variable is a global variable which means the var_address is a label
 		if (var_template->datatype->is_pointer || var_template->datatype->is_array) {
 			// the variable is a global pointer or array which means the var_address is a label
@@ -1322,27 +1338,23 @@ char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 		// the variable is not a pointer or an array and can be directly dereferenced
 		return dereference_pointer_variable(var_template, scope);
 	}
-
-	// else: the variable is a local variable
-
-	char *var_address = scope_get_variable_address(scope, var_template->identifier);
-	if (var_template->datatype->is_pointer) {
-		return straddall("QWORD[", var_address, "]", NULL);
-	}
-
-	return dereference_pointer_variable(var_template, scope);
 }
 
 char *dereference_pointer_variable(VariableTemplate *var_template, Scope *scope) {
 	char *var_address = NULL;
 
-	if (scope_contains_global_variable(scope, var_template->identifier)) {
+	if (!scope_contains_variable(scope, var_template->identifier)) {
+		log_error("#4 undefined variable '%s'\n", var_template->identifier);
+		return NULL;
+	}
+
+	if (scope_contains_local_variable(scope, var_template->identifier)) {
+		// the variable is a local variable
+		var_address = scope_get_variable_address(scope, var_template->identifier);
+	} else {
 		// the variable is a global variable which means the var_address is a label
 		// Therefore we need to convert the address to an lcc identifier
 		var_address = variable_to_lcc_identifier(var_template);
-	} else {
-		// the variable is a local variable
-		var_address = scope_get_variable_address(scope, var_template->identifier);
 	}
 
 	switch (var_template->datatype->size) {
