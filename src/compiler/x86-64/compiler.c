@@ -457,7 +457,7 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 			var_decl_code = straddall(var_decl_code, "\tmov QWORD[rbp-", int_to_string(offset), "],", NULL);
 			break;
 		default:
-			log_error("unknown datatype size: %d\n", var_template->datatype->size);
+			log_error("unknown datatype size [#1]: %d\n", var_template->datatype->size);
 			exit(1);
 	}
 
@@ -600,10 +600,10 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					}
 					
 					switch (bin_expr->operator) {
-						case BINARY_OPERATOR_PLUS:
+						case BINARY_OPERATOR_ADD:
 							bin_expr_code = straddall(bin_expr_code, "\tadd rax, ", literal->value, "\n", NULL);
 							break;
-						case BINARY_OPERATOR_MINUS:
+						case BINARY_OPERATOR_SUBTRACT:
 							bin_expr_code = straddall(bin_expr_code, "\tsub rax, ", literal->value, "\n", NULL);
 							break;
 						case BINARY_OPERATOR_MULTIPLY:
@@ -657,7 +657,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 							break;
 						}
 
-						case BINARY_OPERATOR_LOGICAL_GREATHER:
+						case BINARY_OPERATOR_LOGICAL_GREATER:
 							bin_expr_code = straddall(bin_expr_code, 
 												"\tmov rbx, ", literal->value, "\n"
 												"\tcmp rax, rbx\n"
@@ -665,7 +665,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 												"\tmovzx rax, al\n", NULL);
 							break;
 
-						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+						case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
 												"\tmov rbx, ", literal->value, "\n"
 												"\txor rcx, rcx\n"
@@ -721,11 +721,11 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, var_template->datatype->size);
 
 					switch (bin_expr->operator) {
-						case BINARY_OPERATOR_PLUS:
+						case BINARY_OPERATOR_ADD:
 							bin_expr_code = straddall(bin_expr_code, "\tadd ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
-						case BINARY_OPERATOR_MINUS:
+						case BINARY_OPERATOR_SUBTRACT:
 							bin_expr_code = straddall(bin_expr_code, "\tsub ", reg_a, ", ", var_pointer, "\n", NULL);
 							break;
 
@@ -781,7 +781,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 							break;
 						}
 
-						case BINARY_OPERATOR_LOGICAL_GREATHER:
+						case BINARY_OPERATOR_LOGICAL_GREATER:
 							bin_expr_code = straddall(bin_expr_code, 
 												"\tmov ", reg_b, ", ", var_pointer, "\n"
 												"\tcmp ", reg_a, ",",  reg_b, "\n"
@@ -789,7 +789,7 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 												"\tmovzx rax, cl\n", NULL);
 							break;
 
-						case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+						case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
 							bin_expr_code = straddall(bin_expr_code, 
 												"\tmov ", reg_b, ", ", var_pointer, "\n"
 												"\txor rcx, rcx\n"
@@ -856,11 +856,11 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					"\tpop rax\n", NULL);
 
 			switch (bin_expr->operator) {
-				case BINARY_OPERATOR_PLUS:
+				case BINARY_OPERATOR_ADD:
 					bin_expr_code = stradd(bin_expr_code, "\tadd rax, rbx\n");
 					break;
 
-				case BINARY_OPERATOR_MINUS:
+				case BINARY_OPERATOR_SUBTRACT:
 					bin_expr_code = stradd(bin_expr_code, "\tsub rax, rbx\n");
 					break;
 
@@ -902,12 +902,12 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 										"\tcmp rax, rbx\n"
 										"\tsetne al\n", NULL);
 					break;
-				case BINARY_OPERATOR_LOGICAL_GREATHER:
+				case BINARY_OPERATOR_LOGICAL_GREATER:
 					bin_expr_code = straddall(bin_expr_code,
 										"\tcmp rax, rbx\n"
 										"\tsetg al\n", NULL);
 					break;
-				case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+				case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
 					bin_expr_code = straddall(bin_expr_code,
 										"\tcmp rax, rbx\n"
 										"\tsetge al\n", NULL);
@@ -1218,6 +1218,7 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 		} else {
 			var_pointer = compile_variable_pointer(template, scope);
 		}
+
 		// char *var_pointer = compile_variable_pointer(template, scope);
 		char *reg_a = getRegisterWithOpCodeSize(REGISTER_EAX, template->datatype->size);
 		char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, template->datatype->size);
@@ -1249,9 +1250,9 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 							"\tmov ", var_pointer, ", ", reg_a, "\n", NULL);
 				break;
 
-			default:
-				log_error("unknown assignment operator: %d\n", assignment_expr->operator);
-				exit(1);
+			// default:
+			// 	log_error("unknown assignment operator: %d\n", assignment_expr->operator);
+			// 	exit(1);
 		}
 	} else if (assignment_expr->identifier->type == EXPRESSION_TYPE_UNARY) {
 		log_error("assignment expressions with unary expressions as identifier are not implemented yet\n");
@@ -1354,8 +1355,8 @@ char *dereference_pointer_variable(VariableTemplate *var_template, Scope *scope)
 		case 8: // QWORD
 			return straddall("QWORD[", var_address, "]", NULL);
 		default:
-			log_error("unknown datatype size: %d\n", var_template->datatype->size);
-			exit(1);
+			log_error("unknown datatype size [#2]: %d (var_name=%s)\n", var_template->datatype->size, var_template->identifier);
+			return NULL;
 	}
 }
 

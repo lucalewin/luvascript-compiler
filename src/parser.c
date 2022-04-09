@@ -1219,10 +1219,10 @@ Expression_T *expectRelationalExpression() {
 				is(TOKEN_RELATIONAL_LESS_OR_EQUAL)) {
 		switch (current->type) {
 			case TOKEN_RELATIONAL_GREATER:
-				temp->operator = BINARY_OPERATOR_LOGICAL_GREATHER;
+				temp->operator = BINARY_OPERATOR_LOGICAL_GREATER;
 				break;
 			case TOKEN_RELATIONAL_GREATER_OR_EQUAL:
-				temp->operator = BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL;
+				temp->operator = BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL;
 				break;
 			case TOKEN_RELATIONAL_LESS:
 				temp->operator = BINARY_OPERATOR_LOGICAL_LESS;
@@ -1298,7 +1298,7 @@ Expression_T *expectAdditiveExpression() {
     Expression_T *temp_expr = NULL;
 
     while (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
-        temp->operator = is(TOKEN_PLUS) ? BINARY_OPERATOR_PLUS : BINARY_OPERATOR_MINUS;
+        temp->operator = is(TOKEN_PLUS) ? BINARY_OPERATOR_ADD : BINARY_OPERATOR_SUBTRACT;
         next();
         temp->expression_right = expectMultiplicativeExpression();
         binary_expression = temp;
