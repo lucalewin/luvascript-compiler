@@ -1,4 +1,4 @@
-function main(): int {
+function main(): char {
 	var character: char = 'a';
 
 	return character;
