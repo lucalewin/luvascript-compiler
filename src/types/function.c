@@ -1,6 +1,8 @@
 #include <types/function.h>
 
 #include <scope_impl.h>
+#include <util/util.h>
+#include <types/datatypes.h>
 
 FunctionTemplate *convert_to_function_template(Function *func) {
 	FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));
@@ -15,6 +17,21 @@ FunctionTemplate *convert_to_function_template(Function *func) {
 		arraylist_add(func_template->param_datatypes, param->type);
 	}
 	return func_template;
+}
+
+FunctionTemplate *copy_function_template(FunctionTemplate *template_function) {
+	FunctionTemplate *new_func_template = calloc(1, sizeof(FunctionTemplate));
+	
+	new_func_template->identifier = strdup(template_function->identifier);
+	new_func_template->return_type = copy_datatype(template_function->return_type);
+	new_func_template->param_datatypes = arraylist_create();
+
+	// copy function parameters
+	for (size_t j = 0; j < template_function->param_datatypes->size; j++) {
+		Datatype *param_datatype = arraylist_get(template_function->param_datatypes, j);
+		arraylist_add(new_func_template->param_datatypes, copy_datatype(param_datatype));
+	}
+	return new_func_template;
 }
 
 /**

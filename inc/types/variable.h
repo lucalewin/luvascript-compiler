@@ -22,6 +22,7 @@ struct _VariableTemplate {
 };
 
 VariableTemplate *convert_to_variable_template(Variable *variable);
+VariableTemplate *copy_variable_template(VariableTemplate *template_variable);
 
 char *variable_to_lcc_identifier(VariableTemplate *var_template);
 

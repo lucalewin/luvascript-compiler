@@ -22,6 +22,7 @@ typedef struct _func_template {
 } FunctionTemplate;
 
 FunctionTemplate *convert_to_function_template(Function *function);
+FunctionTemplate *copy_function_template(FunctionTemplate *template_function);
 
 char *function_to_lcc_identifier(FunctionTemplate *function_template);
 
