@@ -48,6 +48,19 @@ void print_expression(Expression_T *expression) {
             printf("}");
             break;
         }
+        case EXPRESSION_TYPE_FUNCTIONCALL: {
+            printf("{\"name\":\"%s\",\"arguments\":[", expression->expr.func_call_expr->function_identifier);
+            for (int i = 0; i < arraylist_size(expression->expr.func_call_expr->argument_expression_list->expressions); i++) {
+                printf("{");
+                print_expression(arraylist_get(expression->expr.func_call_expr->argument_expression_list->expressions, i));
+                printf("}");
+                if (i < arraylist_size(expression->expr.func_call_expr->argument_expression_list->expressions) - 1) {
+                    printf(",");
+                }
+            }
+            printf("]}");
+            break;
+        }
         default:
             break;
     }
@@ -106,4 +119,10 @@ void print_statement(Statement *statement) {
             log_error("unknown statement type: %d", statement->type);
             break;
     }
+}
+
+void print_variable(Variable *var) {
+    printf("{\"identifier\":\"%s\",\"type\":%s,\"default_value\":{", var->identifier->value, var->type->type_identifier);
+    print_expression(var->default_value);
+    printf("}}");
 }
