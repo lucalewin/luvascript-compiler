@@ -107,7 +107,7 @@ Datatype *type_of_expression_list(ExpressionList_T *expression_list, Scope *scop
  * @param variable 
  * @return true  
  */
-bool variable_types_match(const Variable *variable, Scope *scope);
+bool variable_types_match(Variable *variable, Scope *scope);
 
 /**
  * @brief TODO(lucalewin) add description
@@ -116,17 +116,6 @@ bool variable_types_match(const Variable *variable, Scope *scope);
  * @return true 
  */
 bool statement_types_match(Statement *statement, Function *function);
-
-/**
- * @brief TODO(lucalewin) add description
- * 
- * @param expression 
- * @return true  
- */
-// bool expression_types_match(Expression_T *expression);
-
-// TODO(lucalewin): add description
-bool expression_is(Expression_T *expr, Datatype *type, Scope *scope);
 
 /**
  * @brief TODO(lucalewin) add description
@@ -358,7 +347,6 @@ bool all_code_paths_return(AST *ast) {
  */
 bool all_code_blocks_are_reachable(AST *ast) {
 	log_debug("Checking if all code paths are reachable\n");
-	// TODO(lucalewin): implement
 
 	bool all_code_paths_return = true;
 
@@ -527,13 +515,13 @@ Datatype *type_of_literal_expression(const Literal_T *literal, Scope *scope) {
 
 			// check size and therefore the type of the number
 			if (number >= CHAR_MIN && number <= CHAR_MAX) {
-				return parse_datatype("i8");
+				return parse_datatype("byte");
 			} else if (number >= SHRT_MIN && number <= SHRT_MAX) {
-				return parse_datatype("i16");
+				return parse_datatype("short");
 			} else if (number >= INT_MIN && number <= INT_MAX) {
-				return parse_datatype("i32");
+				return parse_datatype("int");
 			} else if (number >= LONG_MIN && number <= LONG_MAX) {
-				return parse_datatype("i64");
+				return parse_datatype("long");
 			} else {
 				// TODO: handle unsigned numbers
 				return NULL;
@@ -605,7 +593,7 @@ Datatype *datatype_of_binary_expression(const BinaryExpression_T *expr, Scope *s
 
 	switch(expr->operator) {
 
-		case BINARY_OPERATOR_PLUS:
+		case BINARY_OPERATOR_ADD:
 		case BINARY_OPERATOR_MULTIPLY: {
 			if (datatype_is_number(dt_left) && datatype_is_number(dt_right)) {
 				return dt_left;
@@ -614,7 +602,7 @@ Datatype *datatype_of_binary_expression(const BinaryExpression_T *expr, Scope *s
 				return parse_datatype("string");
 			} else {
 				printf("    " IRED "error: " RESET "binary operator '%s' cannot be applied to types '%s' and '%s'\n",
-						"!#[add operator to string function]",
+						BINARY_OPERATOR_TYPES[expr->operator],
 						dt_left->type_identifier,
 						dt_right->type_identifier);
 				return NULL;
@@ -622,14 +610,14 @@ Datatype *datatype_of_binary_expression(const BinaryExpression_T *expr, Scope *s
 			return NULL;
 		}
 
-		case BINARY_OPERATOR_MINUS:
+		case BINARY_OPERATOR_SUBTRACT:
 		case BINARY_OPERATOR_DIVIDE:
 		case BINARY_OPERATOR_MODULO: {
 			if (datatype_is_number(dt_left) && datatype_is_number(dt_right)) {
 				return dt_left;
 			} else {
 				printf("    " IRED "error: " RESET "binary operator '%s' cannot be applied to types '%s' and '%s'\n", 
-						"!#[add operator to string function]", 
+						BINARY_OPERATOR_TYPES[expr->operator], 
 						dt_left->type_identifier,
 						dt_right->type_identifier);
 				return NULL;
@@ -645,7 +633,7 @@ Datatype *datatype_of_binary_expression(const BinaryExpression_T *expr, Scope *s
 			// check if dt_left and dt_right are numbers
 			if (!datatype_is_number(dt_left) || !datatype_is_number(dt_right)) {
 				printf("    " IRED "error: " RESET "binary operator '%s' cannot be applied to types '%s' and '%s'\n",
-						"!#[add operator to string function]", dt_left->type_identifier, dt_right->type_identifier);
+						BINARY_OPERATOR_TYPES[expr->operator], dt_left->type_identifier, dt_right->type_identifier);
 				return NULL;
 			}
 
@@ -658,14 +646,14 @@ Datatype *datatype_of_binary_expression(const BinaryExpression_T *expr, Scope *s
 			return parse_datatype("bool");
 		}
 
-		case BINARY_OPERATOR_LOGICAL_GREATHER:
-		case BINARY_OPERATOR_LOGICAL_GREATHER_OR_EQUAL:
+		case BINARY_OPERATOR_LOGICAL_GREATER:
+		case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
 		case BINARY_OPERATOR_LOGICAL_LESS:
 		case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL: {
 			// check if dt_left and dt_right are numbers
 			if (!datatype_is_number(dt_left) || !datatype_is_number(dt_right)) {
 				printf("    " IRED "error: " RESET "binary operator '%s' cannot be applied to types '%s' and '%s'\n",
-						"!#[add operator to string function]", dt_left->type_identifier, dt_right->type_identifier);
+						BINARY_OPERATOR_TYPES[expr->operator], dt_left->type_identifier, dt_right->type_identifier);
 				return NULL;
 			}
 			return parse_datatype("bool");
@@ -676,7 +664,7 @@ Datatype *datatype_of_binary_expression(const BinaryExpression_T *expr, Scope *s
 			// check if both expressions are of type bool
 			if (strcmp(dt_left->type_identifier, "bool") != 0 || strcmp(dt_right->type_identifier, "bool") != 0) {
 				printf("    " IRED "error: " RESET "binary operator '%s' cannot be applied to types '%s' and '%s'\n",
-						"!#[add operator to string function]", dt_left->type_identifier, dt_right->type_identifier);
+						BINARY_OPERATOR_TYPES[expr->operator], dt_left->type_identifier, dt_right->type_identifier);
 				return NULL;
 			}
 			return dt_left; // bool
@@ -732,7 +720,7 @@ Datatype *type_of_function_call_expression(FunctionCallExpression_T *expression,
 			Datatype *param_datatype = arraylist_get(ft->param_datatypes, j);
 
 			// check if argument datatype matches
-			if (argument_datatype == NULL) {
+			if (argument_datatype == NULL || param_datatype == NULL) {
 				return NULL;	
 			}
 
@@ -816,24 +804,65 @@ Datatype *type_of_assignment_expression(AssignmentExpression_T *expression, Scop
 		}
 	}
 
-	datatype_free(dt_right);
-
 	return dt_left;
 }
 
 Datatype *type_of_array_access_expression(ArrayAccessExpression_T *expression, Scope *scope) {
-	return NULL; // TODO(lucalewin): implement
+	Datatype *ident_dt = type_of_literal_expression(expression->identifier, scope);
+	Datatype *index_dt = type_of_expression(expression->index_expression, scope);
+
+	if (ident_dt == NULL || index_dt == NULL) {
+		return NULL;
+	}
+
+	if (!datatype_is_number(index_dt)) {
+		printf("    " IRED "error: " RESET "index must be a number\n");
+		return NULL;
+	}
+
+	if (strcmp(ident_dt->type_identifier, "string") == 0) {
+		return parse_datatype("char");
+	}
+
+	return parse_datatype(ident_dt->type_identifier);
 }
 
 Datatype *type_of_member_access_expression(MemberAccessExpression_T *expression, Scope *scope) {
 	return NULL; // TODO(lucalewin): implement
 }
 
+// FIXME: this implementation does not look good
 Datatype *type_of_expression_list(ExpressionList_T *expression_list, Scope *scope) {
-	return NULL; // TODO(lucalewin): implement
+	Datatype *datatype = NULL;
+
+	for (size_t i = 0; i < arraylist_size(expression_list->expressions); i++) {
+		Expression_T *expression = arraylist_get(expression_list->expressions, i);
+		Datatype *dt = type_of_expression(expression, scope);
+		if (dt == NULL) {
+			return NULL;
+		}
+		if (datatype == NULL) {
+			datatype = dt;
+		} else {
+
+			if (datatype_is_number(datatype) && datatype_is_number(dt)) {
+				if (datatype->size < dt->size) {
+					datatype = dt;
+				}
+			} else if (!types_equal(datatype, dt)) {
+				printf("    " IRED "error: " RESET "expression list can only contain expressions with the same type, but got '%s' and '%s' instead\n",
+						dt->type_identifier,
+						datatype->type_identifier);
+				return NULL;
+			}
+
+		}
+	}
+
+	return datatype;
 }
 
-bool variable_types_match(const Variable *variable, Scope *scope) {
+bool variable_types_match(Variable *variable, Scope *scope) {
 	if (variable->type == NULL) {
 		printf("    " IRED "error: " RESET "global variable '%s' (%s:%d:%d) has no type\n", 
 				variable->identifier->value,
@@ -846,8 +875,6 @@ bool variable_types_match(const Variable *variable, Scope *scope) {
 		Datatype *expression_type = type_of_expression(variable->default_value, scope);
 
 		if (expression_type == NULL) {
-			// printf("%s:%d:%d " IRED "error: " RESET "variable '%s' has no type\n", 
-			// 		"TODO", 0, 0, variable->identifier->value);
 			// error will be printed in type_of_expression
 			return false;
 		}
@@ -863,8 +890,6 @@ bool variable_types_match(const Variable *variable, Scope *scope) {
 
 				return false;
 			}
-			datatype_free(expression_type);
-			
 			return true;
 		}
 
@@ -877,16 +902,11 @@ bool variable_types_match(const Variable *variable, Scope *scope) {
 
 			return false;
 		}
-
-		datatype_free(expression_type);
 	}
-
 	return true;
 }
 
 bool statement_types_match(Statement *statement, Function *function) {
-	// log_debug("Checking if statement types match\n");
-
 	bool match = true;
 
 	switch (statement->type) {
@@ -910,7 +930,6 @@ bool statement_types_match(Statement *statement, Function *function) {
 			if (dt == NULL) {
 				match = false;
 			}
-			free(dt);
 
 			break;
 		}
@@ -920,7 +939,13 @@ bool statement_types_match(Statement *statement, Function *function) {
 			// check if return type matches
 			if (return_statement->expression != NULL) {
 				// evaluate datatype of expression
-				Datatype *expression_type = type_of_expression(return_statement->expression, statement->scope);
+				Datatype *expression_type = type_of_expression(return_statement->expression, function->scope);
+
+				if (expression_type == NULL) {
+					match = false;
+					break;
+				}
+
 				// then check if it matches the function's return type
 				if (datatype_is_number(expression_type) && datatype_is_number(function->return_type)) {
 					if (expression_type->size > function->return_type->size) {
@@ -962,9 +987,6 @@ bool statement_types_match(Statement *statement, Function *function) {
 		case STATEMENT_CONDITIONAL: {
 			ConditionalStatement *conditional = statement->stmt.conditional_statement;
 
-			// if (!expression_types_match(conditional->condition)) {
-			// 	match = false;
-			// }
 			Datatype *dt_condition = type_of_expression(conditional->condition, statement->scope);
 
 			if (strcmp(dt_condition->type_identifier, "bool") != 0) {
@@ -973,8 +995,6 @@ bool statement_types_match(Statement *statement, Function *function) {
 
 				match = false;
 			}
-
-			free(dt_condition);
 
 			if (!statement_types_match(conditional->true_branch, function)) {
 				match = false;
@@ -989,10 +1009,6 @@ bool statement_types_match(Statement *statement, Function *function) {
 		}
 		case STATEMENT_LOOP: {
 			LoopStatement *loop = statement->stmt.loop_statement;
-
-			// if (!expression_types_match(loop->condition)) {
-			// 	match = false;
-			// }
 
 			Datatype *dt_condition = type_of_expression(loop->condition, statement->scope);
 
