@@ -1054,17 +1054,6 @@ char *compile_function_call_expression(FunctionCallExpression_T *func_call_expr,
 		return NULL;
 	}
 
-	// check if parameter count matches
-	// TODO(lucalewin): check if parameter types match
-	// FunctionTemplate *func_template = scope_get_function_by_name(scope, func_call_expr->function_identifier);
-	// if (func_template->param_datatypes->size != func_call_expr->argument_expression_list->expressions->size) {
-	// 	log_error("expected %d arguments for function '%s' but got %d instead\n", 
-	// 			func_template->param_datatypes->size, 
-	// 			func_template->identifier, 
-	// 			func_call_expr->argument_expression_list->expressions->size);
-	// 	return NULL;
-	// }
-
 	// get the function template of the called function
 	FunctionTemplate *func_template = NULL;
 	for (size_t i = 0; i < scope->function_templates->size; i++) {

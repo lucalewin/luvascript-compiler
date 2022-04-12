@@ -297,7 +297,6 @@ bool all_code_paths_return(AST *ast) {
 					// check if branch returns
 					ConditionalStatement *conditional_statement = statement->stmt.conditional_statement;
 
-					// TODO: add checks
 					if(check_if_branch_retuns(conditional_statement)) {
 						// all_code_paths_return = true;
 						goto next_function;
@@ -1052,9 +1051,10 @@ bool check_if_branch_retuns(ConditionalStatement *conditional_stmt) {
 				// check if branch returns
 				ConditionalStatement *conditional_statement = statement->stmt.conditional_statement;
 
-				// TODO: add checks
-				true_branch_retuns = check_if_branch_retuns(conditional_statement);
-				break;
+				if (check_if_branch_retuns(conditional_statement)) {
+					true_branch_retuns = true;
+					break;
+				}
 			}
 
 			// check if statement is a return statement
@@ -1083,8 +1083,6 @@ bool check_if_branch_retuns(ConditionalStatement *conditional_stmt) {
 					// check if branch returns
 					ConditionalStatement *conditional_statement = statement->stmt.conditional_statement;
 
-					// TODO: add checks
-					// false_branch_retuns = check_if_branch_retuns(conditional_statement);
 					if (check_if_branch_retuns(conditional_statement)) {
 						false_branch_retuns = true;
 						break;
@@ -1140,7 +1138,6 @@ bool branch_contains_unreachable_code(ConditionalStatement *conditional_stmt) {
 						
 						true_branch_contains_unreachable_code = true;
 
-						// TODO(lucalewin): remove unreachable code
 						for (size_t l = arraylist_size(compound_statement->nested_statements) - 1; l > k; l--)
 						{
 							Statement *statement = arraylist_get(compound_statement->nested_statements, l);
@@ -1161,7 +1158,6 @@ bool branch_contains_unreachable_code(ConditionalStatement *conditional_stmt) {
 					
 					true_branch_contains_unreachable_code = true;
 
-					// TODO(lucalewin): remove unreachable code
 					for (size_t l = arraylist_size(compound_statement->nested_statements) - 1; l > k; l--)
 					{
 						Statement *statement = arraylist_get(compound_statement->nested_statements, l);
@@ -1219,7 +1215,6 @@ bool branch_contains_unreachable_code(ConditionalStatement *conditional_stmt) {
 							
 							false_branch_contains_unreachable_code = true;
 
-							// TODO(lucalewin): remove unreachable code
 							for (size_t l = arraylist_size(compound_statement->nested_statements) - 1; l > k; l--)
 							{
 								Statement *statement = arraylist_get(compound_statement->nested_statements, l);
@@ -1240,7 +1235,6 @@ bool branch_contains_unreachable_code(ConditionalStatement *conditional_stmt) {
 						
 						false_branch_contains_unreachable_code = true;
 
-						// TODO(lucalewin): remove unreachable code
 						for (size_t l = arraylist_size(compound_statement->nested_statements) - 1; l > k; l--)
 						{
 							Statement *statement = arraylist_get(compound_statement->nested_statements, l);
