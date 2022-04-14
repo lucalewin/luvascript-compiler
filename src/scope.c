@@ -4,9 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <util/util.h>
+#include <util/file.h>
 #include <logging/logger.h>
+
+#include <lexer.h>
+#include <parser.h>
 
 #include <types/variable.h>
 #include <types/statement.h>
@@ -23,59 +28,142 @@
 int scope_evaluate_ast(AST *ast, ArrayList *modules) {
 	if (ast == NULL) return 1;
 
-	// evaluate imports
-	for (size_t i = 0; i < ast->packages->size; i++) {
-		Package *package = arraylist_get(ast->packages, i);
-		package->imported_functions = arraylist_create();
-		package->imported_global_variables = arraylist_create();
+	bool successful_evaluation = true;
 
-		// log_debug("evaluating imports in package %s\n", package->name);
-		for (size_t j = 0; j < package->import_stmts->size; j++) {
-			import_stmt_t *import = arraylist_get(package->import_stmts, j);
+	// load imported packages
+	for (size_t i = 0; i < arraylist_size(ast->packages); i++) {
+		Package *pkg = arraylist_get(ast->packages, i);
 
-			if (import->type_identifier == NULL) {
-				// log_debug("import statement: %s\n", import->package_name);
-				break;
-			}
+		if (arraylist_size(pkg->import_declarations) > 0) {
+			ArrayList *local_files = list_files(get_absolute_dirname(pkg->file_path));
+			ArrayList *local_pkgs = arraylist_create();
 
-			if (strcmp(import->package_name, package->name) == 0) {
-				log_error("import statement cannot import self\n");
-				return 1;
-			}
+			char *absolute_dir = get_absolute_dirname(pkg->file_path);
 
-			for (size_t k = 0; k < ast->packages->size; k++) {
-				Package *imported_package = arraylist_get(ast->packages, k);
-				if (strcmp(imported_package->name, import->package_name) != 0) {
+			// print all values in local_files
+			for (size_t j = 0; j < arraylist_size(local_files); j++) {
+				char *file = arraylist_get(local_files, j);
+				char *full_file_path = path_combine(absolute_dir, file);
+
+				if (strcmp(pkg->file_path, full_file_path) == 0) continue;
+
+				// check if file extension is '.lv'
+				if (strcmp("lv", get_filename_extension(full_file_path)) != 0) {
 					continue;
 				}
 
-				// log_debug("import statement: %s\n", import->package_name);
+				char *source = read_file(full_file_path);
+				ArrayList *tokens = tokenize(source, full_file_path);
+				Package *local_pkg = parse(tokens, full_file_path);
 
-				for (size_t l = 0; l < imported_package->functions->size; l++) {
-					Function *function = arraylist_get(imported_package->functions, l);
-					if (strcmp(function->identifier, import->type_identifier) == 0) {
-						function->is_imported = 1;
-						arraylist_add(package->imported_functions, function);
-						goto type_imported;
-					}
-				}
+				arraylist_add(local_pkgs, local_pkg);
 
-				for (size_t l = 0; l < imported_package->global_variables->size; l++) {
-					Variable *var = arraylist_get(imported_package->global_variables, l);
-					if (strcmp(var->identifier->value, import->type_identifier) == 0) {
-						// function->is_imported = 1;
-						arraylist_add(package->imported_global_variables, var);
-						goto type_imported;
-					}
-				}
+				free(full_file_path);
 			}
-			
-			log_error("import statement: %s\n", import->package_name);
-			return 1;
 
-			type_imported: ;
-			// log_debug("import type '%s' from package '%s'\n", import->type_identifier, import->package_name);
-		}
+			for (size_t j = 0; j < arraylist_size(pkg->import_declarations); j++) {
+				ImportDeclaration *import_decl = arraylist_get(pkg->import_declarations, j);
+
+				bool package_found = false;
+
+				for (size_t i = 0; i < arraylist_size(local_pkgs); i++) {
+					Package *local_pkg = arraylist_get(local_pkgs, i);
+
+					// compare package names
+					if (strcmp(local_pkg->name, arraylist_get(import_decl->package_names, 0)) == 0) {
+						
+						package_found = true;
+						/// if the import declaration is empty, then we need to import all
+						if (arraylist_size(pkg->import_declarations) == 0) {
+							log_warning("importing all from package %s\n", local_pkg->name);
+									// add the function to the package
+							for (size_t l = 0; l < arraylist_size(local_pkg->extern_functions); l++) {
+								FunctionTemplate *extern_func_template = arraylist_get(local_pkg->extern_functions, l);
+								// arraylist_add(pkg->extern_functions, extern_func_template);
+								arraylist_add(pkg->imported_functions, extern_func_template);
+							}
+
+							// add the function to the package
+							for (size_t l = 0; l < arraylist_size(local_pkg->functions); l++) {
+								Function *func = arraylist_get(local_pkg->functions, l);
+
+								FunctionTemplate *func_template = convert_to_function_template(func);
+								arraylist_add(pkg->imported_functions, func_template);
+							}
+
+							// add the variable to the package
+							for (size_t l = 0; l < arraylist_size(local_pkg->global_variables); l++) {
+								Variable *global_var = arraylist_get(local_pkg->global_variables, l);
+								// arraylist_add(pkg->global_variables, global_var);
+								arraylist_add(pkg->imported_global_variables, convert_to_variable_template(global_var));
+							}
+							continue;
+						}
+
+						for (size_t k = 0; k < arraylist_size(import_decl->type_identifiers); k++) {
+							char *type_identifier = arraylist_get(import_decl->type_identifiers, k);
+
+							log_warning("importing type %s from package %s\n", type_identifier, local_pkg->name);
+							// check if the type identifier is in local_pkg
+
+							// first check extern functions
+							for (size_t l = 0; l < arraylist_size(local_pkg->extern_functions); l++) {
+								FunctionTemplate *extern_func_template = arraylist_get(local_pkg->extern_functions, l);
+
+								if (strcmp(extern_func_template->identifier, type_identifier) == 0) {
+									// add the function to the package
+									arraylist_add(pkg->imported_functions, extern_func_template);
+								}
+							}
+
+							// check functions
+							for (size_t l = 0; l < arraylist_size(local_pkg->functions); l++) {
+								Function *func = arraylist_get(local_pkg->functions, l);
+
+								if (strcmp(func->identifier, type_identifier) == 0) {
+									// add the function to the package
+									FunctionTemplate *func_template = convert_to_function_template(func);
+									arraylist_add(pkg->imported_functions, func_template);
+								}
+							}
+
+							// check global variables
+							for (size_t l = 0; l < arraylist_size(local_pkg->global_variables); l++) {
+								Variable *global_var = arraylist_get(local_pkg->global_variables, l);
+
+								if (strcmp(global_var->identifier->value, type_identifier) == 0) {
+									// add the variable to the package
+									arraylist_add(pkg->imported_global_variables, convert_to_variable_template(global_var));
+								}
+							} // for
+						} // for
+					} // if
+				} // for
+				if (!package_found) {
+					printf("    " RED "error: " RESET "package %s not found\n", (char *) arraylist_get(import_decl->package_names, 0));
+					successful_evaluation = false;
+				}
+			} // for
+			
+			// free local_pkgs
+			for (size_t i = 0; i < arraylist_size(local_pkgs); i++) {
+				Package *local_pkg = arraylist_get(local_pkgs, i);
+				package_free(local_pkg);
+			}
+			arraylist_free(local_pkgs);
+
+			/// because `list_files` uses `struct dirent`, which is statically allocated,
+			/// do not need to free the filenames
+			/// reference: https://stackoverflow.com/questions/34550766/free-deleting-allocated-memory-from-the-function-readdir
+			arraylist_free(local_files);
+
+			free(absolute_dir);
+		} // if
+	} // for
+
+	if (!successful_evaluation) {
+		return 1; // failed
+		// FIXME: this should return 0 (false) and not 1 (true)
 	}
 
 	for (size_t i = 0; i < ast->packages->size; i++) {
@@ -111,18 +199,24 @@ int scope_evaluate_package(Package *package) {
 
 	// convert imported functions to function templates + add them to the global scope
 	for (size_t i = 0; i < package->imported_functions->size; i++) {
-		Function *func = arraylist_get(package->imported_functions, i);
-		FunctionTemplate *func_template = convert_to_function_template(func);
+		// FunctionTemplate *func_template = convert_to_function_template(func);
+		// arraylist_add(package->package_scope->function_templates, func_template);
+		FunctionTemplate *func_template = arraylist_get(package->imported_functions, i);
 		arraylist_add(package->package_scope->function_templates, func_template);
 	}
 
+	for (size_t i = 0; i < package->imported_global_variables->size; i++) {
+		VariableTemplate *var_template = arraylist_get(package->imported_global_variables, i);
+		arraylist_add(package->package_scope->global_variable_templates, var_template);
+	}
 
 	// external functions are already function templates -> add them directly to the global scope
 	arraylist_addall(package->package_scope->function_templates, package->extern_functions);
 
 	// evaluate scopes for all functions
 	for (size_t i = 0; i < package->functions->size; i++) {
-		Function *func = arraylist_get(package->functions, i);
+		Function *func = arraylist_get(package->functions, i);;
+
 		func->scope = scope_copy(package->package_scope);
 		func->scope->parent = package->package_scope;
 		if (!scope_evaluate_function(func)) {
