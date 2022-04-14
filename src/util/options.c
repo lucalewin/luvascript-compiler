@@ -47,7 +47,7 @@ CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
 			} else if (strcmp(argv[i], "-o") == 0) {
 				// output file name
 				if (i + 1 < argc) {
-					options->output_file_name = argv[i + 1];
+					options->output_file_name = strdup(argv[i + 1]);
 					i++;
 				} else {
 					log_error("no output file specified\n");
