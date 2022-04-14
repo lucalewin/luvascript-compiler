@@ -125,6 +125,7 @@ ArrayList *arraylist_copy(ArrayList *src) {
 
 void arraylist_clear(ArrayList *arr) {
     arr->size = 0;
+    arr->capacity = INITIAL_BASE_ARRAY_SIZE;
     free(arr->data);
     arr->data = NULL;
 }
