@@ -124,7 +124,7 @@ Package *expectPackage() {
 	package->functions = arraylist_create();
 	package->extern_functions = arraylist_create();
 	package->global_variables = arraylist_create();
-	package->import_stmts = arraylist_create();
+	package->import_declarations = arraylist_create();
 	package->imported_functions = arraylist_create();
 	package->imported_global_variables = arraylist_create();
 
@@ -149,61 +149,112 @@ Package *expectPackage() {
 		package->name = strdup("global");
 	}
 
-	// log_debug("parsing package '%s'\n", package->name);
+	while (_index < tokens->size && is(TOKEN_KEYWORD) && strcmp(current->data, "import") == 0) {
+		eat(TOKEN_KEYWORD); // import
 
-	while (is(TOKEN_KEYWORD)) {
-		if (strcmp(current->data, "import") == 0) {
-			eat(TOKEN_KEYWORD);
-			// log_debug("import package %s\n", current->data);
-			if (!is(TOKEN_IDENTIFIER)) {
-				printf("%s:%d:%d: " RED "error: " RESET "expected package name\n", _filename, current->line, current->pos);
-				// free allocated memory
-				package_free(package);
-				return NULL;
-			}
+		ImportDeclaration *import_declaration = import_declaration_new();
+		// TODO: add NULL checks
 
-			import_stmt_t *import = calloc(1, sizeof(import_stmt_t));
-			import->package_name = strdup(current->data);
-			arraylist_add(package->import_stmts, import);
-			eat(TOKEN_IDENTIFIER);
-			eat(TOKEN_SEMICOLON);
-		} else if (strcmp(current->data, "from") == 0) {
-			eat(TOKEN_KEYWORD);
-			import_stmt_t *import = calloc(1, sizeof(import_stmt_t));
-			import->package_name = strdup(current->data);
-
-			eat(TOKEN_IDENTIFIER);
-
-			if (!is(TOKEN_KEYWORD) || strcmp(current->data, "import") != 0) {
-				printf("%s:%d:%d: " RED "error: " RESET "expected 'import' keyword, but got '%s'\n", _filename, current->line, current->pos, current->data);
-				// free all allocated memory
-				import_stmt_free(import);
-				package_free(package);
-				return NULL;
-			}
-
-			next(); // eat 'import' keyword
-
-			if (!is(TOKEN_IDENTIFIER)) {
-				printf("%s:%d:%d: " RED "error: " RESET "expected variable or function identifier, but got '%s'\n", 
-						_filename, current->line,
-						current->pos, current->data);
-				// free all allocated memory
-				import_stmt_free(import);
-				package_free(package);
-				return NULL;
-			}
-
-			import->type_identifier = strdup(current->data);
-
-			arraylist_add(package->import_stmts, import);
-
-			eat(TOKEN_IDENTIFIER);
-			eat(TOKEN_SEMICOLON);
-		} else {
-			break;
+		if (!is(TOKEN_IDENTIFIER)) {
+			printf("%s:%d:%d: " RED "error: " RESET "expected package name, but got '%s'\n", _filename, current->line, current->pos, current->data);
+			// free allocated memory
+			import_declaration_free(import_declaration);
+			package_free(package);
+			return NULL;
 		}
+
+		arraylist_add(import_declaration->package_names, strdup(current->data));
+		eat(TOKEN_IDENTIFIER);
+
+		while (is(TOKEN_DOT)) {
+			eat(TOKEN_DOT);
+			if (!is(TOKEN_IDENTIFIER)) {
+				printf("%s:%d:%d: " RED "error: " RESET "expected package name, but got '%s'\n", _filename, current->line, current->pos, current->data);
+				// free allocated memory
+				import_declaration_free(import_declaration);
+				package_free(package);
+				return NULL;
+			}
+			arraylist_add(import_declaration->package_names, strdup(current->data));
+			eat(TOKEN_IDENTIFIER);
+		}
+
+		if (is(TOKEN_COLON)) {
+			eat(TOKEN_COLON);
+			
+			if (!is(TOKEN_COLON)) {
+				printf("%s:%d:%d: " RED "error: " RESET "expected second ':' after package name, but got '%s'\n", _filename, current->line, current->pos, current->data);
+				// free allocated memory
+				import_declaration_free(import_declaration);
+				package_free(package);
+				return NULL;
+			}
+
+			eat(TOKEN_COLON);
+
+			// check if identifier or
+			if (is(TOKEN_IDENTIFIER)) {
+				arraylist_add(import_declaration->type_identifiers, strdup(current->data));
+				eat(TOKEN_IDENTIFIER);
+			} else if (is(TOKEN_ASTERISK)) {
+				arraylist_add(import_declaration->type_identifiers, strdup(current->data));
+				eat(TOKEN_ASTERISK); // *
+			} else if (is(TOKEN_LBRACE)) {
+				eat(TOKEN_LBRACE); // {
+				while (is(TOKEN_IDENTIFIER)) {
+					arraylist_add(import_declaration->type_identifiers, strdup(current->data));
+					eat(TOKEN_IDENTIFIER);
+					if (is(TOKEN_COMMA)) {
+						eat(TOKEN_COMMA);
+					} else {
+						break;
+					}
+				}
+
+				if (!is(TOKEN_RBRACE)) {
+					printf("%s:%d:%d: " RED "error: " RESET "expected '}' after type identifiers, but got '%s'\n", _filename, current->line, current->pos, current->data);
+					// free allocated memory
+					import_declaration_free(import_declaration);
+					package_free(package);
+					return NULL;
+				}
+
+				eat(TOKEN_RBRACE); // }
+			} else {
+				printf("%s:%d:%d: " RED "error: " RESET "expected identifier or '*' or '{' after ':', but got '%s'\n", _filename, current->line, current->pos, current->data);
+				// free allocated memory
+				import_declaration_free(import_declaration);
+				package_free(package);
+				return NULL;
+			}
+		} else {
+			if (!is(TOKEN_SEMICOLON)) {
+				printf("%s:%d:%d: " RED "error: " RESET "expected ';' after package name, but got '%s'\n", _filename, current->line, current->pos, current->data);
+				// free allocated memory
+				import_declaration_free(import_declaration);
+				package_free(package);
+				return NULL;
+			}
+			arraylist_add(import_declaration->type_identifiers, strdup("*"));
+		}
+
+		eat(TOKEN_SEMICOLON); // ;
+
+		arraylist_add(package->import_declarations, import_declaration);
 	}
+
+	ArrayList *compacted_import_declarations = compact_import_declarations(package->import_declarations);
+
+	// free packages->import_declarations
+	for (int i = 0; i < package->import_declarations->size; i++) {
+		ImportDeclaration *import_declaration = (ImportDeclaration *) package->import_declarations->data[i];
+		import_declaration_free(import_declaration);
+	}
+	arraylist_free(package->import_declarations);
+
+	package->import_declarations = compacted_import_declarations;
+
+	log_info("parsed all import statements\n");
 
 	while (_index < tokens->size) {
 		if (strcmp(current->data, "function") == 0) {
