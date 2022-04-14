@@ -79,6 +79,7 @@ int main(int argc, char **argv)
 			ast_free(ast);
 			return -1;
 		}
+		package->file_path = to_absolute_path(source_file_name);
 
 		arraylist_add(ast->packages, package);
 
