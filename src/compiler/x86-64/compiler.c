@@ -42,6 +42,7 @@ int statement_label_counter = 0;
 
 // ----------------------- function prototypes -------------------------
 
+char *compile_imports(Package *package);
 char *compile_global_variable(Variable *glob_var);
 char *compile_extern_function_templates(FunctionTemplate *func_template);
 char *compile_function(Function *function);
@@ -94,6 +95,8 @@ char *compile_to_x86_64_assembly(AST *ast, CommandlineOptions *options) {
 			}
 		}
 
+		asm_code = stradd(asm_code, compile_imports(package));
+
 		// check if main method is defined
 		if (scope_contains_function(package->package_scope, "main")) {
 			// main function is defined
@@ -139,6 +142,28 @@ char *compile_to_x86_64_assembly(AST *ast, CommandlineOptions *options) {
 
 
 	return asm_code;
+}
+
+char *compile_imports(Package *package) {
+	char *imports = calloc(1, sizeof(char));
+
+	for (size_t i = 0; i < arraylist_size(package->imported_global_variables); i++) {
+		VariableTemplate *var_template = arraylist_get(package->imported_global_variables, i);
+
+		imports = stradd(imports, "extern ");
+		imports = stradd(imports, variable_to_lcc_identifier(var_template));
+		imports = stradd(imports, "\n");
+	}
+	for (size_t i = 0; i < arraylist_size(package->imported_functions); i++) {
+		FunctionTemplate *func_template = arraylist_get(package->imported_functions, i);
+
+		imports = stradd(imports, "extern ");
+		imports = stradd(imports, function_to_lcc_identifier(func_template));
+		imports = stradd(imports, "\n");
+	}
+
+
+	return imports;
 }
 
 char *compile_global_variable(Variable *glob_var) {
@@ -189,8 +214,9 @@ char *compile_global_variable(Variable *glob_var) {
 	}
 
 	char *var_lcc_identifier = variable_to_lcc_identifier(convert_to_variable_template(glob_var));
-	char *asm_code = calloc(strlen(var_lcc_identifier) + 1, sizeof(char));
+	char *asm_code = calloc(strlen(var_lcc_identifier) + 2, sizeof(char));
 	strcpy(asm_code, var_lcc_identifier);
+	strcat(asm_code, ":");
 
 	free(var_lcc_identifier);
 
@@ -1309,7 +1335,7 @@ char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 	if (scope_contains_local_variable(scope, var_template->identifier)) {
 		// the variable is a local variable
 
-		log_debug("variable '%s' is a local variable\n", var_template->identifier);
+		// log_debug("variable '%s' is a local variable\n", var_template->identifier);
 
 		char *var_address = scope_get_variable_address(scope, var_template->identifier);
 		if (var_template->datatype->is_pointer) {
