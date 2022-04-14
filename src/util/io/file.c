@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <limits.h>
+#include <libgen.h>
 #include <dirent.h>
 
 #include <util/arraylist.h>
@@ -92,4 +93,21 @@ const char *get_filename_extension(const char *filename) {
 	const char *dot = strrchr(filename, '.');
 	if(!dot || dot == filename) return "";
 	return dot + 1;
+}
+
+char *to_absolute_path(const char *path) {
+	return realpath(path, NULL);
+}
+
+char *get_absolute_dirname(const char *file) {
+	return dirname(to_absolute_path(file));
+}
+
+char *path_combine(const char *path, const char *file) {
+	size_t len = strlen(path) + strlen(file) + 2;
+	char *combined = (char*) malloc(sizeof(char) * len);
+	strcpy(combined, path);
+	strcat(combined, "/");
+	strcat(combined, file);
+	return combined;
 }
