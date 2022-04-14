@@ -26,7 +26,14 @@ void compile(const char *assembly_code, CommandlineOptions *options)
 		return;
 	}
 
-	char *obj_filename = stradd(options->output_file_name, ".o");
+	char *obj_filename = NULL;
+	
+	if (options->output_file_name != NULL) {
+		obj_filename = strdup(options->output_file_name);
+	} else {
+		stradd(options->output_file_name, ".o");
+	}
+	
 
 	compile_to_object_file(asm_filename, obj_filename);
 	
