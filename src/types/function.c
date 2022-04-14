@@ -6,15 +6,15 @@
 
 FunctionTemplate *convert_to_function_template(Function *func) {
 	FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));
-	func_template->identifier = func->identifier;
-	func_template->return_type = func->return_type;
+	func_template->identifier = strdup(func->identifier);
+	func_template->return_type = copy_datatype(func->return_type);
 	func_template->param_datatypes = arraylist_create();
 
 	// convert function parameters to variable templates
 	for (size_t j = 0; j < func->parameters->size; j++) {
 		Variable *param = arraylist_get(func->parameters, j);
 		// VariableTemplate *var_template = convert_to_variable_template(param);
-		arraylist_add(func_template->param_datatypes, param->type);
+		arraylist_add(func_template->param_datatypes, copy_datatype(param->type));
 	}
 	return func_template;
 }
