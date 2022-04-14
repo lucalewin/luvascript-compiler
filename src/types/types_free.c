@@ -133,6 +133,7 @@ void package_free(Package *package) {
 		return;
 	}
 	free(package->name);
+	free(package->file_path);
 	scope_free(package->package_scope);
 
 
@@ -140,6 +141,7 @@ void package_free(Package *package) {
 	// 	Package *imported_package = arraylist_get(package->imported_packages, i);
 	// 	package_free(imported_package);
 	// }
+
 
 	if (package->functions != NULL) {
 		for (size_t i = 0; i < package->functions->size; i++) {
@@ -158,17 +160,23 @@ void package_free(Package *package) {
 		Variable *variable = arraylist_get(package->global_variables, i);
 		variable_free(variable);
 	}
+
+	// free imported functions and variables
+	for (size_t i = 0; i < package->imported_functions->size; i++) {
+		FunctionTemplate *function = arraylist_get(package->imported_functions, i);
+		function_template_free(function);
+	}
+
+	for (size_t i = 0; i < package->imported_global_variables->size; i++) {
+		VariableTemplate *variable = arraylist_get(package->imported_global_variables, i);
+		variable_template_free(variable);
+	}
 }
 
 void options_free(CommandlineOptions *options) {
+	if (options == NULL) return;
 	free(options->input_file_name);
 	free(options->output_file_name);
 	arraylist_free(options->library_paths);
 	free(options);
-}
-
-void import_stmt_free(import_stmt_t *import_stmt) {
-	free(import_stmt->package_name);
-	free(import_stmt->type_identifier);
-	free(import_stmt);
 }
