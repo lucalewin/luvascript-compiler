@@ -74,6 +74,7 @@ nav:
     - Datatypes: language-reference/datatypes.md
     - External Functions: language-reference/external-functions.md
     - Inline Assembly: language-reference/inline-assembly.md
+    - Import Statements: language-reference/imports.md
   - Language Specifications:
     - Overview: language-specifications/index.md
     - Version 0.1.0: language-specifications/0.1.0.md
