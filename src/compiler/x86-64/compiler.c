@@ -218,7 +218,6 @@ char *compile_global_variable(Variable *glob_var) {
 	strcpy(asm_code, var_lcc_identifier);
 	strcat(asm_code, ":");
 
-	free(var_lcc_identifier);
 
 	switch (glob_var->type->size) {
 		case 1: // BYTE
@@ -238,6 +237,9 @@ char *compile_global_variable(Variable *glob_var) {
 			exit(1);
 	}
 
+	asm_code = straddall(asm_code, "global ", var_lcc_identifier, "\n", NULL);
+
+	free(var_lcc_identifier);
 	free(variable_value);
 
 	return asm_code;
