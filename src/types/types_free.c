@@ -136,12 +136,10 @@ void package_free(Package *package) {
 	free(package->file_path);
 	scope_free(package->package_scope);
 
-
-	// for (size_t i = 0; i < package->imported_packages->size; i++) {
-	// 	Package *imported_package = arraylist_get(package->imported_packages, i);
-	// 	package_free(imported_package);
-	// }
-
+	for (size_t i = 0; i < package->import_declarations->size; i++) {
+		ImportDeclaration *import_declaration = arraylist_get(package->import_declarations, i);
+		import_declaration_free(import_declaration);
+	}
 
 	if (package->functions != NULL) {
 		for (size_t i = 0; i < package->functions->size; i++) {
