@@ -70,12 +70,13 @@ int scope_evaluate_ast(AST *ast, ArrayList *modules) {
 					Package *local_pkg = arraylist_get(local_pkgs, i);
 
 					// compare package names
-					if (strcmp(local_pkg->name, arraylist_get(import_decl->package_names, 0)) == 0) {
+					if (strcmp(local_pkg->name, import_decl->package_name) == 0) {
 						
 						package_found = true;
 						/// if the import declaration is empty, then we need to import all
-						if (arraylist_size(pkg->import_declarations) == 0) {
-							log_warning("importing all from package %s\n", local_pkg->name);
+						// if (arraylist_size(import_decl->type_identifiers) == 0) {
+						if (import_declaration_contains(import_decl, "*")) {
+							// log_warning("importing all from package %s\n", local_pkg->name);
 									// add the function to the package
 							for (size_t l = 0; l < arraylist_size(local_pkg->extern_functions); l++) {
 								FunctionTemplate *extern_func_template = arraylist_get(local_pkg->extern_functions, l);
@@ -103,7 +104,7 @@ int scope_evaluate_ast(AST *ast, ArrayList *modules) {
 						for (size_t k = 0; k < arraylist_size(import_decl->type_identifiers); k++) {
 							char *type_identifier = arraylist_get(import_decl->type_identifiers, k);
 
-							log_warning("importing type %s from package %s\n", type_identifier, local_pkg->name);
+							// log_warning("importing type %s from package %s\n", type_identifier, local_pkg->name);
 							// check if the type identifier is in local_pkg
 
 							// first check extern functions
