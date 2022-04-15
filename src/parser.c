@@ -164,7 +164,10 @@ Package *expectPackage() {
 		}
 
 		arraylist_add(import_declaration->package_names, strdup(current->data));
+		import_declaration->package_name = strdup(current->data);
 		eat(TOKEN_IDENTIFIER);
+
+		// log_debug("current tokentype: %s\n", TOKEN_TYPE_NAMES[current->type]);
 
 		while (is(TOKEN_DOT)) {
 			eat(TOKEN_DOT);
@@ -176,8 +179,16 @@ Package *expectPackage() {
 				return NULL;
 			}
 			arraylist_add(import_declaration->package_names, strdup(current->data));
+			char *new_package_name = calloc(1, sizeof(char) * (strlen(import_declaration->package_name) + strlen(current->data) + 2));
+			strcpy(new_package_name, import_declaration->package_name);
+			strcat(new_package_name, ".");
+			strcat(new_package_name, current->data);
+			free(import_declaration->package_name);
+			import_declaration->package_name = new_package_name;
 			eat(TOKEN_IDENTIFIER);
 		}
+
+		// log_warning("PACKAGE_NAME: %s\n", import_declaration->package_name);
 
 		if (is(TOKEN_COLON)) {
 			eat(TOKEN_COLON);
@@ -245,13 +256,17 @@ Package *expectPackage() {
 
 	ArrayList *compacted_import_declarations = compact_import_declarations(package->import_declarations);
 
+	if (compacted_import_declarations == NULL) {
+		package_free(package);
+		return NULL;
+	}
+
 	// free packages->import_declarations
 	for (int i = 0; i < package->import_declarations->size; i++) {
-		ImportDeclaration *import_declaration = (ImportDeclaration *) package->import_declarations->data[i];
+		ImportDeclaration *import_declaration = (ImportDeclaration *) arraylist_get(package->import_declarations, i);
 		import_declaration_free(import_declaration);
 	}
 	arraylist_free(package->import_declarations);
-
 	package->import_declarations = compacted_import_declarations;
 
 	log_info("parsed all import statements\n");
