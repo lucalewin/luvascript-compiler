@@ -25,40 +25,97 @@
  * 
  * @param ast the ast to evaluate
  */
-int scope_evaluate_ast(AST *ast, ArrayList *modules) {
+int scope_evaluate_ast(CommandlineOptions *options, AST *ast) {
 	if (ast == NULL) return 1;
 
 	bool successful_evaluation = true;
+
+	// load all filenames from the library paths
+	ArrayList *library_filenames = arraylist_create();
+
+	for (int i = 0; i < arraylist_size(options->library_paths); i++) {
+		char *library_path = arraylist_get(options->library_paths, i);
+
+		// TODO: check if library_path is a directory
+
+		// log_debug("todo: load all filenames from %s\n", library_path);
+
+		// check if library_path is given multiple times
+		for (size_t j = 0; j < arraylist_size(options->library_paths); j++) {
+			if (i == j) continue;
+
+			char *library_path_j = arraylist_get(options->library_paths, j);
+
+			if (strcmp(library_path, library_path_j) == 0) {
+				log_warning("library path '%s' is given multiple times\n", library_path);
+				goto next_library_path;
+			}
+		}
+
+		ArrayList *filenames = list_files(library_path);
+		// add all filenames to the library_filenames
+		for (int j = 0; j < arraylist_size(filenames); j++) {
+			char *filename = arraylist_get(filenames, j);
+			arraylist_add(library_filenames, path_combine(library_path, filename));
+		}
+
+		next_library_path: ;
+	}
+
+	// print all filenames
+	// printf(GREEN "info: " RESET "library filenames:\n");
+	// for (int i = 0; i < arraylist_size(library_filenames); i++) {
+	// 	char *filename = arraylist_get(library_filenames, i);
+	// 	printf(GREEN "info: " RESET " - %s\n", filename);
+	// }
 
 	// load imported packages
 	for (size_t i = 0; i < arraylist_size(ast->packages); i++) {
 		Package *pkg = arraylist_get(ast->packages, i);
 
 		if (arraylist_size(pkg->import_declarations) > 0) {
-			ArrayList *local_files = list_files(get_absolute_dirname(pkg->file_path));
+			ArrayList *local_files = library_filenames;//list_files(get_absolute_dirname_from_file(pkg->file_path));
 			ArrayList *local_pkgs = arraylist_create();
 
-			char *absolute_dir = get_absolute_dirname(pkg->file_path);
+			char *absolute_dir = get_absolute_dirname_from_file(pkg->file_path);
+
+			// check if directory of current package is specified in `options->library_paths`
+			bool found_dir = false;
+			for (size_t j = 0; j < arraylist_size(options->library_paths); j++) {
+				if (i == j) continue;
+
+				char *library_path_j = arraylist_get(options->library_paths, j);
+
+				if (strcmp(absolute_dir, library_path_j) == 0) {
+					found_dir = true;
+					break;
+				}
+			}
+
+			if (!found_dir) {
+
+			}
 
 			// print all values in local_files
 			for (size_t j = 0; j < arraylist_size(local_files); j++) {
 				char *file = arraylist_get(local_files, j);
-				char *full_file_path = path_combine(absolute_dir, file);
+				// char *full_file_path = path_combine(absolute_dir, file);
 
-				if (strcmp(pkg->file_path, full_file_path) == 0) continue;
-
+				if (strcmp(pkg->file_path, file) == 0) {
+					continue;
+				}
 				// check if file extension is '.lv'
-				if (strcmp("lv", get_filename_extension(full_file_path)) != 0) {
+				if (strcmp("lv", get_filename_extension(file)) != 0) {
 					continue;
 				}
 
-				char *source = read_file(full_file_path);
-				ArrayList *tokens = tokenize(source, full_file_path);
-				Package *local_pkg = parse(tokens, full_file_path);
+				char *source = read_file(file);
+				ArrayList *tokens = tokenize(source, file);
+				Package *local_pkg = parse(tokens, file);
 
 				arraylist_add(local_pkgs, local_pkg);
 
-				free(full_file_path);
+				// free(file);
 			}
 
 			for (size_t j = 0; j < arraylist_size(pkg->import_declarations); j++) {
@@ -156,7 +213,8 @@ int scope_evaluate_ast(AST *ast, ArrayList *modules) {
 			/// because `list_files` uses `struct dirent`, which is statically allocated,
 			/// do not need to free the filenames
 			/// reference: https://stackoverflow.com/questions/34550766/free-deleting-allocated-memory-from-the-function-readdir
-			arraylist_free(local_files);
+			// FIXME
+			// arraylist_free(local_files);
 
 			free(absolute_dir);
 		} // if
