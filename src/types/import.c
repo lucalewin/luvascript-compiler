@@ -112,18 +112,18 @@ ArrayList *compact_import_declarations(ArrayList *import_declarations) {
     _exit: ;
 
     // print all imported types
-    for (size_t i = 0; i < arraylist_size(compacted_import_declarations); i++) {
-        ImportDeclaration *import_declaration = (ImportDeclaration *) arraylist_get(compacted_import_declarations, i);
+    // for (size_t i = 0; i < arraylist_size(compacted_import_declarations); i++) {
+    //     ImportDeclaration *import_declaration = (ImportDeclaration *) arraylist_get(compacted_import_declarations, i);
 
-        printf("%s:%d:%d: " GREEN "info: " RESET "imported types from package '%s':\n",
-                "TODO", 0, 0, import_declaration->package_name);
+    //     printf("%s:%d:%d: " GREEN "info: " RESET "imported types from package '%s':\n",
+    //             "TODO", 0, 0, import_declaration->package_name);
 
-        for (size_t j = 0; j < arraylist_size(import_declaration->type_identifiers); j++) {
-            char *type_ident = (char *) arraylist_get(import_declaration->type_identifiers, j);
-            printf("%s:%d:%d: " GREEN "info: " RESET "  - %s\n",
-                    "TODO", 0, 0, type_ident);
-        }
-    }
+    //     for (size_t j = 0; j < arraylist_size(import_declaration->type_identifiers); j++) {
+    //         char *type_ident = (char *) arraylist_get(import_declaration->type_identifiers, j);
+    //         printf("%s:%d:%d: " GREEN "info: " RESET "  - %s\n",
+    //                 "TODO", 0, 0, type_ident);
+    //     }
+    // }
 
     // TODO: if successful_evaluation == false, we should free all allocated memory
     
