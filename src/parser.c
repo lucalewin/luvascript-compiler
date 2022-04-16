@@ -131,6 +131,7 @@ Package *expectPackage() {
 	if (is(TOKEN_KEYWORD)) {
 		if (strcmp(current->data, "package") == 0) {
 			eat(TOKEN_KEYWORD);
+
 			if (!is(TOKEN_IDENTIFIER)) {
 				printf("%s:%d:%d: " RED "error: " RESET "expected package name, but got '%s'\n", _filename, current->line, current->pos, current->data);
 				// free allocated memory
@@ -138,8 +139,26 @@ Package *expectPackage() {
 				return NULL;
 			}
 			package->name = strdup(current->data);
-			// eat(TOKEN_IDENTIFIER);
-			next();
+			eat(TOKEN_IDENTIFIER);
+
+			while (is(TOKEN_DOT)) {
+				eat(TOKEN_DOT);
+
+				if (!is(TOKEN_IDENTIFIER)) {
+					printf("%s:%d:%d: " RED "error: " RESET "expected package name, but got '%s'\n", _filename, current->line, current->pos, current->data);
+					// free allocated memory
+					package_free(package);
+					return NULL;
+				}
+				char *new_package_name = calloc(strlen(package->name) + strlen(current->data) + 2, sizeof(char));
+				strcpy(new_package_name, package->name);
+				strcat(new_package_name, ".");
+				strcat(new_package_name, current->data);
+				free(package->name);
+				package->name = new_package_name;
+				eat(TOKEN_IDENTIFIER);
+			}
+
 			eat(TOKEN_SEMICOLON);
 		} else {
 			goto default_package;
@@ -179,7 +198,7 @@ Package *expectPackage() {
 				return NULL;
 			}
 			arraylist_add(import_declaration->package_names, strdup(current->data));
-			char *new_package_name = calloc(1, sizeof(char) * (strlen(import_declaration->package_name) + strlen(current->data) + 2));
+			char *new_package_name = calloc(strlen(import_declaration->package_name) + strlen(current->data) + 2, sizeof(char));
 			strcpy(new_package_name, import_declaration->package_name);
 			strcat(new_package_name, ".");
 			strcat(new_package_name, current->data);
@@ -269,14 +288,14 @@ Package *expectPackage() {
 	arraylist_free(package->import_declarations);
 	package->import_declarations = compacted_import_declarations;
 
-	log_info("parsed all import statements\n");
+	// log_info("parsed all import statements\n");
 
 	while (_index < tokens->size) {
 		if (strcmp(current->data, "function") == 0) {
 			Function *func = expectFunction();
 			if (func == NULL) {
 				package_free(package);
-				log_debug("error: " RESET " expected variable or function identifier, but got '%s'\n", current->data);
+				log_error("error: " RESET " expected variable or function identifier, but got '%s'\n", current->data);
 				return NULL;
 			}
 			arraylist_add(package->functions, func);
