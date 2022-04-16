@@ -28,15 +28,14 @@ void compile(const char *assembly_code, CommandlineOptions *options)
 
 	char *obj_filename = NULL;
 	
-	if (options->output_file_name != NULL) {
-		obj_filename = strdup(options->output_file_name);
+	if (options->link == true) {
+		obj_filename = stradd(options->output_file_name, ".o");
 	} else {
-		stradd(options->output_file_name, ".o");
+		obj_filename = strdup(options->output_file_name);
 	}
-	
 
 	compile_to_object_file(asm_filename, obj_filename);
-	
+
 	if (options->link)
 	{
 		if (options->is_shared_library)
