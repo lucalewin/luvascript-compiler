@@ -1,4 +1,4 @@
-from io import print_number;
+import io::print_number;
 
 function fib(n: int): int {
 	if (n <= 1)

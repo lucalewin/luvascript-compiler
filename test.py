@@ -61,7 +61,7 @@ os.chdir(test_dir)
 
 for test in test_files:
 	# compile test
-	compile_proc = subprocess.Popen(['../bin/lvc', test], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	compile_proc = subprocess.Popen(['../bin/debug/lvc', test], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 	stdout, stderr = compile_proc.communicate()
 

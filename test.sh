@@ -5,7 +5,7 @@ echo "--------------- [BUILDING] ---------------"
 echo ""
 
 # build the project
-make build
+make debug
 
 cd ./tests
 
@@ -22,7 +22,7 @@ if [ $# -eq 0 ]; then
 		echo ""
 
 		# compile the test file with the previously built project binary
-		../bin/lvc -S "$file"
+		../bin/debug/lvc -S "$file"
 
 		# execute the generated binary file
 		./a.out
@@ -39,7 +39,7 @@ else
 		echo ""
 
 		# compile the test file with the previously built project binary
-		../bin/lvc -S test${test}.lv
+		../bin/debug/lvc -S test${test}.lv
 
 		# execute the generated binary file
 		./a.out

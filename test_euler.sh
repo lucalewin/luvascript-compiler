@@ -5,7 +5,7 @@ echo "--------------- [BUILDING] ---------------"
 echo ""
 
 # build the project
-make build
+make debug
 
 cd ./tests/euler
 
@@ -22,7 +22,7 @@ if [ $# -eq 0 ]; then
 		echo ""
 
 		# compile the test file with the previously built project binary
-		../../bin/lvc -S "$file" "../../lib/math.lv" "../../lib/io.lv" "../../lib/util.lv"
+		../../bin/debug/lvc -S "$file" -I../../lib
 
 		# execute the generated binary file
 		./a.out
@@ -43,7 +43,7 @@ else
 		echo ""
 
 		# compile the test file with the previously built project binary
-		../../bin/lvc -S problem${test}.lvs "../../lib/math.lv" "../../lib/io.lv" "../../lib/util.lv"
+		../../bin/debug/lvc -S problem${test}.lvs -I../../lib
 
 		# execute the generated binary file
 		./a.out
