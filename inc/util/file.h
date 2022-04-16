@@ -17,7 +17,7 @@ ArrayList *list_files(const char *dir);
 ArrayList *list_dirs(const char *directory);
 const char *get_filename_extension(const char *filename);
 char *to_absolute_path(const char *path);
-char *get_absolute_dirname(const char *file);
+char *get_absolute_dirname_from_file(const char *file);
 char *path_combine(const char *path, const char *file);
 
 #endif // LUVA_FILE_H

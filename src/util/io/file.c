@@ -99,7 +99,7 @@ char *to_absolute_path(const char *path) {
 	return realpath(path, NULL);
 }
 
-char *get_absolute_dirname(const char *file) {
+char *get_absolute_dirname_from_file(const char *file) {
 	return dirname(to_absolute_path(file));
 }
 
