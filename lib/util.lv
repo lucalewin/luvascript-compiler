@@ -1,13 +1,13 @@
 package util;
 
-from math import sqrt;
+import math::sqrt;
 
-function isPrime(n: int): bool {
+function isPrime(n: i64): bool {
 	if (n <= 1)
 		return false;
 		
-	var index: int = 2;
-	var upperBound: int = sqrt(n) + 1;
+	var index: i64 = 2;
+	var upperBound: i64 = sqrt(n) + 1;
 
 	while(index < upperBound) {
 		if (n % index == 0) {

@@ -58,6 +58,8 @@ void log_error(const char *message, ...) {
 void log_debug(const char *message, ...) {
     // printf("[DEBUG]: %s", message);
     /* Declare a va_list type variable */
+    #if defined DEBUG
+
     va_list args;
 
     /* Initialise the va_list variable with the ... after message */
@@ -68,11 +70,15 @@ void log_debug(const char *message, ...) {
 
     /* Clean up the va_list */
     va_end(args);
+
+    #endif
 }
 
 void log_cmd(const char *message, ...) {
     // printf("[CMD]: %s", command);
     /* Declare a va_list type variable */
+    #if defined DEBUG
+
     va_list args;
 
     /* Initialise the va_list variable with the ... after message */
@@ -83,4 +89,6 @@ void log_cmd(const char *message, ...) {
 
     /* Clean up the va_list */
     va_end(args);
+
+    #endif
 }

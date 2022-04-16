@@ -9,9 +9,10 @@ typedef struct package Package;
 struct package {
 	char *name;
 
+	char *file_path;
 	// ArrayList *imported_packages;
 
-	ArrayList *import_stmts;
+	ArrayList *import_declarations;
 
 	Scope *package_scope;
 	ArrayList *functions;

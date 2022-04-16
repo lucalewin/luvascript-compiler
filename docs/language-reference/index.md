@@ -4,3 +4,4 @@
 * [Datatypes](./datatypes.md)
 * [External Functions](./external-functions.md)
 * [Inline Assembly](./inline-assembly.md)
+* [Import Statements](./imports.md)

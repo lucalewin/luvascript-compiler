@@ -1,33 +1,32 @@
 package io;
 
-function print_number(number: int): int {
+function print_number(number: i64): void {
 	asm {
-		mov		eax, edi				; function arg
-		mov		ecx, 0xa				; base 10
+		mov		rax, rdi				; function arg
+		mov		rcx, 0xa				; base 10
 		push	rcx						; ASCII newline '\n' = 0xa = base
 		mov		rsi, rsp
 		sub		rsp, 16					; not needed on 64-bit Linux, the red-zone is big enough.  Change the LEA below if you remove this.
 										; rsi is pointing at '\n' on the stack, with 16B of "allocated" space below that.
 	.toascii_digit:						; do 
-		xor		edx, edx
-		div		ecx						; edx=remainder = low digit = 0..9.  eax/=10
+		xor		rdx, rdx
+		div		rcx						; edx=remainder = low digit = 0..9.  eax/=10
 										;; DIV IS SLOW.  use a multiplicative inverse if performance is relevant.
-		add		edx, '0'
+		add		rdx, '0'
 		dec		rsi						; store digits in MSD-first printing order, working backwards from the end of the string
 		mov		[rsi], dl
-		test	eax, eax				;  while(x);
+		test	rax, rax				;  while(x);
 		jnz		.toascii_digit
 										; rsi points to the first digit
-		mov		eax, 1					; __NR_write from /usr/include/asm/unistd_64.h
-		mov		edi, 1					; fd = STDOUT_FILENO
+		mov		rax, 1					; __NR_write from /usr/include/asm/unistd_64.h
+		mov		rdi, 1					; fd = STDOUT_FILENO
 		; pointer already in RSI		; buf = last digit stored = most significant
-		lea		edx, [rsp + 16 + 1]		; yes, it's safe to truncate pointers before subtracting to find length.
-		sub		edx, esi				; RDX = length = end-start, including the \n
+		lea		rdx, [rsp + 16 + 1]		; yes, it's safe to truncate pointers before subtracting to find length.
+		sub		rdx, rsi				; RDX = length = end-start, including the \n
 		syscall							; write(1, string /*RSI*/,  digits + 1)
 
 		add		rsp, 24					; (in 32-bit: add esp,20) undo the push and the buffer reservation
 	}
-	return 0;
 }
 
 // TODO: implement this function

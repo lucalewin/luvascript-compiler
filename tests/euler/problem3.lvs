@@ -1,6 +1,6 @@
-from io import print_number;
-from math import sqrt;
-from util import isPrime;
+import io::print_number;
+import math::sqrt;
+import util::isPrime;
 
 function main(): int {
 	var index: long = 3;

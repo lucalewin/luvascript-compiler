@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <util/util.h>
+#include <util/file.h>
 #include <logging/logger.h>
 
 // default filename of the generated binary file if no output filename is specified
@@ -47,7 +48,7 @@ CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
 			} else if (strcmp(argv[i], "-o") == 0) {
 				// output file name
 				if (i + 1 < argc) {
-					options->output_file_name = argv[i + 1];
+					options->output_file_name = strdup(argv[i + 1]);
 					i++;
 				} else {
 					log_error("no output file specified\n");
@@ -61,6 +62,18 @@ CommandlineOptions *parse_commandline_arguments(int argc, char *argv[]) {
 			} else if (strcmp(argv[i], "-c") == 0) {
 				// compile to object file
 				options->link = false;
+			} else if (strlen(argv[i]) >= 2 && argv[i][1] == 'I') {
+				// add library path
+				if (strlen(argv[i] + 2) > 0) {
+					log_debug("adding library path '%s'\n", to_absolute_path(argv[i] + 2));
+					arraylist_add(options->library_paths, to_absolute_path(argv[i] + 2));
+					// i++;
+				} else {
+					log_error("no library path specified\n");
+					log_error("type 'lvc -h' for help\n");
+					options_free(options);
+					exit(1);
+				}
 			} else if (strcmp(argv[i], "-shared") == 0) {
 				// compile to shared library
 				options->is_shared_library = true;

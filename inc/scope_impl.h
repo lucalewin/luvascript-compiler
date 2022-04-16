@@ -1,5 +1,6 @@
 #include <scope.h>
 
+#include <options.h>
 #include <util/arraylist.h>
 
 #include <types/ast.h>
@@ -10,9 +11,11 @@
 /**
  * @brief 
  * 
+ * @param options 
  * @param ast 
+ * @return int 
  */
-int scope_evaluate_ast(AST *ast, ArrayList *modules);
+int scope_evaluate_ast(CommandlineOptions *options, AST *ast);
 
 /**
  * @brief 

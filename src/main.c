@@ -79,6 +79,7 @@ int main(int argc, char **argv)
 			ast_free(ast);
 			return -1;
 		}
+		package->file_path = to_absolute_path(source_file_name);
 
 		arraylist_add(ast->packages, package);
 
@@ -91,15 +92,15 @@ int main(int argc, char **argv)
 	}
 
 	// load global modules
-	ArrayList *modules = arraylist_create();
-	if (!options->nostdlib)
-	{
-		// struct module *std_module = module_load(GLOBAL_LIBRARY_DIR "std");
-		// arraylist_add(modules, std_module);
-	}
+	// ArrayList *modules = arraylist_create();
+	// if (!options->nostdlib)
+	// {
+	// 	// struct module *std_module = module_load(GLOBAL_LIBRARY_DIR "std");
+	// 	// arraylist_add(modules, std_module);
+	// }
 
 	// evaluate the scopes of the packages
-	if (scope_evaluate_ast(ast, modules) != 0) {
+	if (scope_evaluate_ast(options, ast) != 0) {
 		// free allocated memory
 		options_free(options);
 		ast_free(ast);

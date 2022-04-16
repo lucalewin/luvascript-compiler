@@ -12,8 +12,8 @@
 VariableTemplate *convert_to_variable_template(Variable *variable) {
 	VariableTemplate *template = calloc(1, sizeof(VariableTemplate));
 
-	template->identifier = variable->identifier->value;
-	template->datatype = variable->type;
+	template->identifier = strdup(variable->identifier->value);
+	template->datatype = copy_datatype(variable->type);
 	template->is_constant = variable->is_constant;
 
 	return template;

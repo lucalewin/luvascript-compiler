@@ -534,7 +534,8 @@ Datatype *type_of_literal_expression(const Literal_T *literal, Scope *scope) {
 		}
 		case LITERAL_IDENTIFIER: {
 			if (!scope_contains_variable(scope, literal->value)) {
-				log_error("Variable %s is not defined\n", literal->value);
+				printf("%s:%d:%d: " IRED "error: " RESET "variable '%s' is not defined\n",
+						"TODO", 0, 0, literal->value);
 				return NULL;
 			}
 
