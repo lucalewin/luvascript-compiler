@@ -1292,21 +1292,31 @@ char *compile_array_access_expression(ArrayAccessExpression_T *array_access_expr
 	// }
 
 	char *array_access_expr_code = compile_expression(array_access_expr->index_expression, scope);
-
+	char *dt_directive = to_datatype_directive(template->datatype);
 	char *var_address = reference_pointer_variable(template, scope);
 
-	if (scope_contains_local_variable(scope, array_access_expr->identifier->value))
-	{
-		// the accessed variable is a local variable
-		array_access_expr_code = straddall(array_access_expr_code,
-				"\tmov rbx, [", var_address, "]\n"
-				"\tmov rax, [rbx+", int_to_string(template->datatype->size), "*rax]\n", NULL);
-	}
-	else
-	{
-		// the accessed variable is a global variable
-		array_access_expr_code = straddall(array_access_expr_code, 
-				"\tmov rax, [", variable_to_lcc_identifier(template), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
+	if (template->datatype->size <= 2) {
+		if (scope_contains_local_variable(scope, array_access_expr->identifier->value)) {
+			// the accessed variable is a local variable
+			array_access_expr_code = straddall(array_access_expr_code,
+					"\tmov rbx, [", var_address, "]\n"
+					"\tmovzx rax, ", dt_directive, "[rbx+", int_to_string(template->datatype->size), "*rax]\n", NULL);
+		} else {
+			// the accessed variable is a global variable
+			array_access_expr_code = straddall(array_access_expr_code, 
+					"\tmovzx rax, ", dt_directive, "[", variable_to_lcc_identifier(template), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
+		}
+	} else {
+		if (scope_contains_local_variable(scope, array_access_expr->identifier->value)) {
+			// the accessed variable is a local variable
+			array_access_expr_code = straddall(array_access_expr_code,
+					"\tmov rbx, [", var_address, "]\n"
+					"\tmov rax, [rbx+", int_to_string(template->datatype->size), "*rax]\n", NULL);
+		} else {
+			// the accessed variable is a global variable
+			array_access_expr_code = straddall(array_access_expr_code, 
+					"\tmov rax, [", variable_to_lcc_identifier(template), "+", int_to_string(template->datatype->size) ,"*rax]\n", NULL);
+		}
 	}
 
 	return array_access_expr_code;
