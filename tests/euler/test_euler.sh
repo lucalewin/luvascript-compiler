@@ -5,6 +5,8 @@ echo "--------------- [BUILDING] ---------------"
 echo ""
 
 # build the project
+cd ../../
+
 make debug
 
 cd ./tests/euler
