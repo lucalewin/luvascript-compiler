@@ -4,10 +4,14 @@ echo ""
 echo "--------------- [BUILDING] ---------------"
 echo ""
 
+cd ..
+
+pwd
 # build the project
 make debug
 
 cd ./tests
+
 
 if [ $# -eq 0 ]; then
 	echo "No test specified, running all tests"
