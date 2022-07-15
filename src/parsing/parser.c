@@ -667,6 +667,47 @@ Variable *parseVariable() {
 		eat(TOKEN_ASSIGNMENT_SIMPLE);
 
 		if (variable->type->is_array) {
+
+			// log_debug("parseVariable(): current tokentype: %s\n", TOKEN_TYPE_NAMES[current->type]);
+
+			if (strcmp(variable->type->type_identifier, "char") == 0) {
+				if (is(TOKEN_STRING)) {
+					// it is a string literal
+
+					Literal_T *literal = calloc(1, sizeof(Literal_T));
+					if (literal == NULL) {
+						datatype_free(variable->type);
+						free(variable);
+						free(identifier->value);
+						free(identifier);
+						log_error("parseVariable(): cannot allocate memory for literal\n");
+						exit(1);
+					}
+					literal->type = LITERAL_STRING;
+					literal->value = strdup(current->data);
+
+					Expression_T *expression = calloc(1, sizeof(Expression_T));
+					if (expression == NULL) {
+						datatype_free(variable->type);
+						free(variable);
+						free(identifier->value);
+						free(identifier);
+						free(literal);
+						log_error("parseVariable(): cannot allocate memory for expression\n");
+						exit(1);
+					}
+
+					expression->type = EXPRESSION_TYPE_LITERAL;
+					expression->expr.literal_expr = literal;
+
+					variable->default_value = expression;
+
+					eat(TOKEN_STRING);
+					eat(TOKEN_SEMICOLON);
+					return variable;
+				} // else: it is just an array of chars
+			}
+
 			eat(TOKEN_LBRACKET);
 			variable->default_value = expectExpressionList();
 			if (array_size_specified) {
@@ -1473,11 +1514,30 @@ Expression_T *expectUnaryExpression() {
 			switch (current->type) {
 				case TOKEN_IDENTIFIER: {
 					literal->type = LITERAL_IDENTIFIER;
+					literal->value = calloc(strlen(current->data), sizeof(char));
+					strcpy(literal->value, current->data);
+					next();
 					break;
 				}
 				case TOKEN_NUMBER: {
 					literal->type = LITERAL_NUMBER;
-					break;
+					literal->value = calloc(1 + strlen(current->data), sizeof(char));
+					strcpy(literal->value, "-");
+					strcat(literal->value, current->data);
+					next();
+
+					Expression_T *expr = calloc(1, sizeof(Expression_T));
+					if (expr == NULL) {
+						free(unary_expr);
+						free(literal);
+						log_error("expectUnaryExpression(): calloc failed\n");
+						exit(1);
+					}
+
+					expr->type = EXPRESSION_TYPE_LITERAL;
+					expr->expr.literal_expr = literal;
+					
+					return expr;
 				}
 				default: {
 					log_error("expectUnaryExpression(): an unexpected error occurred");
@@ -1485,9 +1545,9 @@ Expression_T *expectUnaryExpression() {
 					exit(1);
 				}
 			}
-			literal->value = calloc(strlen(current->data), sizeof(char));
-			strcpy(literal->value, current->data);
-			next();
+			// literal->value = calloc(strlen(current->data), sizeof(char));
+			// strcpy(literal->value, current->data);
+			// next();
 
 			unary_expr->identifier = literal;
 

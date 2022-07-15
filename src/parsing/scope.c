@@ -530,9 +530,10 @@ int scope_get_variable_rbp_offset(Scope *scope, char *var_name) {
 			return offset + 8;
 		}
 		
-		if (var_template->datatype->is_array) {
-			offset += var_template->datatype->array_size * var_template->datatype->size;
-		} else if(var_template->datatype->is_pointer) {
+		// if (var_template->datatype->is_array) {
+		// 	offset += var_template->datatype->array_size * var_template->datatype->size;
+		// } else 
+		if(var_template->datatype->is_pointer || var_template->datatype->is_array) {
 			offset += 8;
 		} else {
 			offset += var_template->datatype->size;
