@@ -12,7 +12,8 @@
 #include <x86-64/generator.h>
 
 char *generate_assembly(AST *ast, CommandlineOptions *options) {
-	return generate_x86_64_assembly(ast, options);
+	char *assembly = generate_x86_64_assembly(ast, options);
+	return assembly;
 }
 
 char *generate_header(AST *ast, CommandlineOptions *options) {
