@@ -136,37 +136,53 @@ bool branch_contains_unreachable_code(ConditionalStatement *conditional_stmt);
 // ----------------------------------------------------------------
 
 bool check_types(AST *ast) {
-	log_info("Starting type-checking...\n");
+	log_debug("Starting type-checking...\n");
 
 	if (duplicate_functions_exist(ast)) {
+		log_debug(" - checking for duplicate functions " IRED "x" RESET "\n");
 		return false;
 	}
+	log_debug(" - checking for duplicate functions " GREEN "✓" RESET "\n");
 
 	if (duplicate_variables_exist(ast)) {
+		log_debug(" - checking for duplicate variables " IRED "x" RESET "\n");
 		return false;
 	}
+	log_debug(" - checking for duplicate variables " GREEN "✓" RESET "\n");
 
 	if (!all_types_match(ast)) {
+		log_debug(" - checking types " IRED "x" RESET "\n");
 		return false;
 	}
+	log_debug(" - checking types " GREEN "✓" RESET "\n");
 
 	if (!all_code_paths_return(ast)) {
+		log_debug(" - checking if all code paths return " IRED "x" RESET "\n");
 		return false;
 	}
+	log_debug(" - checking if all code paths return " GREEN "✓" RESET "\n");
 
 	if (!all_code_blocks_are_reachable(ast)) {
 		// warning is already printed
+		log_debug(" - checking for unreachable code " IRED "x" RESET "\n");
+	} else {
+		log_debug(" - checking for unreachable code " GREEN "✓" RESET "\n");
 	}
 
 	if (!unused_functions_exist(ast)) {
 		// warning is already printed
+		log_debug(" - checking for unused functions " IRED "x" RESET "\n");
+	} else {
+		log_debug(" - checking for unused functions " GREEN "✓" RESET "\n");
 	}
 
 	if (!unused_variables_exist(ast)) {
 		// warning is already printed
+		log_debug(" - checking for unused variables " IRED "x" RESET "\n");
+	} else {
+		log_debug(" - checking for unused variables " GREEN "✓" RESET "\n");
 	}
 
-	log_info("Finnished type-checking\n");
 	return true;
 }
 
@@ -175,7 +191,7 @@ bool check_types(AST *ast) {
 // ----------------------------------------------------------------
 
 bool duplicate_functions_exist(AST *ast) {
-	log_debug("Checking for duplicate functions\n");
+	// log_debug(" - Checking for duplicate functions\n");
 
 	bool duplicated_functions_found = false;
 
@@ -234,7 +250,7 @@ bool duplicate_functions_exist(AST *ast) {
 }
 
 bool duplicate_variables_exist(AST *ast) {
-	log_debug("Checking for duplicate variables\n");
+	// log_debug(" - Checking for duplicate variables\n");
 
 	bool duplicated_variables_found = false;
 
@@ -271,7 +287,7 @@ bool duplicate_variables_exist(AST *ast) {
 }
 
 bool all_code_paths_return(AST *ast) {
-	log_debug("Checking if all code paths return\n");
+	// log_debug(" - Checking if all code paths return\n");
 
 	bool all_code_paths_return = true;
 
@@ -345,7 +361,7 @@ bool all_code_paths_return(AST *ast) {
  * remove the unreachable code.
  */
 bool all_code_blocks_are_reachable(AST *ast) {
-	log_debug("Checking if all code paths are reachable\n");
+	// log_debug(" - Checking if all code paths are reachable\n");
 
 	bool all_code_paths_return = true;
 
@@ -426,7 +442,7 @@ bool unused_variables_exist(AST *ast) {
 // type checks
 
 bool all_types_match(AST *ast) {
-	log_debug("Checking if all types match\n");
+	// log_debug(" - Checking if all types match\n");
 
 	bool all_types_match = true;
 
