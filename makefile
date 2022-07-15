@@ -61,6 +61,11 @@ clean: debug_clean release_clean
 
 debug_build: $(DEBUG_TARGET)
 
+debug_clean:
+	rm -rf $(DEBUG_OBJECTS) $(DEBUG_TARGET)
+
+debug_rebuild: debug_clean debug
+
 $(DEBUG_OBJECTS): $(DEBUG_OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(INC_DIRS) $< -o $@
@@ -68,12 +73,14 @@ $(DEBUG_OBJECTS): $(DEBUG_OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 $(DEBUG_TARGET): $(DEBUG_OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@
 
-debug_clean:
-	rm -rf $(DEBUG_OBJECTS) $(DEBUG_TARGET)
-
 # -------- [Release Targets] ---------
 
 release_build: $(RELEASE_TARGET)
+
+release_clean:
+	rm -rf $(RELEASE_OBJECTS) $(RELEASE_TARGET)
+
+release_rebuild: release_clean release
 
 $(RELEASE_OBJECTS): $(RELEASE_OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
@@ -81,6 +88,3 @@ $(RELEASE_OBJECTS): $(RELEASE_OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 
 $(RELEASE_TARGET): $(RELEASE_OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@
-
-release_clean:
-	rm -rf $(RELEASE_OBJECTS) $(RELEASE_TARGET)
