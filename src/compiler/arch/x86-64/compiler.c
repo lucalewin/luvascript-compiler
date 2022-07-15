@@ -8,11 +8,10 @@
 // utility libraries
 #include <util/util.h>
 #include <util/cmd.h>
-#include <util/string.h>
 #include <logging/logger.h>
 
 #include <scope_impl.h>
-#include <register.h>
+#include <assembly/registers.h>
 
 // types
 #include <types/operator.h>
@@ -265,9 +264,10 @@ char *compile_function(Function *function) {
 	size_t size_for_stack_align = 0;
 	for (int i = 0; i < function->scope->local_variable_templates->size; i++) {
 		VariableTemplate *var_template = arraylist_get(function->scope->local_variable_templates, i);
-		if (var_template->datatype->is_array) {
-			size_for_stack_align += var_template->datatype->size * var_template->datatype->array_size;
-		} else if (var_template->datatype->is_pointer) {
+		// if (var_template->datatype->is_array) {
+		// 	size_for_stack_align += var_template->datatype->size * var_template->datatype->array_size;
+		// } else
+		if (var_template->datatype->is_pointer || var_template->datatype->is_array) {
 			size_for_stack_align += 8;
 		} else {
 			size_for_stack_align += var_template->datatype->size;
@@ -297,7 +297,7 @@ char *compile_function(Function *function) {
 			VariableTemplate *template = convert_to_variable_template(param);
 
 			char *pointer = compile_variable_pointer(template, function->scope);
-			char *reg = getRegisterWithOpCodeSize(REGISTER_R9, template->datatype->is_pointer ? 8 : template->datatype->size);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_R9, template->datatype->is_pointer || template->datatype->is_array ? 8 : template->datatype->size);
 			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
@@ -308,7 +308,7 @@ char *compile_function(Function *function) {
 			VariableTemplate *template = convert_to_variable_template(param);
 
 			char *pointer = compile_variable_pointer(template, function->scope);
-			char *reg = getRegisterWithOpCodeSize(REGISTER_R8, template->datatype->is_pointer ? 8 : template->datatype->size);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_R8, template->datatype->is_pointer || template->datatype->is_array ? 8 : template->datatype->size);
 			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
@@ -319,7 +319,7 @@ char *compile_function(Function *function) {
 			VariableTemplate *template = convert_to_variable_template(param);
 
 			char *pointer = compile_variable_pointer(template, function->scope);
-			char *reg = getRegisterWithOpCodeSize(REGISTER_ECX, template->datatype->is_pointer ? 8 : template->datatype->size);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_RCX, template->datatype->is_pointer ? 8 : template->datatype->size);
 			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
@@ -330,7 +330,7 @@ char *compile_function(Function *function) {
 			VariableTemplate *template = convert_to_variable_template(param);
 
 			char *pointer = compile_variable_pointer(template, function->scope);
-			char *reg = getRegisterWithOpCodeSize(REGISTER_EDX, template->datatype->is_pointer ? 8 : template->datatype->size);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_RDX, template->datatype->is_pointer || template->datatype->is_array ? 8 : template->datatype->size);
 			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
@@ -341,7 +341,7 @@ char *compile_function(Function *function) {
 			VariableTemplate *template = convert_to_variable_template(param);
 
 			char *pointer = compile_variable_pointer(template, function->scope);
-			char *reg = getRegisterWithOpCodeSize(REGISTER_ESI, template->datatype->is_pointer ? 8 : template->datatype->size);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_RSI, template->datatype->is_pointer || template->datatype->is_array ? 8 : template->datatype->size);
 			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
@@ -352,7 +352,7 @@ char *compile_function(Function *function) {
 			VariableTemplate *template = convert_to_variable_template(param);
 
 			char *pointer = compile_variable_pointer(template, function->scope);
-			char *reg = getRegisterWithOpCodeSize(REGISTER_EDI, template->datatype->is_pointer ? 8 : template->datatype->size);
+			char *reg = getRegisterWithOpCodeSize(REGISTER_RDI, template->datatype->is_pointer || template->datatype->is_array ? 8 : template->datatype->size);
 			function_code = straddall(function_code, "\tmov ", pointer, ", ", reg, "\t; function paramter: ", template->identifier, "\n", NULL);
 
 			variable_template_free(template);
@@ -490,7 +490,7 @@ char *compile_variable_declaration_statement(VariableDeclarationStatement *var_d
 	}
 
 	var_decl_code = straddall(var_decl_code,
-					getRegisterWithOpCodeSize(REGISTER_EAX, var->type->size), 
+					getRegisterWithOpCodeSize(REGISTER_RAX, var->type->size), 
 					"\t; variable: ", var->identifier->value, "\n", NULL);
 
 	return var_decl_code;
@@ -745,8 +745,8 @@ char *compile_binary_expression(BinaryExpression_T *bin_expr, Scope *scope) {
 					VariableTemplate *var_template = scope_get_variable_by_name(scope, literal->value);
 
 					char *var_pointer = compile_variable_pointer(var_template, scope);
-					char *reg_a = getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size);
-					char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, var_template->datatype->size);
+					char *reg_a = getRegisterWithOpCodeSize(REGISTER_RAX, var_template->datatype->size);
+					char *reg_b = getRegisterWithOpCodeSize(REGISTER_RBX, var_template->datatype->size);
 
 					switch (bin_expr->operator) {
 						case BINARY_OPERATOR_ADD:
@@ -1007,7 +1007,7 @@ char *compile_literal_expression(Literal_T *literal, Scope *scope) {
 			// }
 
 			literal_expr_code = straddall(literal_expr_code, "\tmov ", 
-							getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->is_pointer ? 8 : var_template->datatype->size), ", ", 
+							getRegisterWithOpCodeSize(REGISTER_RAX, var_template->datatype->is_pointer || var_template->datatype->is_array ? 8 : var_template->datatype->size), ", ", 
 							compile_variable_pointer(var_template, scope), "\n", NULL);
 
 			break;
@@ -1064,7 +1064,7 @@ char *compile_unary_expression(UnaryExpression_T *unary_expr, Scope *scope) {
 			
 			unary_expr_code = straddall(unary_expr_code, 
 						"\tinc ", var_pointer, "\n" 
-						"\tmov ", getRegisterWithOpCodeSize(REGISTER_EAX, var_template->datatype->size), ", ", var_pointer, "\n", NULL);
+						"\tmov ", getRegisterWithOpCodeSize(REGISTER_RAX, var_template->datatype->size), ", ", var_pointer, "\n", NULL);
 			break;
 		}
 		default:
@@ -1229,7 +1229,7 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 		char *var_pointer = NULL;
 
 		// char *var_address = scope_get_variable_address(scope, identifier->value);
-		if (template->datatype->is_pointer == 1) {
+		if (template->datatype->is_pointer == 1 || template->datatype->is_array == 1) {
 			var_pointer = scope_get_variable_address(scope, identifier->value);
 			
 		} else {
@@ -1237,8 +1237,8 @@ char *compile_assignment_expression(AssignmentExpression_T *assignment_expr, Sco
 		}
 
 		// char *var_pointer = compile_variable_pointer(template, scope);
-		char *reg_a = getRegisterWithOpCodeSize(REGISTER_EAX, template->datatype->size);
-		char *reg_b = getRegisterWithOpCodeSize(REGISTER_EBX, template->datatype->size);
+		char *reg_a = getRegisterWithOpCodeSize(REGISTER_RAX, template->datatype->size);
+		char *reg_b = getRegisterWithOpCodeSize(REGISTER_RBX, template->datatype->size);
 
 		switch (assignment_expr->operator) {
 			case ASSIGNMENT_OPERATOR_DEFAULT:
@@ -1350,7 +1350,7 @@ char *compile_variable_pointer(VariableTemplate *var_template, Scope *scope) {
 		// log_debug("variable '%s' is a local variable\n", var_template->identifier);
 
 		char *var_address = scope_get_variable_address(scope, var_template->identifier);
-		if (var_template->datatype->is_pointer) {
+		if (var_template->datatype->is_pointer || var_template->datatype->is_array) {
 			return straddall("QWORD[", var_address, "]", NULL);
 		}
 
