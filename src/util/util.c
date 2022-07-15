@@ -41,7 +41,8 @@ char *straddall(char *src, ...) {
 }
 
 char *strdup(const char *src) {
-	char *dst = malloc(strlen (src) + 1);  // Space for length plus nul
+    if (src == NULL) return NULL;
+	char *dst = calloc(strlen (src) + 1, sizeof (char));  // Space for length plus nul
 	if (dst == NULL) return NULL;          // No memory
 	strcpy(dst, src);                      // Copy the characters
 	return dst;                            // Return the new string
@@ -51,6 +52,40 @@ char *allocate_string(const char *str) {
 	char *new_str = calloc(strlen(str) + 1, sizeof(char));
 	strcpy(new_str, str);
 	return new_str;
+}
+
+/*
+ * Edited from https://stackoverflow.com/a/9693452/13990026
+ */
+char** copy_all(char** argv, int length) {
+    if (argv == NULL) return NULL;
+    if (length == 0) return NULL;
+    
+    char** ppDest = calloc(length, sizeof(char**));
+    if (!ppDest) {
+        return NULL;
+    }
+
+    int i = 0;
+    for (; i < length; i++) {
+        char* pCurrent = argv[i];
+        size_t currentLength = strlen(pCurrent);
+        ppDest[i] = calloc(currentLength + 1, sizeof(char));
+        if (!ppDest[i]) {
+            goto Error;
+        }
+        strcpy(ppDest[i], argv[i]);
+    }
+
+    return ppDest;
+
+Error:
+    while (i > 0) {
+        free(ppDest[i - 1]);
+        i--;
+    }
+    free(ppDest);
+    return NULL;
 }
 
 // ----------------------------------------------------------

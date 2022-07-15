@@ -29,6 +29,8 @@ char *straddall(char *src, ...);
 char *strdup(const char *src);
 char *allocate_string(const char *str);
 
+char** copy_all(char** argv, int length);
+
 int strendswith(const char *str, const char *suffix);
 
 int str_last_index_of(char *str, char x);
