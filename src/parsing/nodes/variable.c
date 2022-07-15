@@ -40,11 +40,15 @@ char *variable_to_lcc_identifier(VariableTemplate *var_template) {
 	size_t var_ident_length = strlen(var_template->identifier);
 	size_t datatype_ident_length = strlen(var_template->datatype->type_identifier);
 	size_t identifier_length = var_ident_length + datatype_ident_length + 7;
-	char *identifier = calloc(identifier_length + 1, sizeof(char));
+	size_t array_length = var_template->datatype->is_array ? 2 : 0;
+	char *identifier = calloc(identifier_length + 1 + array_length, sizeof(char));
 	strcpy(identifier, "_var_");
 	strcat(identifier, var_template->identifier);
 	strcat(identifier, "__");
 	strcat(identifier, var_template->datatype->type_identifier);
+	if (var_template->datatype->is_array) {
+		strcat(identifier, "@1");
+	}
 	return identifier;
 }
 

@@ -49,8 +49,15 @@ char *function_to_lcc_identifier(FunctionTemplate *function_template) {
 		Datatype *datatype = arraylist_get(function_template->param_datatypes, i);
 		param_ident_length += strlen(datatype->type_identifier);
 	}
+	size_t extra_length_for_array_length = 0;
+	for (size_t i = 0; i < param_count; i++) {
+		Datatype *datatype = arraylist_get(function_template->param_datatypes, i);
+		if (datatype->is_array) {
+			extra_length_for_array_length += 2;
+		}
+	}
 	// 2 + param_count is the amount of underscores in the identifier
-	size_t identifier_length = func_ident_length + param_ident_length + 2 + param_count + 5;
+	size_t identifier_length = func_ident_length + param_ident_length + 2 + param_count + 5 + extra_length_for_array_length;
 	char *identifier = calloc(identifier_length + 1, sizeof(char));
 	strcpy(identifier, "_func_");
 	strcat(identifier, function_template->identifier);
@@ -59,6 +66,10 @@ char *function_to_lcc_identifier(FunctionTemplate *function_template) {
 		Datatype *datatype = arraylist_get(function_template->param_datatypes, i);
 		strcat(identifier, "_");
 		strcat(identifier, datatype->type_identifier);
+
+		if (datatype->is_array) {
+			strcat(identifier, "@1");
+		}
 	}
 	return identifier;
 }

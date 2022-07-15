@@ -61,9 +61,15 @@ Datatype *parse_datatype(char *type) {
 		dt->size = 1; // 1 byte (ascii) (might change in future versions)
 	} else if (strcmp(type, "string") == 0) {
 		// a string is an array of chars
+		// dt->is_primitive = 1;
+		// dt->type_identifier = "string";
+		// dt->is_pointer = 1; // pointer to char array
+		// dt->size = 1; // 1 byte for ascii character (might change in future versions)
+
 		dt->is_primitive = 1;
-		dt->type_identifier = "string";
-		dt->is_pointer = 1; // pointer to char array
+		dt->type_identifier = "char";
+		dt->is_pointer = 0;
+		dt->is_array = 1; // array of chars
 		dt->size = 1; // 1 byte for ascii character (might change in future versions)
 	} else if (strcmp(type, "void") == 0) {
 		dt->is_primitive = 1;
@@ -97,4 +103,28 @@ void datatype_free(Datatype *datatype) {
 	if (!datatype->is_primitive)
 		free(datatype->type_identifier);
 	free(datatype);
+}
+
+char *to_datatype_directive(const Datatype *datatype) {
+	if (datatype == NULL) return NULL;
+	//if (datatype->is_pointer) {
+	//	return "qword";
+	//}
+	switch (datatype->size) {
+		case DATATYPE_DIRECTIVE_BYTE:
+			return "byte";
+		case DATATYPE_DIRECTIVE_WORD:
+			return "word";
+		case DATATYPE_DIRECTIVE_DWORD:
+			return "dword";
+		case DATATYPE_DIRECTIVE_QWORD:
+			return "qword";
+		default:
+			return NULL;
+	}
+}
+
+char *datatype_to_datatype_directive(const Datatype *datatype) {
+	log_error("datatype_to_datatype_directive not implemented\n");
+	return NULL;
 }
