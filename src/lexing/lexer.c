@@ -11,7 +11,7 @@
 #include <logging/logger.h>
 
 #define keywords_length 30
-
+ 
 char *keywords[keywords_length] = {
 	"function",
 	"var",
