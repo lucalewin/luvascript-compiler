@@ -64,6 +64,8 @@ nav:
     - Options: compiler/options.md
     - Conventions:
       - compiler/conventions/index.md
+      - x64:
+        - Calling Convention: compiler/conventions/x64/calling-convention.md
       - Luvascript Naming Convention: compiler/conventions/luvascript-naming-convention.md
     - Compiler Messages: compiler/messages/index.md
     - Source Documentation:
