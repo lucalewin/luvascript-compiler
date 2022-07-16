@@ -2,7 +2,7 @@
 #define LUVA_TYPES_DATATYPES_H
 
 #include <string.h>
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 typedef struct _datatype {
 	char *type_identifier;

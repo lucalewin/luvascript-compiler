@@ -1,5 +1,5 @@
-#include <scope.h>
-#include <scope_impl.h>
+#include <parsing/scope.h>
+#include <parsing/scope_impl.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,18 +7,18 @@
 #include <stdbool.h>
 
 #include <util/util.h>
-#include <util/file.h>
-#include <logging/logger.h>
+#include <util/io/file.h>
+#include <util/logging/logger.h>
 
-#include <lexer.h>
-#include <parser.h>
+#include <lexing/lexer.h>
+#include <parsing/parser.h>
 
-#include <types/variable.h>
-#include <types/statement.h>
-#include <types/function.h>
-#include <types/import.h>
-#include <types/package.h>
-#include <types/module.h>
+#include <parsing/nodes/variable.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/import.h>
+#include <parsing/nodes/package.h>
+#include <parsing/nodes/module.h>
 
 /**
  * @brief evaluates the scopes of the ast

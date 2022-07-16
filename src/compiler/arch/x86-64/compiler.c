@@ -1,4 +1,4 @@
-#include <x86-64/compiler.h>
+#include <compiler/arch/x86-64/compiler.h>
 
 // standart libraries
 #include <stdio.h>
@@ -7,21 +7,21 @@
 
 // utility libraries
 #include <util/util.h>
-#include <util/cmd.h>
-#include <logging/logger.h>
+#include <util/io/cmd.h>
+#include <util/logging/logger.h>
 
-#include <scope_impl.h>
-#include <assembly/registers.h>
+#include <parsing/scope_impl.h>
+#include <generation/arch/x86-64/assembly/registers.h>
 
-// types
-#include <types/operator.h>
-#include <types/literal.h>
-#include <types/expression.h>
-#include <types/statement.h>
-#include <types/function.h>
-#include <types/datatypes.h>
+// nodes
+#include <parsing/nodes/operator.h>
+#include <parsing/nodes/literal.h>
+#include <parsing/nodes/expression.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/datatypes.h>
 
-#include <x86-64/optimizer.h>
+#include <compiler/arch/x86-64/optimizer.h>
 
 // ------------------------ string templates ------------------------
 

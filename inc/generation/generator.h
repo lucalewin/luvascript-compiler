@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include <options.h>
-#include <types/ast.h>
+#include <parsing/nodes/ast.h>
 
 char *generate_assembly(AST *ast, CommandlineOptions *options);
 char *generate_header(AST *ast, CommandlineOptions *options);

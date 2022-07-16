@@ -1,8 +1,8 @@
-#include <types/function.h>
+#include <parsing/nodes/function.h>
 
-#include <scope_impl.h>
+#include <parsing/scope_impl.h>
 #include <util/util.h>
-#include <types/datatypes.h>
+#include <parsing/nodes/datatypes.h>
 
 FunctionTemplate *convert_to_function_template(Function *func) {
 	FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));

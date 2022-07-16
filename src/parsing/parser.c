@@ -1,4 +1,4 @@
-#include <parser.h>
+#include <parsing/parser.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,17 +6,17 @@
 
 #include <util/util.h>
 #include <util/string.h>
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
-#include <scope_impl.h>
+#include <parsing/scope_impl.h>
 
-#include <types/datatypes.h>
-#include <types/expression.h>
-#include <types/function.h>
-#include <types/statement.h>
-#include <types/variable.h>
-#include <types/package.h>
-#include <types/import.h>
+#include <parsing/nodes/datatypes.h>
+#include <parsing/nodes/expression.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/variable.h>
+#include <parsing/nodes/package.h>
+#include <parsing/nodes/import.h>
 
 // global variables used by the parser
 int _index;

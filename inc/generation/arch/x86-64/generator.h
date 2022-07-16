@@ -1,7 +1,7 @@
 #ifndef __LUVA_X86_64_GENERATOR_H__
 #define __LUVA_X86_64_GENERATOR_H__
 
-#include <types/ast.h>
+#include <parsing/nodes/ast.h>
 #include <options.h>
 
 char *generate_x86_64_assembly(AST *ast, CommandlineOptions *options);

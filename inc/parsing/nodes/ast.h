@@ -1,7 +1,7 @@
 #ifndef LUVA_AST_H
 #define LUVA_AST_H
 
-#include <scope.h>
+#include <parsing/scope.h>
 #include <util/arraylist.h>
 #include <options.h>
 

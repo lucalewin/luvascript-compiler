@@ -1,18 +1,18 @@
-#include <types/ast.h>
-#include <types/literal.h>
-#include <types/datatypes.h>
-#include <types/expression.h>
-#include <types/function.h>
-#include <types/statement.h>
-#include <types/variable.h>
-#include <types/package.h>
-#include <types/import.h>
+#include <parsing/nodes/ast.h>
+#include <parsing/nodes/literal.h>
+#include <parsing/nodes/datatypes.h>
+#include <parsing/nodes/expression.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/variable.h>
+#include <parsing/nodes/package.h>
+#include <parsing/nodes/import.h>
 #include <options.h>
 
-#include <scope_impl.h>
+#include <parsing/scope_impl.h>
 #include <util/arraylist.h>
 
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 /**
  * @brief free an expression

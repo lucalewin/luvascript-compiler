@@ -1,4 +1,4 @@
-#include <assembly/registers.h>
+#include <generation/arch/x86-64/assembly/registers.h>
 
 #include <stdio.h>
 #include <stdlib.h>

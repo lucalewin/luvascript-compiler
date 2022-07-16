@@ -1,10 +1,10 @@
-#include <assembly/program.h>
+#include <generation/arch/x86-64/assembly/program.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <assembly/section.h>
+#include <generation/arch/x86-64/assembly/section.h>
 
 AssemblyProgram *assembly_program_new() {
     AssemblyProgram *assembly = calloc(1, sizeof(AssemblyProgram));

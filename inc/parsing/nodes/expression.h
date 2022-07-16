@@ -1,8 +1,8 @@
 #ifndef LUVA_EXPRESSION_H
 #define LUVA_EXPRESSION_H
 
-#include <types/operator.h>
-#include <types/literal.h>
+#include <parsing/nodes/operator.h>
+#include <parsing/nodes/literal.h>
 #include <util/arraylist.h>
 
 typedef enum ExpressionType ExpressionType;

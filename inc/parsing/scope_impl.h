@@ -1,12 +1,12 @@
-#include <scope.h>
+#include <parsing/scope.h>
 
 #include <options.h>
 #include <util/arraylist.h>
 
-#include <types/ast.h>
-#include <types/statement.h>
-#include <types/function.h>
-#include <types/package.h>
+#include <parsing/nodes/ast.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/package.h>
 
 /**
  * @brief 

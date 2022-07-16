@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include <util/arraylist.h>
-#include <assembly/datatypes.h>
+#include <generation/arch/x86-64/assembly/datatypes.h>
 
 typedef struct _DataSection {
     ArrayList *data; // array list of AssemblyDataVariable*

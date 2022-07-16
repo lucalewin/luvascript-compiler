@@ -1,7 +1,7 @@
-#include <types/variable.h>
+#include <parsing/nodes/variable.h>
 
 #include <util/util.h>
-#include <types/datatypes.h>
+#include <parsing/nodes/datatypes.h>
 
 /**
  * @brief TODO (lucalewin): add documentation for function

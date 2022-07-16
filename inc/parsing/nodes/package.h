@@ -1,7 +1,7 @@
 #ifndef __LUVA_PACKAGE_H__
 #define __LUVA_PACKAGE_H__
 
-#include <scope.h>
+#include <parsing/scope.h>
 #include <util/arraylist.h>
 
 typedef struct package Package;

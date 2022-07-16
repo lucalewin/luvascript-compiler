@@ -1,9 +1,9 @@
 #ifndef LUVA_TYPE_VARIABLE_H
 #define LUVA_TYPE_VARIABLE_H
 
-#include <types/datatypes.h>
-#include <types/literal.h>
-#include <types/expression.h>
+#include <parsing/nodes/datatypes.h>
+#include <parsing/nodes/literal.h>
+#include <parsing/nodes/expression.h>
 
 typedef struct _Variable Variable;
 typedef struct _VariableTemplate VariableTemplate;

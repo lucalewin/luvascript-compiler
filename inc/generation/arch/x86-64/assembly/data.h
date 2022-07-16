@@ -1,7 +1,7 @@
 #ifndef __LUVA_X86_64_COMPILER_ASSEMBLY_DATA_H__
 #define __LUVA_X86_64_COMPILER_ASSEMBLY_DATA_H__
 
-#include <assembly/datatypes.h>
+#include <generation/arch/x86-64/assembly/datatypes.h>
 
 typedef struct _assemblyDataVariable {
     char *label;

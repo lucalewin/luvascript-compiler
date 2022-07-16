@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include <types/ast.h>
+#include <parsing/nodes/ast.h>
 
 /**
  * @brief TODO(lucalewin) add description

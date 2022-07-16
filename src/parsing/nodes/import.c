@@ -1,4 +1,4 @@
-#include <types/import.h>
+#include <parsing/nodes/import.h>
 
 #include <string.h>
 #include <stdbool.h>
@@ -6,7 +6,7 @@
 #include <util/util.h>
 #include <util/arraylist.h>
 
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 ImportDeclaration *import_declaration_new() {
     ImportDeclaration *import_declaration = (ImportDeclaration *) malloc(sizeof(ImportDeclaration));

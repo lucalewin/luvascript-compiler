@@ -1,4 +1,4 @@
-#include <assembly/datatypes.h>
+#include <generation/arch/x86-64/assembly/datatypes.h>
 
 const char *_AssemblyDataSectionTypes_names[] = {
     [DATA_TYPE_DB] = "db",

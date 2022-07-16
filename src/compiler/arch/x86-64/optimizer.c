@@ -1,11 +1,11 @@
-#include <x86-64/optimizer.h>
+#include <compiler/arch/x86-64/optimizer.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <types/expression.h>
+#include <parsing/nodes/expression.h>
 #include <util/util.h>
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 Expression_T *simplify_expression(Expression_T *expr) {
 	switch (expr->type) {

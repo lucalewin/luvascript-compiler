@@ -1,4 +1,4 @@
-#include <types/strings.h>
+#include <parsing/nodes/strings.h>
 
 #include <stdio.h>
 #include <stdlib.h>

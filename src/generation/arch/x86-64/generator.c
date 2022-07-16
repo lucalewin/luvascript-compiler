@@ -1,4 +1,4 @@
-#include <x86-64/generator.h>
+#include <generation/arch/x86-64/generator.h>
 
 #include <stdbool.h>
 
@@ -7,18 +7,18 @@
 // #include <x86-64/compiler.h>
 #include <conventions/lcc.h>
 
-#include <types/package.h>
-#include <types/function.h>
-#include <types/variable.h>
-#include <types/expression.h>
-#include <types/statement.h>
-#include <types/datatypes.h>
-#include <types/literal.h>
+#include <parsing/nodes/package.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/variable.h>
+#include <parsing/nodes/expression.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/datatypes.h>
+#include <parsing/nodes/literal.h>
 
-#include <assembly/section.h>
-#include <assembly/program.h>
-#include <assembly/registers.h>
-#include <assembly/stack.h>
+#include <generation/arch/x86-64/assembly/section.h>
+#include <generation/arch/x86-64/assembly/program.h>
+#include <generation/arch/x86-64/assembly/registers.h>
+#include <generation/arch/x86-64/assembly/stack.h>
 
 // ------------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 #ifndef __LUVA_X86_64_COMPILER_ASSEMBLY_STACK_H__
 #define __LUVA_X86_64_COMPILER_ASSEMBLY_STACK_H__
 
-#include <assembly/registers.h>
+#include <generation/arch/x86-64/assembly/registers.h>
 
 typedef struct _StackLayout StackLayout;
 

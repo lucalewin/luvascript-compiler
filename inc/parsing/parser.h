@@ -2,14 +2,14 @@
 #define LUVA_PARSER_H
 
 #include <util/arraylist.h>
-#include <token.h>
+#include <lexing/token.h>
 
-#include <types/literal.h>
-#include <types/expression.h>
-#include <types/statement.h>
-#include <types/function.h>
-#include <types/ast.h>
-#include <types/package.h>
+#include <parsing/nodes/literal.h>
+#include <parsing/nodes/expression.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/ast.h>
+#include <parsing/nodes/package.h>
 
 // helper functions
 

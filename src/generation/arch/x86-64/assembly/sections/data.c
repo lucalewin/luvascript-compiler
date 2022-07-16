@@ -1,14 +1,13 @@
-#include <assembly/section.h>
-#include <assembly/data.h>
+#include <generation/arch/x86-64/assembly/section.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 #include <util/util.h>
-#include <assembly/data.h>
-#include <assembly/datatypes.h>
+#include <generation/arch/x86-64/assembly/data.h>
+#include <generation/arch/x86-64/assembly/datatypes.h>
 
 // partly implementation of assembly/section.h (only the data part) 
 

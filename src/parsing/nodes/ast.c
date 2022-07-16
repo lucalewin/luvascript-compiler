@@ -1,12 +1,12 @@
-#include <types/ast.h>
+#include <parsing/nodes/ast.h>
 
 #include <stdio.h>
 
-#include <scope_impl.h>
+#include <parsing/scope_impl.h>
 #include <util/arraylist.h>
 #include <util/util.h>
-#include <util/file.h>
-#include <types/package.h>
+#include <util/io/file.h>
+#include <parsing/nodes/package.h>
 #include <options.h>
 
 AST *ast_new() {

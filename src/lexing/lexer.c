@@ -1,4 +1,4 @@
-#include <lexer.h>
+#include <lexing/lexer.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,9 +6,9 @@
 
 #include <util/util.h>
 #include <util/string.h>
-#include <token.h>
+#include <lexing/token.h>
 
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 #define keywords_length 30
  

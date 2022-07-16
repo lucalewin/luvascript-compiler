@@ -1,4 +1,4 @@
-#include <util/file.h>
+#include <util/io/file.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +8,7 @@
 #include <dirent.h>
 
 #include <util/arraylist.h>
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 char *read_file(const char* path) {
     FILE *file = fopen(path, "r");

@@ -2,7 +2,7 @@
 #define __LUVA_X86_64_COMPILER_ASSEMBLY_PROGRAM_H__
 
 #include <util/arraylist.h>
-#include <assembly/section.h>
+#include <generation/arch/x86-64/assembly/section.h>
 
 typedef struct _AssemblyProgram {
     ArrayList *global_directives; // array of strings

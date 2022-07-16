@@ -1,12 +1,12 @@
-#include <assembly/section.h>
+#include <generation/arch/x86-64/assembly/section.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 #include <util/util.h>
-#include <assembly/datatypes.h>
+#include <generation/arch/x86-64/assembly/datatypes.h>
 
 BssSection *bss_section_new() {
     BssSection *section = calloc(1, sizeof(BssSection));

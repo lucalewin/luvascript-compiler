@@ -2,7 +2,7 @@
 #define __LUVA_X86_64_COMPILER_H__
 
 #include <options.h>
-#include <types/ast.h>
+#include <parsing/nodes/ast.h>
 
 char *compile_to_x86_64_assembly(AST *ast, CommandlineOptions *options);
 

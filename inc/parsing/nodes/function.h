@@ -2,8 +2,8 @@
 #define LUVA_TYPES_FUNCTION_H
 
 #include <util/arraylist.h>
-#include <types/statement.h>
-#include <types/datatypes.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/datatypes.h>
 
 typedef struct _function {
 	char *identifier;

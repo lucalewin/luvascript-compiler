@@ -1,10 +1,10 @@
-#include <logging/debug.h>
+#include <util/logging/debug.h>
 
 #include <stdio.h>
 
 #include <util/util.h>
-#include <types/literal.h>
-#include <logging/logger.h>
+#include <parsing/nodes/literal.h>
+#include <util/logging/logger.h>
 
 void print_literal(Literal_T *literal) {
     printf("{\"type\":\"%s\",\"value\":", LITERAL_TYPES[literal->type]);

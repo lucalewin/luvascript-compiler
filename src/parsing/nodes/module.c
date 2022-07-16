@@ -1,17 +1,17 @@
-#include <types/module.h>
+#include <parsing/nodes/module.h>
 
 #include <stdio.h>
 #include <string.h>
 
-#include <lexer.h>
-#include <header.h>
+#include <lexing/lexer.h>
+#include <parsing/header.h>
 
 #include <util/util.h>
 #include <util/arraylist.h>
-#include <util/file.h>
-#include <logging/logger.h>
+#include <util/io/file.h>
+#include <util/logging/logger.h>
 
-#include <types/package.h>
+#include <parsing/nodes/package.h>
 
 struct module *module_load(const char *path)
 {

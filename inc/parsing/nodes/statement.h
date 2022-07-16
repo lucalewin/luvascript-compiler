@@ -5,10 +5,10 @@
 
 #include <util/arraylist.h>
 
-#include <types/expression.h>
-#include <types/variable.h>
+#include <parsing/nodes/expression.h>
+#include <parsing/nodes/variable.h>
 
-#include <scope.h>
+#include <parsing/scope.h>
 
 // ---------------------------------
 

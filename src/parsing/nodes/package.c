@@ -1,8 +1,8 @@
-#include <types/package.h>
+#include <parsing/nodes/package.h>
 
-#include <scope_impl.h>
+#include <parsing/scope_impl.h>
 #include <util/arraylist.h>
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 Package *package_new() {
 	Package *package = malloc(sizeof(Package));

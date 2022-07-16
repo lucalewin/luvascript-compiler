@@ -1,8 +1,8 @@
 #ifndef __LUVA_COMPILER_CONVENTION_LCC_H__
 #define __LUVA_COMPILER_CONVENTION_LCC_H__
 
-#include <types/variable.h>
-#include <types/function.h>
+#include <parsing/nodes/variable.h>
+#include <parsing/nodes/function.h>
 
 /**
  * @brief implementation according to the `Luvascript Naming Convention` (LNC)

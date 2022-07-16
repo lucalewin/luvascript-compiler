@@ -1,15 +1,15 @@
-#include <generator.h>
+#include <generation/generator.h>
 
 #include <util/util.h>
-#include <util/file.h>
+#include <util/io/file.h>
 
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
-#include <types/function.h>
-#include <types/package.h>
-#include <types/ast.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/package.h>
+#include <parsing/nodes/ast.h>
 
-#include <x86-64/generator.h>
+#include <generation/arch/x86-64/generator.h>
 
 char *generate_assembly(AST *ast, CommandlineOptions *options) {
 	char *assembly = generate_x86_64_assembly(ast, options);

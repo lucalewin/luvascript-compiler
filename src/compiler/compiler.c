@@ -1,12 +1,12 @@
-#include <compiler.h>
+#include <compiler/compiler.h>
 
 #include <stdbool.h>
 
 #include <options.h>
 #include <util/util.h>
-#include <util/cmd.h>
-#include <util/file.h>
-#include <logging/logger.h>
+#include <util/io/cmd.h>
+#include <util/io/file.h>
+#include <util/logging/logger.h>
 
 void compile_to_object_file(const char *asm_filename, const char *obj_filename);
 void link_to_shared_library(const char *obj_filename, CommandlineOptions *options);

@@ -1,4 +1,4 @@
-#include <token.h>
+#include <lexing/token.h>
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-#include <assembly/stack.h>
+#include <generation/arch/x86-64/assembly/stack.h>
 
 #include <stdlib.h>
 

@@ -1,23 +1,23 @@
-#include <typechecker.h>
+#include <types/typechecker.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 
-#include <scope.h>
-#include <scope_impl.h>
+#include <parsing/scope.h>
+#include <parsing/scope_impl.h>
 
-#include <types/ast.h>
-#include <types/package.h>
-#include <types/function.h>
-#include <types/statement.h>
-#include <types/variable.h>
-#include <types/expression.h>
-#include <types/datatypes.h>
-#include <types/operator.h>
+#include <parsing/nodes/ast.h>
+#include <parsing/nodes/package.h>
+#include <parsing/nodes/function.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/variable.h>
+#include <parsing/nodes/expression.h>
+#include <parsing/nodes/datatypes.h>
+#include <parsing/nodes/operator.h>
 
-#include <logging/logger.h>
-#include <logging/debug.h>
+#include <util/logging/logger.h>
+#include <util/logging/debug.h>
 
 // validate code
 

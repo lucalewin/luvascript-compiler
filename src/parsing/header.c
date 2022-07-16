@@ -1,14 +1,14 @@
-#include <header.h>
+#include <parsing/header.h>
 
 #include <stdio.h>
 #include <string.h>
 
-#include <token.h>
+#include <lexing/token.h>
 #include <util/util.h>
 #include <util/arraylist.h>
-#include <types/package.h>
+#include <parsing/nodes/package.h>
 
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 ArrayList *header_parse(ArrayList *tokens)
 {
