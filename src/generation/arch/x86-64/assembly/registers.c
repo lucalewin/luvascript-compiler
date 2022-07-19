@@ -4,30 +4,64 @@
 #include <stdlib.h>
 
 struct _RegisterLayout {
-
+	RegisterInfo *registers[REGISTER_COUNT];
 };
 
 struct _RegisterInfo {
+	unsigned int is_empty : 1;
     size_t value_type;
-    size_t bytes;
+    size_t bytes : 1;
     char *value;
+};
+
+enum _RegisterInfoValueType {
+	REGISTER_INFO_VALUE_TYPE_NONE,
+	REGISTER_INFO_VALUE_TYPE_VARIABLE,
+	REGISTER_INFO_VALUE_TYPE_VALUE
 };
 
 RegisterLayout* register_layout_new() {
     RegisterLayout *layout = calloc(1, sizeof(RegisterLayout));
+	for (size_t i = 0; i < REGISTER_COUNT; i++) {
+		layout->registers[i] = calloc(1, sizeof(RegisterInfo));
+		layout->registers[i]->is_empty = 1;
+		layout->registers[i]->value_type = REGISTER_INFO_VALUE_TYPE_NONE;
+		layout->registers[i]->value = NULL;
+	}
     return layout;
 }
 
-void register_layout_set_value(RegisterLayout layout, Register reg, size_t bytes, char *value) {
-
+void register_setValue(RegisterLayout *layout, Register reg, size_t bytes, char *value) {
+	layout->registers[reg]->is_empty = 0;
+	layout->registers[reg]->value_type = REGISTER_INFO_VALUE_TYPE_VALUE;
+	layout->registers[reg]->bytes = bytes;
+	layout->registers[reg]->value = value;
 }
 
-void register_layout_set_var(RegisterLayout layout, Register reg, size_t bytes, char *var_name) {
-
+void register_setVariable(RegisterLayout *layout, Register reg, size_t bytes, char *var_name) {
+	layout->registers[reg]->is_empty = 0;
+	layout->registers[reg]->value_type = REGISTER_INFO_VALUE_TYPE_VARIABLE;
+	layout->registers[reg]->bytes = bytes;
+	layout->registers[reg]->value = var_name;
 }
 
-RegisterInfo *register_layout_get(RegisterLayout *layout, Register reg) {
-    return NULL;
+void register_clear(RegisterLayout *layout, Register reg) {
+	layout->registers[reg]->is_empty = 1;
+	layout->registers[reg]->value_type = REGISTER_INFO_VALUE_TYPE_NONE;
+	layout->registers[reg]->bytes = 0;
+	layout->registers[reg]->value = NULL;
+}
+
+RegisterInfo *register_layout_getRegisterInfo(RegisterLayout *layout, Register reg) {
+    // if (reg >= 0 && reg < REGISTER_COUNT) {
+	// 	return layout->registers[reg];
+	// }
+	// return NULL;
+	return layout->registers[reg];
+}
+
+int register_isEmpty(RegisterInfo *info) {
+	return info->is_empty;
 }
 
 void register_layout_free(RegisterLayout *layout) {
@@ -35,10 +69,26 @@ void register_layout_free(RegisterLayout *layout) {
         return;
     }
 
+	for (size_t i = 0; i < REGISTER_COUNT; i++) {
+		if (layout->registers[i]->value != NULL) {
+			free(layout->registers[i]->value);
+		}
+		free(layout->registers[i]);
+	}
+
     free(layout);
 }
 
-char *getRegisterWithOpCodeSize(Register reg, int opCodeSize) {
+Register getEmptyRegister(RegisterLayout *layout) {
+	for (size_t i = 0; i < REGISTER_COUNT; i++) {
+		if (layout->registers[i]->is_empty) {
+			return (Register)i;
+		}
+	}
+	return -1;
+}
+
+char *register_toString(Register reg, int opCodeSize) {
 	switch (opCodeSize) {
 		case 1:
 			switch (reg) {

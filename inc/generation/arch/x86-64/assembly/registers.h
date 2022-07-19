@@ -39,18 +39,26 @@ typedef enum _register {
     REGISTER_XMM15
 } Register;
 
+#ifndef REGISTER_COUNT
+    #define REGISTER_COUNT REGISTER_XMM15 + 1
+#endif
+
 typedef struct _RegisterLayout RegisterLayout;
 typedef struct _RegisterInfo RegisterInfo;
 
 RegisterLayout* register_layout_new();
 
-void register_layout_set_value(RegisterLayout layout, Register reg, size_t bytes, char *value);
-void register_layout_set_var(RegisterLayout layout, Register reg, size_t bytes, char *var_name);
+void register_setValue(RegisterLayout *layout, Register reg, size_t bytes, char *value);
+void register_setVariable(RegisterLayout *layout, Register reg, size_t bytes, char *var_name);
 
-RegisterInfo *register_layout_get(RegisterLayout *layout, Register reg);
+RegisterInfo *register_layout_getRegisterInfo(RegisterLayout *layout, Register reg);
 
 void register_layout_free(RegisterLayout *layout);
 
-char *getRegisterWithOpCodeSize(Register reg, int opCodeSize);
+int register_isEmpty(RegisterInfo *info);
+void register_clear(RegisterLayout *layout, Register reg);
+
+Register getEmptyRegister(RegisterLayout *layout);
+char *register_toString(Register reg, int opCodeSize);
 
 #endif // __LUVA_X86_64_COMPILER_REGISTERS_H__
