@@ -76,6 +76,7 @@ bool generate_declaration_statement(VariableDeclarationStatement *decl_stmt);
 bool generate_expression(Expression_T *expression, Register reg);
 
 bool generate_literal_expression(Literal_T *literal, Register reg);
+bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_reg);
 
 // ------------------------------------------------------------------------
 
@@ -471,6 +472,10 @@ bool generate_expression(Expression_T *expression, Register reg) {
 	switch (expression->type) {
 		case EXPRESSION_TYPE_LITERAL:
 			return generate_literal_expression(expression->expr.literal_expr, reg);
+		case EXPRESSION_TYPE_BINARY:
+			return generate_binary_expression(expression->expr.binary_expr, reg);
+		case EXPRESSION_TYPE_NESTED:
+			return generate_expression(expression->expr.nested_expr->expression, reg);
 		default:
 			// print error
 			log_error("Unsupported expression type: %d\n", expression->type);
@@ -498,17 +503,20 @@ bool generate_literal_expression(Literal_T *literal, Register reg) {
 		case LITERAL_NUMBER:
 			// FIXME: replace 8 with size of the number
 			// see typechecker.c : type_of_literal_expression()
-			ADD_INST("mov", getRegisterWithOpCodeSize(reg, 8) ,literal->value);
+			ADD_INST("mov", register_toString(reg, 8), literal->value);
+			register_setValue(register_layout, reg, 8, literal->value);
 			return true;
 		case LITERAL_BOOLEAN:
 			// FIXME: replace 8 with size of the number
 			// see typechecker.c : type_of_literal_expression()
-			ADD_INST("mov", getRegisterWithOpCodeSize(reg, 8), literal->value);
+			ADD_INST("mov", register_toString(reg, 8), literal->value);
+			register_setValue(register_layout, reg, 8, literal->value);
 			return true;
 		case LITERAL_CHARACTER:
 			// FIXME: replace 8 with size of the number
 			// see typechecker.c : type_of_literal_expression()
-			ADD_INST("mov", getRegisterWithOpCodeSize(reg, 8), literal->value);
+			ADD_INST("mov", register_toString(reg, 8), literal->value);
+			register_setValue(register_layout, reg, 8, literal->value);
 			return true;
 		default:
 			// TODO: support other types
@@ -517,4 +525,211 @@ bool generate_literal_expression(Literal_T *literal, Register reg) {
 			return false;
 	}
 	return false;
+}
+
+bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_reg) {
+
+	/*
+
+
+	Step 1: check if a register is empty
+			set other to the empty register
+			if no register is empty, set other and out_reg to -1
+
+	Step 1.5: check if binary operator requires special registers (div -> eax:edx/e?x)
+
+	Step 2: check if binary expression contains a literal expression
+			if so, generate generate other expression and 
+
+	Step 3: generate expression 1 and store result in other
+			generate expression 2 and store result in out_reg
+
+	*/
+
+	// step 1
+	Register other = -1;
+
+	for (size_t i = 0; i < REGISTER_COUNT; i++) {
+		if (i == out_reg) {
+			continue;
+		}
+		RegisterInfo *reg_info = register_layout_getRegisterInfo(register_layout, i);
+		if (register_isEmpty(reg_info)) {
+			other = i;
+			break;
+		}
+	}
+
+	// step 1.5
+	// TODO: implement step 1.5
+	bool pushed_rax = false;
+	bool pushed_rdx = false;
+	Register special_reg = -1;
+	if (binary_expr->operator == BINARY_OPERATOR_DIVIDE || binary_expr->operator == BINARY_OPERATOR_MODULO) {
+		other = REGISTER_RAX;
+		if (out_reg == REGISTER_RAX) {
+			for (size_t i = 0; i < REGISTER_COUNT; i++) {
+				if (i == out_reg || i == REGISTER_RDX) {
+					continue;
+				}
+				RegisterInfo *reg_info = register_layout_getRegisterInfo(register_layout, i);
+				if (register_isEmpty(reg_info)) {
+					special_reg = i;
+					break;
+				}
+			}
+		} else {
+			special_reg = out_reg;
+		}
+
+		RegisterInfo *rax = register_layout_getRegisterInfo(register_layout, REGISTER_RAX);
+		RegisterInfo *rdx = register_layout_getRegisterInfo(register_layout, REGISTER_RDX);
+
+		// if rax is not empty, push the value in rax on the stack
+		if (!register_isEmpty(rax)) {
+			ADD_INST("push", register_toString(REGISTER_RAX, 8));
+			pushed_rax = true;
+			// TODO: push the StackLayout + set value in RegisterLayout
+		}
+
+		// if rdx is not empty, push the value in rdx on the stack
+		if (!register_isEmpty(rdx)) {
+			ADD_INST("push", register_toString(REGISTER_RDX, 8));
+			pushed_rdx = true;
+			// TODO
+		}
+	}
+
+
+	// step 2
+	char *second_operand = NULL;
+
+	if (binary_expr->expression_right->type == EXPRESSION_TYPE_LITERAL) {
+
+		Literal_T *literal = binary_expr->expression_right->expr.literal_expr;
+		Expression_T *other_expr = binary_expr->expression_left;
+
+		// generate other expression and store result in out_reg
+		if (!generate_expression(other_expr, special_reg == -1 ? out_reg : other)) {
+			return false;
+		}
+
+		second_operand = literal->value;
+	} else {
+		// step 3
+		if (!generate_expression(binary_expr->expression_left, special_reg == -1 ? out_reg : other)) {
+			return false;
+		}
+
+		if (!generate_expression(binary_expr->expression_right, special_reg == -1 ? other : special_reg)) {
+			return false;
+		}
+
+		second_operand = register_toString(other, 8);
+	}
+
+	// add binary instruction with other and out_reg as registers
+	switch (binary_expr->operator) {
+		case BINARY_OPERATOR_ADD:
+			ADD_INST("add", register_toString(out_reg, 8), second_operand);
+			break;
+		case BINARY_OPERATOR_SUBTRACT:
+			ADD_INST("sub", register_toString(out_reg, 8), second_operand);
+			break;
+		case BINARY_OPERATOR_MULTIPLY:
+			ADD_INST("imul", register_toString(out_reg, 8), second_operand);
+			break;
+			// FIXME: see step 1.5
+		case BINARY_OPERATOR_DIVIDE:
+			if (binary_expr->expression_right->type == EXPRESSION_TYPE_LITERAL) {
+				ADD_INST("mov", register_toString(special_reg == -1 ? other : special_reg, 8), second_operand);
+			}
+
+			ADD_INST("idiv", register_toString(special_reg == -1 ? other : special_reg, 8));
+
+			if (out_reg != REGISTER_RAX) {
+				ADD_INST("mov", register_toString(out_reg, 8), register_toString(REGISTER_RAX, 8));
+			}
+
+			if (pushed_rax) {
+				ADD_INST("pop", register_toString(REGISTER_RAX, 8));
+			}
+			if (pushed_rdx) {
+				ADD_INST("pop", register_toString(REGISTER_RDX, 8));
+			}
+			break;
+		case BINARY_OPERATOR_MODULO:
+			if (binary_expr->expression_right->type == EXPRESSION_TYPE_LITERAL) {
+				ADD_INST("mov", register_toString(special_reg == -1 ? other : special_reg, 8), second_operand);
+			}
+			ADD_INST("idiv", register_toString(special_reg == -1 ? other : special_reg, 8));
+			if (out_reg != REGISTER_RDX) {
+				ADD_INST("mov", register_toString(out_reg, 8), register_toString(REGISTER_RDX, 8));
+			}
+			if (pushed_rax) {
+				ADD_INST("pop", register_toString(REGISTER_RAX, 8));
+			}
+			if (pushed_rdx) {
+				ADD_INST("pop", register_toString(REGISTER_RDX, 8));
+			}
+			break;
+		case BINARY_OPERATOR_LOGICAL_EQUAL:
+			ADD_INST("cmp", register_toString(out_reg, 8), second_operand);
+			ADD_INST("sete", register_toString(out_reg, 1));
+			break;
+		case BINARY_OPERATOR_LOGICAL_NOT_EQUAL:
+			ADD_INST("cmp", register_toString(out_reg, 8), second_operand);
+			ADD_INST("setne", register_toString(out_reg, 8));
+			break;
+		case BINARY_OPERATOR_LOGICAL_LESS:
+			ADD_INST("cmp", register_toString(out_reg, 8), second_operand);
+			ADD_INST("setl", register_toString(out_reg, 8));
+			break;
+		case BINARY_OPERATOR_LOGICAL_LESS_OR_EQUAL:
+			ADD_INST("cmp", register_toString(out_reg, 8), second_operand);
+			ADD_INST("setle", register_toString(out_reg, 8));
+			break;
+		case BINARY_OPERATOR_LOGICAL_GREATER:
+			ADD_INST("cmp", register_toString(out_reg, 8), second_operand);
+			ADD_INST("setg", register_toString(out_reg, 8));
+			break;
+		case BINARY_OPERATOR_LOGICAL_GREATER_OR_EQUAL:
+			ADD_INST("cmp", register_toString(out_reg, 8), second_operand);
+			ADD_INST("setge", register_toString(out_reg, 8));
+			break;
+		case BINARY_OPERATOR_BITWISE_AND:
+			ADD_INST("and", register_toString(out_reg, 8), second_operand);
+			break;
+		case BINARY_OPERATOR_BITWISE_OR:
+			ADD_INST("or", register_toString(out_reg, 8), second_operand);
+			break;
+		case BINARY_OPERATOR_BITWISE_XOR:
+			ADD_INST("xor", register_toString(out_reg, 8), second_operand);
+			break;
+		// FIXME: implement bitwise not
+		// case BINARY_OPERATOR_BITWISE_NOT:
+		// 	ADD_INST("not", register_toString(out_reg, 8), register_toString(out_reg, 8));
+		// 	break;
+		case BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT:
+			ADD_INST("shl", register_toString(out_reg, 8), second_operand);
+			break;
+		case BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT:
+			ADD_INST("shr", register_toString(out_reg, 8), second_operand);
+			break;
+		// FIXME: implement bitwise unsigned arithmetic right shift
+		// case BINARY_OPERATOR_BITWISE_SHIFT_RIGHT_UNSIGNED:
+		// 	ADD_INST("sar", register_toString(out_reg, 8), second_operand);
+		// 	break;
+		default:
+			// print error
+			log_error("Unsupported binary operator: %d\n", binary_expr->operator);
+			return false;
+	}
+
+	// clear other if it was set
+	if (other != -1) {
+		register_clear(register_layout, other);
+	}
+
+	return true;
 }
