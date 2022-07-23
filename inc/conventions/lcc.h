@@ -20,7 +20,7 @@ char *variable_as_lcc_identifier(Variable *var);
  * @param var the VariableTemplate to convert to a lcc identifier
  * @return char* the lcc identifier
  */
-char *variabletemplate_as_lcc_identifier(VariableTemplate *var);
+char *variabletemplate_toLCCIdentifier(VariableTemplate *var);
 
 /**
  * @brief implementation according to the `Luvascript Naming Convention` (LNC)
