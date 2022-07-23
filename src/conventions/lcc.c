@@ -19,7 +19,7 @@ char *variable_as_lcc_identifier(Variable *var) {
 	return identifier;
 }
 
-char *variabletemplate_as_lcc_identifier(VariableTemplate *var) {
+char *variabletemplate_toLCCIdentifier(VariableTemplate *var) {
 	size_t var_ident_length = strlen(var->identifier);
 	size_t datatype_ident_length = strlen(var->datatype->type_identifier);
 	size_t identifier_length = var_ident_length + datatype_ident_length + 7;
