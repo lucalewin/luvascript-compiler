@@ -13,13 +13,6 @@ typedef struct _datatype {
 	unsigned long long int array_size;
 } Datatype;
 
-typedef enum _DatatypeDirective {
-	DATATYPE_DIRECTIVE_BYTE = 1,
-	DATATYPE_DIRECTIVE_WORD = 2,
-	DATATYPE_DIRECTIVE_DWORD = 4,
-	DATATYPE_DIRECTIVE_QWORD = 8
-} DatatypeDirective;
-
 int types_equal(const Datatype *a, const Datatype *b);
 int datatype_is_number(const Datatype *datatype);
 

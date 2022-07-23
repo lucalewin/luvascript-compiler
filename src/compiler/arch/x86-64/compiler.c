@@ -11,6 +11,7 @@
 #include <util/logging/logger.h>
 
 #include <parsing/scope_impl.h>
+#include <generation/arch/x86-64/assembly/datatypes.h>
 #include <generation/arch/x86-64/assembly/registers.h>
 
 // nodes
@@ -1292,7 +1293,7 @@ char *compile_array_access_expression(ArrayAccessExpression_T *array_access_expr
 	// }
 
 	char *array_access_expr_code = compile_expression(array_access_expr->index_expression, scope);
-	char *dt_directive = to_datatype_directive(template->datatype);
+	const char *dt_directive = _AssemblyDataType_directives[template->datatype->size];
 	char *var_address = reference_pointer_variable(template, scope);
 
 	if (template->datatype->size <= 2) {

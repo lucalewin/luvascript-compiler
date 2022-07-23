@@ -105,24 +105,24 @@ void datatype_free(Datatype *datatype) {
 	free(datatype);
 }
 
-char *to_datatype_directive(const Datatype *datatype) {
-	if (datatype == NULL) return NULL;
-	//if (datatype->is_pointer) {
-	//	return "qword";
-	//}
-	switch (datatype->size) {
-		case DATATYPE_DIRECTIVE_BYTE:
-			return "byte";
-		case DATATYPE_DIRECTIVE_WORD:
-			return "word";
-		case DATATYPE_DIRECTIVE_DWORD:
-			return "dword";
-		case DATATYPE_DIRECTIVE_QWORD:
-			return "qword";
-		default:
-			return NULL;
-	}
-}
+// char *to_datatype_directive(const Datatype *datatype) {
+// 	if (datatype == NULL) return NULL;
+// 	//if (datatype->is_pointer) {
+// 	//	return "qword";
+// 	//}
+// 	switch (datatype->size) {
+// 		case DATATYPE_DIRECTIVE_BYTE:
+// 			return "byte";
+// 		case DATATYPE_DIRECTIVE_WORD:
+// 			return "word";
+// 		case DATATYPE_DIRECTIVE_DWORD:
+// 			return "dword";
+// 		case DATATYPE_DIRECTIVE_QWORD:
+// 			return "qword";
+// 		default:
+// 			return NULL;
+// 	}
+// }
 
 char *datatype_to_datatype_directive(const Datatype *datatype) {
 	log_error("datatype_to_datatype_directive not implemented\n");
