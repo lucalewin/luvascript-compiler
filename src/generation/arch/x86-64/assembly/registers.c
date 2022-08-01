@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct _RegisterLayout {
 	RegisterInfo *registers[REGISTER_COUNT];
@@ -39,6 +40,7 @@ void register_setValue(RegisterLayout *layout, Register reg, size_t bytes, char 
 }
 
 void register_setVariable(RegisterLayout *layout, Register reg, size_t bytes, char *var_name) {
+	printf("set variable %s\n", var_name);
 	layout->registers[reg]->is_empty = 0;
 	layout->registers[reg]->value_type = REGISTER_INFO_VALUE_TYPE_VARIABLE;
 	layout->registers[reg]->bytes = bytes;
@@ -52,6 +54,12 @@ void register_clear(RegisterLayout *layout, Register reg) {
 	layout->registers[reg]->value = NULL;
 }
 
+void register_clearAll(RegisterLayout *layout) {
+	for (size_t i = 0; i < REGISTER_COUNT; i++) {
+		register_clear(layout, i);
+	}
+}
+
 RegisterInfo *register_layout_getRegisterInfo(RegisterLayout *layout, Register reg) {
     // if (reg >= 0 && reg < REGISTER_COUNT) {
 	// 	return layout->registers[reg];
@@ -60,8 +68,21 @@ RegisterInfo *register_layout_getRegisterInfo(RegisterLayout *layout, Register r
 	return layout->registers[reg];
 }
 
-int register_isEmpty(RegisterInfo *info) {
+int registerinfo_isEmpty(RegisterInfo *info) {
 	return info->is_empty;
+}
+
+int register_isEmpty(RegisterLayout *layout, Register reg) {
+	return layout->registers[reg]->is_empty;
+}
+
+Register register_getEmpty(RegisterLayout *layout) {
+	for (size_t i = 0; i < REGISTER_COUNT; i++) {
+		if (layout->registers[i]->is_empty) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 void register_layout_free(RegisterLayout *layout) {
@@ -87,6 +108,30 @@ Register getEmptyRegister(RegisterLayout *layout) {
 	}
 	return -1;
 }
+
+
+int register_containsVariable(RegisterLayout *layout, char *var_name) {
+	for (size_t i = 0; i < REGISTER_COUNT; i++) {
+		if (layout->registers[i]->value_type == REGISTER_INFO_VALUE_TYPE_VARIABLE &&
+					strcmp(layout->registers[i]->value, var_name) == 0) {
+						printf("%s\n", layout->registers[i]->value);
+			return 1;
+		}
+	}
+	printf("var not in register\n");
+	return 0;
+}
+
+Register register_getVariable(RegisterLayout *layout, char *var_name) {
+	for (size_t i = 0; i < REGISTER_COUNT; i++) {
+		if (layout->registers[i]->value_type == REGISTER_INFO_VALUE_TYPE_VARIABLE &&
+					strcmp(layout->registers[i]->value, var_name) == 0) {
+			return (Register)i;
+		}
+	}
+	return -1;
+}
+
 
 char *register_toString(Register reg, int opCodeSize) {
 	switch (opCodeSize) {

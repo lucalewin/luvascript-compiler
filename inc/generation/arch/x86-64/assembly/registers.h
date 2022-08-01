@@ -55,10 +55,17 @@ RegisterInfo *register_layout_getRegisterInfo(RegisterLayout *layout, Register r
 
 void register_layout_free(RegisterLayout *layout);
 
-int register_isEmpty(RegisterInfo *info);
+int registerinfo_isEmpty(RegisterInfo *info);
+int register_isEmpty(RegisterLayout *layout, Register reg);
+Register register_getEmpty(RegisterLayout *layout);
+
 void register_clear(RegisterLayout *layout, Register reg);
+void register_clearAll(RegisterLayout *layout);
 
 Register getEmptyRegister(RegisterLayout *layout);
 char *register_toString(Register reg, int opCodeSize);
+
+int register_containsVariable(RegisterLayout *layout, char *var_name);
+Register register_getVariable(RegisterLayout *layout, char *var_name);
 
 #endif // __LUVA_X86_64_COMPILER_REGISTERS_H__
