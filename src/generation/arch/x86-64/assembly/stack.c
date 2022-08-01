@@ -33,7 +33,7 @@ void freeStackLayout(StackLayout *stack_layout) {
     if (stack_layout->items != NULL) {
         for (int i = 0; i < arraylist_size(stack_layout->items); i++) {
             StackItem *item = arraylist_get(stack_layout->items, i);
-            free(item->name);
+            // free(item->name);
             free(item);
         }
         arraylist_free(stack_layout->items);
@@ -83,7 +83,15 @@ void stack_pushRegister(StackLayout *stack_layout, Register reg, size_t size, Re
 }
 
 void stack_popRegister(StackLayout *stack_layout, Register reg, size_t size, RegisterLayout *reg_layout) {
+    if (stack_layout == NULL) {
+        return;
+    }
 
+    StackItem *item = arraylist_get(stack_layout->items, arraylist_size(stack_layout->items) - 1);
+    // arraylist_remove(stack_layout->items, arraylist_size(stack_layout->items) - 1);
+    arraylist_remove_at_index(stack_layout->items, arraylist_size(stack_layout->items) - 1);
+    stack_layout->size -= item->size;
+    free(item);
 }
 
 // ----------------------------------------------------------------
@@ -97,13 +105,25 @@ void stack_pushVariable(StackLayout *stack_layout, char *var_name, size_t size) 
     item->size = size;
     item->rbp_offset = stack_layout->size;
     item->type = STACK_ITEM_VARIABLE;
-    item->name = strdup(var_name);
+    item->name = var_name;//strdup(var_name);
     arraylist_add(stack_layout->items, item);
     stack_layout->size += size;
 }
 
 void stack_popVariable(StackLayout *stack_layout, char *var_name, size_t size) {
+    if (stack_layout == NULL) {
+        return;
+    }
 
+    for (int i = 0; i < arraylist_size(stack_layout->items); i++) {
+        StackItem *item = arraylist_get(stack_layout->items, i);
+        if (item->type == STACK_ITEM_VARIABLE && strcmp(item->name, var_name) == 0) {
+            arraylist_remove_at_index(stack_layout->items, i);
+            free(item);
+            stack_layout->size -= size;
+            break;
+        }
+    }
 }
 
 // ----------------------------------------------------------------
