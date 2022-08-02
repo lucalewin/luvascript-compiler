@@ -67,8 +67,8 @@ bool evaluate_function(Function *function);
 bool generate_statement(Statement *statement);
 
 bool generate_expression_statement(ExpressionStatement *expr_stmt, Scope *scope);
-bool generate_conditional_statement(ConditionalStatement *conditional_stmt);
-bool generate_loop_statement(LoopStatement *loop_stmt);
+bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scope *scope);
+bool generate_loop_statement(LoopStatement *loop_stmt, Scope *scope);
 bool generate_return_statement(ReturnStatement *return_statement, Scope *scope);
 bool generate_block_statement(CompoundStatement *block_stmt);
 bool generate_declaration_statement(VariableDeclarationStatement *decl_stmt, Scope *scope);
@@ -422,9 +422,9 @@ bool generate_statement(Statement *statement) {
 		case STATEMENT_EXPRESSION:
 			return generate_expression_statement(statement->stmt.expression_statement, statement->scope);
 		case STATEMENT_CONDITIONAL:
-			return generate_conditional_statement(statement->stmt.conditional_statement);
+			return generate_conditional_statement(statement->stmt.conditional_statement, statement->scope);
 		case STATEMENT_LOOP:
-			return generate_loop_statement(statement->stmt.loop_statement);
+			return generate_loop_statement(statement->stmt.loop_statement, statement->scope);
 		case STATEMENT_RETURN:
 			return generate_return_statement(statement->stmt.return_statement, statement->scope);
 		case STATEMENT_COMPOUND:
@@ -461,8 +461,57 @@ bool generate_expression_statement(ExpressionStatement *expr_stmt, Scope *scope)
  * @return true 
  * @return false 
  */
-bool generate_conditional_statement(ConditionalStatement *conditional_stmt) {
-	return false;
+bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scope *scope) {
+	static unsigned int conditional_label_counter = 0;
+	static unsigned int conditional_false_label_counter = 0;
+	static unsigned int conditional_end_label_generated = false;
+
+	size_t conditional_end_label_size = snprintf(NULL, 0, ".CE%u", conditional_label_counter);
+	char *conditional_end_label = malloc(conditional_end_label_size + 1);
+	snprintf(conditional_end_label, conditional_end_label_size + 1, ".CE%u", conditional_label_counter);
+
+	size_t conditional_false_label_size = snprintf(NULL, 0, ".CF%u", conditional_false_label_counter);
+	char *conditional_false_label = malloc(conditional_false_label_size + 1);
+	snprintf(conditional_false_label, conditional_false_label_size + 1, ".CF%u", conditional_false_label_counter);
+
+	if (!conditional_end_label_generated) {
+		conditional_end_label_generated = true;
+	}
+
+	// generate condition
+	if (!generate_expression(conditional_stmt->condition, REGISTER_RAX, scope)) {
+		return false;
+	}
+
+	// jump to end if condition is false
+	ADD_INST("cmp", register_toString(REGISTER_RAX, 8), "0");
+	ADD_INST("je", conditional_stmt->false_branch == NULL ? conditional_end_label : conditional_false_label);
+
+	// generate true statement
+	if (!generate_statement(conditional_stmt->true_branch)) {
+		return false;
+	}
+
+	if (conditional_stmt->false_branch != NULL) {
+		// jump to end if condition is true
+		ADD_INST("jmp", conditional_end_label);
+		ADD_TEXT_LABEL(conditional_false_label);
+		conditional_false_label_counter++;
+
+		// generate false statement
+		if (!generate_statement(conditional_stmt->false_branch)) {
+			return false;
+		}
+	}
+	
+	if (conditional_end_label_generated) {
+		ADD_TEXT_LABEL(conditional_end_label);
+		free(conditional_end_label);
+		conditional_label_counter++;
+		conditional_end_label_generated = false;
+	}
+
+	return true; // FIXME
 }
 
 /**
@@ -472,8 +521,44 @@ bool generate_conditional_statement(ConditionalStatement *conditional_stmt) {
  * @return true 
  * @return false 
  */
-bool generate_loop_statement(LoopStatement *loop_stmt) {
-	return false;
+bool generate_loop_statement(LoopStatement *loop_stmt, Scope *scope) {
+	static unsigned int loop_counter = 0;
+
+	size_t loop_label_length = snprintf(NULL, 0, ".LC%u", loop_counter);
+	char *loop_label = calloc(loop_label_length + 1, sizeof(char));
+	sprintf(loop_label, ".LC%u", loop_counter);
+
+	size_t loop_end_label_length = snprintf(NULL, 0, ".LE%u", loop_counter);
+	char *loop_end_label = calloc(loop_end_label_length + 1, sizeof(char));
+	sprintf(loop_end_label, ".LE%u", loop_counter);
+
+	// FUTURE OPTIMIZATION: check if the binary should be optimized for size or speed
+
+	ADD_TEXT_LABEL(loop_label);
+	// generate loop condition
+	
+	if (!generate_expression(loop_stmt->condition, REGISTER_RAX, scope)) {
+		return false;
+	}
+
+	// if the condition is false, jump to the end of the loop
+	ADD_INST("cmp", register_toString(REGISTER_RAX, 8), "0");
+	ADD_INST("je", loop_end_label);
+
+	// generate loop body
+	if (!generate_statement(loop_stmt->body)) {
+		return false;
+	}
+
+	// jump to the start of the loop
+	ADD_INST("jmp", loop_label);
+
+	// end of loop label
+	ADD_TEXT_LABEL(loop_end_label);
+
+	loop_counter++;
+
+	return true; // FIXME
 }
 
 /**
@@ -690,55 +775,75 @@ bool generate_literal_expression(Literal_T *literal, Register reg, Scope *scope)
 }
 
 bool generate_unary_expression(UnaryExpression_T *unary_expr, Register reg, Scope *scope) {
-	// if literal is a number and the operator is - --> move the number into the register then negate it
+	switch (unary_expr->operator) {
+		case UNARY_OPERATOR_NEGATE:
+			// only variables can be negated
+			// (numbers are already negated by the compiler)
 
-	// if literal is a boolean and the operator is ! --> mov opposite of boolean into reg
-
-	char *operand = NULL;
-
-	switch (unary_expr->identifier->type) {
-		case LITERAL_NUMBER:
-		case LITERAL_BOOLEAN:
-		case LITERAL_CHARACTER:
-			ADD_INST("mov", register_toString(reg, 8), unary_expr->identifier->value);
-			register_setValue(register_layout, reg, 8, unary_expr->identifier->value);
-			operand = register_toString(reg, 8);
-			break;
-
-		case LITERAL_IDENTIFIER: {
-
-			char *var = generate_operand_for_variable(scope_get_variable_by_name(scope, unary_expr->identifier->value), scope);
-
-			size_t var_rbp_offset = stack_getVariableOffset(stack_layout, unary_expr->identifier->value);
-			size_t var_size = stack_getItemSize(stack_layout, var_rbp_offset);
-
-			if (var_rbp_offset == -1 || var_size == -1) {
+			if (unary_expr->identifier->type != LITERAL_IDENTIFIER) {
+				log_error("Unary operator '-' can only be applied to variables and number literals\n");
 				return false;
 			}
 
-			char *mnemonic = var_size == 8 ? "mov" : "movsx";
+			// get the size of the variable
+			char *mnemonic = NULL;
+			char *operand = generate_variable_pointer(unary_expr->identifier->value, scope);
 
-			ADD_INST(mnemonic, register_toString(reg, 8), var);
-			register_setValue(register_layout, reg, 8, var);
-			operand = register_toString(reg, 8);
+			if (scope_contains_global_variable(scope, unary_expr->identifier->value)) {
+				VariableTemplate *variable = scope_get_variable_by_name(scope, unary_expr->identifier->value);
+				mnemonic = variable->datatype->size == 8 ? "mov" : "movsx";
+			} else {
+				size_t var_rbp_offset = stack_getVariableOffset(stack_layout, unary_expr->identifier->value);
+				size_t var_size = stack_getItemSize(stack_layout, var_rbp_offset);
 
-			free(var);
+				if (var_rbp_offset == -1 || var_size == -1) {
+					return false;
+				}
+
+				mnemonic = var_size == 8 ? "mov" : "movsx";
+			}
+
+			ADD_INST("neg", operand);
+			ADD_INST(mnemonic, register_toString(reg, 8), operand);
+			register_setValue(register_layout, reg, 8, NULL);
+
+			free(operand);
+			break;
+		case UNARY_OPERATOR_INCREMENT: {
+
+			// the identifier can only be a variable (because of the typechecker) but safety first
+			if (unary_expr->identifier->type != LITERAL_IDENTIFIER) {
+				log_error("Unsupported literal type: %d\n", unary_expr->identifier->type);
+				return false;
+			}
+
+			char *mnemonic = NULL;
+			char *value = NULL;
+
+			if (scope_contains_global_variable(scope, unary_expr->identifier->value)) {
+				VariableTemplate *variable = scope_get_variable_by_name(scope, unary_expr->identifier->value);
+				mnemonic = variable->datatype->size == 8 ? "mov" : "movsx";
+				value = generate_variable_pointer(variable->identifier, scope);
+			} else {
+				size_t var_rbp_offset = stack_getVariableOffset(stack_layout, unary_expr->identifier->value);
+				size_t var_size = stack_getItemSize(stack_layout, var_rbp_offset);
+
+				if (var_rbp_offset == -1 || var_size == -1) {
+					return false;
+				}
+
+				mnemonic = var_size == 8 ? "mov" : "movsx";
+				value = generate_local_variable_pointer(var_rbp_offset, var_size);
+			}
+
+			ADD_INST("inc", value);
+			ADD_INST(mnemonic, register_toString(reg, 8), value);
+			register_setVariable(register_layout, reg, 8, unary_expr->identifier->value);
+
+			free(value);
+
 			break;
 		}
-		
-		default:
-			// print error
-			log_error("Unsupported literal type: %d\n", unary_expr->identifier->type);
-			return false;
-	}
-
-	switch (unary_expr->operator) {
-		case UNARY_OPERATOR_NEGATE:
-			ADD_INST("neg", operand);
-			break;
-		case UNARY_OPERATOR_INCREMENT:
-			ADD_INST("inc", operand);
-			break;
 		default:
 			// print error
 			log_error("Unsupported unary operator: %d\n", unary_expr->operator);
