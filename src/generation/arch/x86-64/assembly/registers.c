@@ -40,7 +40,6 @@ void register_setValue(RegisterLayout *layout, Register reg, size_t bytes, char 
 }
 
 void register_setVariable(RegisterLayout *layout, Register reg, size_t bytes, char *var_name) {
-	printf("set variable %s\n", var_name);
 	layout->registers[reg]->is_empty = 0;
 	layout->registers[reg]->value_type = REGISTER_INFO_VALUE_TYPE_VARIABLE;
 	layout->registers[reg]->bytes = bytes;
@@ -118,7 +117,6 @@ int register_containsVariable(RegisterLayout *layout, char *var_name) {
 			return 1;
 		}
 	}
-	printf("var not in register\n");
 	return 0;
 }
 
