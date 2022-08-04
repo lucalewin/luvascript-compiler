@@ -51,6 +51,9 @@ RegisterLayout* register_layout_new();
 void register_setValue(RegisterLayout *layout, Register reg, size_t bytes, char *value);
 void register_setVariable(RegisterLayout *layout, Register reg, size_t bytes, char *var_name);
 
+char *register_getValue(RegisterLayout *layout, Register reg);
+char *register_getValueType(RegisterLayout *layout, Register reg);
+
 RegisterInfo *register_layout_getRegisterInfo(RegisterLayout *layout, Register reg);
 
 void register_layout_free(RegisterLayout *layout);

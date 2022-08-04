@@ -46,6 +46,22 @@ void register_setVariable(RegisterLayout *layout, Register reg, size_t bytes, ch
 	layout->registers[reg]->value = var_name;
 }
 
+char *register_getValue(RegisterLayout *layout, Register reg) {
+	return layout->registers[reg]->value;
+}
+
+char *register_getValueType(RegisterLayout *layout, Register reg) {
+	switch (layout->registers[reg]->value_type) {
+		case REGISTER_INFO_VALUE_TYPE_NONE:
+			return "none";
+		case REGISTER_INFO_VALUE_TYPE_VARIABLE:
+			return "variable";
+		case REGISTER_INFO_VALUE_TYPE_VALUE:
+			return "value";
+	}
+	return "unknown";
+}
+
 void register_clear(RegisterLayout *layout, Register reg) {
 	layout->registers[reg]->is_empty = 1;
 	layout->registers[reg]->value_type = REGISTER_INFO_VALUE_TYPE_NONE;
