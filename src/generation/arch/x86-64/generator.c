@@ -81,6 +81,9 @@ bool generate_unary_expression(UnaryExpression_T *unary_expr, Register reg, Scop
 bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_reg, Scope *scope);
 bool generate_functioncall_expression(FunctionCallExpression_T *func_call_expr, Register out_reg, Scope *scope);
 bool generate_assignment_expression(AssignmentExpression_T *assignment_expr, Register out_reg, Scope *scope);
+bool generate_array_access_expression(ArrayAccessExpression_T *array_index_expr, Register out_reg, Scope *scope);
+// bool generate_member_access_expression(MemberAccessExpression_T *member_access_expr, Register out_reg, Scope *scope);
+bool generate_list_expression(ExpressionList_T *expr_list, Register out_reg, Scope *scope);
 
 // utility functions
 char *generate_local_variable_pointer(size_t rbp_offset, size_t size);
@@ -715,6 +718,10 @@ bool generate_expression(Expression_T *expression, Register reg, Scope *scope) {
 			return generate_functioncall_expression(expression->expr.func_call_expr, reg, scope);
 		case EXPRESSION_TYPE_ASSIGNMENT:
 			return generate_assignment_expression(expression->expr.assignment_expr, reg, scope);
+		case EXPRESSION_TYPE_ARRAYACCESS:
+			return generate_array_access_expression(expression->expr.array_access_expr, reg, scope);
+		case EXPRESSION_TYPE_LIST:
+			return generate_list_expression(expression->expr.list_expr, reg, scope);
 		default:
 			// print error
 			log_error("Unsupported expression type: %d\n", expression->type);
@@ -1360,6 +1367,80 @@ bool generate_assignment_expression(AssignmentExpression_T *assignment_expr, Reg
 	}
 
 	return true;
+}
+
+bool generate_array_access_expression(ArrayAccessExpression_T *array_index_expr, Register out_reg, Scope *scope) {
+
+	if (array_index_expr->identifier->type != LITERAL_IDENTIFIER) {
+		log_error("Array access to non-literal identifier not supported\n");
+		return false;
+	}
+	
+	Register index_expression_register = register_getEmpty(register_layout);
+
+	if (index_expression_register == -1) {
+		log_error("No empty register available\n");
+		return false;
+	}
+
+	if (!generate_expression(
+			array_index_expr->index_expression,
+			index_expression_register,
+			scope)) {
+		return false;
+	}
+
+	VariableTemplate *variable = scope_get_variable_by_name(scope, array_index_expr->identifier->value);
+	char *mnemonic = variable->datatype->size == 8 ? "mov" : "movsx";
+
+	if (scope_contains_local_variable(scope, array_index_expr->identifier->value)) {
+		// local variable
+		size_t var_rbp_offset = stack_getVariableOffset(stack_layout, array_index_expr->identifier->value);
+
+		if (var_rbp_offset == -1) {
+			log_error("Variable %s not found\n", array_index_expr->identifier->value);
+			return false;
+		}
+
+		const char *format = "%s[rbp-%d+%s*%d]";
+		const char *datatype_directive = _AssemblyDataType_directives[variable->datatype->size];
+		const int offset = var_rbp_offset + variable->datatype->size * (variable->datatype->array_size - 1);
+		const char *register_str = register_toString(index_expression_register, 8);
+		const int array_offset = variable->datatype->size;
+
+
+		size_t address_str_length = snprintf(NULL, 0, format, datatype_directive, offset, register_str, array_offset);
+		char *address_str = calloc(address_str_length + 1, sizeof(char));
+		sprintf(address_str, format, datatype_directive, offset, register_str, array_offset);	
+
+		ADD_INST(mnemonic, register_toString(out_reg, 8), address_str);
+
+		free(address_str);
+	} else {
+		// global variable
+		char *format = "%s[%s+%d*%s]";
+		const char *datatype_directive = _AssemblyDataType_directives[variable->datatype->size];
+		char *lcc_identifier = variabletemplate_toLCCIdentifier(variable);
+		char *register_str = register_toString(index_expression_register, 8);
+
+		size_t source_operand_length = snprintf(NULL, 0, format, datatype_directive,
+					lcc_identifier, variable->datatype->size, register_str);
+		char *source_operand = calloc(source_operand_length + 1, sizeof(char));
+		sprintf(source_operand, format, datatype_directive,
+				lcc_identifier, variable->datatype->size, register_str);
+
+
+		ADD_INST(mnemonic, register_toString(out_reg, 8), source_operand);
+
+		free(lcc_identifier);
+		free(source_operand);
+	}
+
+	return true;
+}
+
+bool generate_list_expression(ExpressionList_T *expr_list, Register out_reg, Scope *scope) {
+	return false; // TODO
 }
 
 char *generate_operand_for_variable(VariableTemplate *variable, Scope *scope) {
