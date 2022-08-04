@@ -70,7 +70,7 @@ bool generate_expression_statement(ExpressionStatement *expr_stmt, Scope *scope)
 bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scope *scope);
 bool generate_loop_statement(LoopStatement *loop_stmt, Scope *scope);
 bool generate_return_statement(ReturnStatement *return_statement, Scope *scope);
-bool generate_block_statement(CompoundStatement *block_stmt);
+bool generate_block_statement(CompoundStatement *block_stmt, Scope *scope);
 bool generate_declaration_statement(VariableDeclarationStatement *decl_stmt, Scope *scope);
 
 // expressions
@@ -428,7 +428,7 @@ bool generate_statement(Statement *statement) {
 		case STATEMENT_RETURN:
 			return generate_return_statement(statement->stmt.return_statement, statement->scope);
 		case STATEMENT_COMPOUND:
-			return generate_block_statement(statement->stmt.compound_statement);
+			return generate_block_statement(statement->stmt.compound_statement, statement->scope);
 		case STATEMENT_VARIABLE_DECLARATION:
 			return generate_declaration_statement(statement->stmt.variable_decl, statement->scope);
 		case STATEMENT_ASSEMBLY_CODE_BLOCK:
@@ -599,13 +599,38 @@ bool generate_return_statement(ReturnStatement *return_statement, Scope *scope) 
  * @return true 
  * @return false 
  */
-bool generate_block_statement(CompoundStatement *block_stmt) {
+bool generate_block_statement(CompoundStatement *block_stmt, Scope *scope) {
+
+	// check if new variables are declared in the block
+	if (arraylist_size(block_stmt->local_scope->local_variable_templates) > 0) {
+		// calculate the size of the stack frame for the new variables
+		size_t stack_frame_size = 0;
+		
+		for (size_t i = 0; i < arraylist_size(block_stmt->local_scope->local_variable_templates); i++) {
+			VariableTemplate *variable_template = arraylist_get(block_stmt->local_scope->local_variable_templates, i);
+			stack_frame_size += variable_template->datatype->size;
+			stack_pushVariable(stack_layout, variable_template->identifier, variable_template->datatype->size);
+		}
+
+		// convert the stack frame size to a string
+		size_t stack_frame_str_length = snprintf(NULL, 0, "%zu", stack_frame_size);
+		char *stack_frame_size_str = calloc(stack_frame_str_length + 1, sizeof(char));
+		sprintf(stack_frame_size_str, "%zu", stack_frame_size);
+
+		// allocate space for the new variables
+		setup_stack_frame = true;
+		ADD_INST("sub", register_toString(REGISTER_RSP, 8), stack_frame_size_str);
+
+		free(stack_frame_size_str);
+	}
+
 	for (size_t i = 0; i < arraylist_size(block_stmt->nested_statements); i++) {
 		Statement *statement = arraylist_get(block_stmt->nested_statements, i);
 		if (!generate_statement(statement)) {
 			return false;
 		}
 	}
+
 	return true;
 }
 
@@ -708,12 +733,22 @@ bool generate_literal_expression(Literal_T *literal, Register reg, Scope *scope)
 			ADD_INST("mov", register_toString(reg, 8), literal->value);
 			register_setValue(register_layout, reg, 8, literal->value);
 			return true;
-		case LITERAL_CHARACTER:
+		case LITERAL_CHARACTER: {
 			// FIXME: replace 8 with size of the number
 			// see typechecker.c : type_of_literal_expression()
-			ADD_INST("mov", register_toString(reg, 8), literal->value);
-			register_setValue(register_layout, reg, 8, literal->value);
+
+			// convert the character to a string
+			size_t len = snprintf(NULL, 0, "'%s'", literal->value);
+			char *char_str = calloc(len + 1, sizeof(char));
+			sprintf(char_str, "'%s'", literal->value);
+
+			ADD_INST("mov", register_toString(reg, 8), char_str);
+			register_setValue(register_layout, reg, 8, char_str);
+			
+			free(char_str);
+			
 			return true;
+		}
 		case LITERAL_IDENTIFIER:
 			// check if the variable is already stored in a register
 			if (register_containsVariable(register_layout, literal->value)) {
