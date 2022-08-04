@@ -464,7 +464,7 @@ bool generate_expression_statement(ExpressionStatement *expr_stmt, Scope *scope)
 bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scope *scope) {
 	static unsigned int conditional_label_counter = 0;
 	static unsigned int conditional_false_label_counter = 0;
-	static unsigned int conditional_end_label_generated = false;
+	// static unsigned int conditional_end_label_generated = false;
 
 	size_t conditional_end_label_size = snprintf(NULL, 0, ".CE%u", conditional_label_counter);
 	char *conditional_end_label = malloc(conditional_end_label_size + 1);
@@ -474,9 +474,12 @@ bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scop
 	char *conditional_false_label = malloc(conditional_false_label_size + 1);
 	snprintf(conditional_false_label, conditional_false_label_size + 1, ".CF%u", conditional_false_label_counter);
 
-	if (!conditional_end_label_generated) {
-		conditional_end_label_generated = true;
-	}
+	// if (!conditional_end_label_generated) {
+	// 	conditional_end_label_generated = true;
+	// }
+
+	conditional_label_counter++;
+	conditional_false_label_counter++;
 
 	// generate condition
 	if (!generate_expression(conditional_stmt->condition, REGISTER_RAX, scope)) {
@@ -496,7 +499,8 @@ bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scop
 		// jump to end if condition is true
 		ADD_INST("jmp", conditional_end_label);
 		ADD_TEXT_LABEL(conditional_false_label);
-		conditional_false_label_counter++;
+		free(conditional_false_label);
+		// conditional_false_label_counter++;
 
 		// generate false statement
 		if (!generate_statement(conditional_stmt->false_branch)) {
@@ -504,12 +508,16 @@ bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scop
 		}
 	}
 	
-	if (conditional_end_label_generated) {
-		ADD_TEXT_LABEL(conditional_end_label);
-		free(conditional_end_label);
-		conditional_label_counter++;
-		conditional_end_label_generated = false;
-	}
+	ADD_TEXT_LABEL(conditional_end_label);
+	free(conditional_end_label);
+	// conditional_label_counter++;
+
+	// if (conditional_end_label_generated) {
+	// 	ADD_TEXT_LABEL(conditional_end_label);
+	// 	free(conditional_end_label);
+	// 	conditional_label_counter++;
+	// 	conditional_end_label_generated = false;
+	// }
 
 	return true; // FIXME
 }
