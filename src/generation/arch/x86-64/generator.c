@@ -379,11 +379,23 @@ bool evaluate_function(Function *function) {
 		char *bytes_to_allocate_label = int_to_string(bytes_to_allocate);
 		
 		ADD_INST("sub", "rsp", bytes_to_allocate_label);
-
-		// print size of the stack
-		// printf("\nstack-size: %ld\n", stack_getSize(stack_layout));
-
 		free(bytes_to_allocate_label);
+
+		// https://lucr4ft.github.io/luvascript-compiler/compiler/conventions/x64/calling-convention/#parameter-passing
+		// arg0 | arg1 | arg2 | arg3 | arg4 | arg5 | argN
+		// rdi  | rsi  | rdx  | rcx  | r8   | r9   | stack
+		Register param_regs[] = {REGISTER_RDI, REGISTER_RSI, REGISTER_RDX, REGISTER_RCX, REGISTER_R8, REGISTER_R9};
+		unsigned int index = min(arraylist_size(function->parameters), 6);
+
+		for (size_t i = 0; i < index; i++) {
+			VariableTemplate *variable_template = arraylist_get(function->scope->local_variable_templates, i);
+			char *var = generate_variable_pointer(variable_template->identifier, function->scope);
+			ADD_INST("mov", var, register_toString(param_regs[i], variable_template->datatype->size));
+			free(var);
+		}
+
+		// TODO: add support for more than 6 parameters
+
 	}
 
 	// generate statements
@@ -490,6 +502,9 @@ bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scop
 	ADD_INST("cmp", register_toString(REGISTER_RAX, 8), "0");
 	ADD_INST("je", conditional_stmt->false_branch == NULL ? conditional_end_label : conditional_false_label);
 
+	// clear all registers (they were used for condition and may not have been cleared)
+	register_clearAll(register_layout);
+
 	// generate true statement
 	if (!generate_statement(conditional_stmt->true_branch)) {
 		return false;
@@ -552,6 +567,9 @@ bool generate_loop_statement(LoopStatement *loop_stmt, Scope *scope) {
 	// if the condition is false, jump to the end of the loop
 	ADD_INST("cmp", register_toString(REGISTER_RAX, 8), "0");
 	ADD_INST("je", loop_end_label);
+
+	// clear all registers
+	register_clearAll(register_layout);
 
 	// generate loop body
 	if (!generate_statement(loop_stmt->body)) {
@@ -962,17 +980,16 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 		if (!registerinfo_isEmpty(rax)) {
 			ADD_INST("push", register_toString(REGISTER_RAX, 8));
 			pushed_rax = true;
-			// TODO: push the StackLayout + set value in RegisterLayout
+			stack_pushRegister(stack_layout, REGISTER_RAX, 8, register_layout);
 		}
 
 		// if rdx is not empty, push the value in rdx on the stack
 		if (!registerinfo_isEmpty(rdx)) {
 			ADD_INST("push", register_toString(REGISTER_RDX, 8));
 			pushed_rdx = true;
-			// TODO
+			stack_pushRegister(stack_layout, REGISTER_RDX, 8, register_layout);
 		}
 	}
-
 
 	// step 2
 	char *second_operand = NULL;
@@ -1008,8 +1025,6 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 
 				char *var_pointer = generate_local_variable_pointer(var_rbp_offset, var_size);
 				// char *var_pointer = generate_variable_pointer(literal->value, scope);
-
-				printf("VAR_POINTER: %s\n", var_pointer);
 
 				reg_other_size = var_size;
 				second_operand = var_pointer;
@@ -1055,6 +1070,8 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 				ADD_INST("mov", register_toString(special_reg == -1 ? other : special_reg, reg_other_size), second_operand);
 			}
 
+			ADD_INST("xor", register_toString(REGISTER_RDX, 8), register_toString(REGISTER_RDX, 8));
+
 			ADD_INST("idiv", register_toString(special_reg == -1 ? other : special_reg, reg_other_size));
 
 			if (out_reg != REGISTER_RAX) {
@@ -1072,6 +1089,7 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 			if (binary_expr->expression_right->type == EXPRESSION_TYPE_LITERAL) {
 				ADD_INST("mov", register_toString(special_reg == -1 ? other : special_reg, 8), second_operand);
 			}
+			ADD_INST("xor", register_toString(REGISTER_RDX, 8), register_toString(REGISTER_RDX, 8));
 			ADD_INST("idiv", register_toString(special_reg == -1 ? other : special_reg, 8));
 			if (out_reg != REGISTER_RDX) {
 				ADD_INST("mov", register_toString(out_reg, out_reg_size), register_toString(REGISTER_RDX, 8));
@@ -1238,8 +1256,7 @@ bool generate_functioncall_expression(FunctionCallExpression_T *func_call_expr, 
 }
 
 bool generate_assignment_expression(AssignmentExpression_T *assignment_expr, Register out_reg, Scope *scope) {
-	printf("generate_assignment_expression\n");
-	
+
 	if (assignment_expr->identifier->type != EXPRESSION_TYPE_LITERAL) {
 		log_error("Assignment to non-literal identifier not supported\n");
 		return false;
@@ -1290,8 +1307,6 @@ bool generate_assignment_expression(AssignmentExpression_T *assignment_expr, Reg
 	}
 
 	char *var_pointer = generate_local_variable_pointer(var_rbp_offset, var_size);
-
-	printf("assignment operator %d\n", assignment_expr->operator);
 
 	// add assignement instruction
 	switch (assignment_expr->operator) {
