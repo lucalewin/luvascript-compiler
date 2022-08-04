@@ -163,3 +163,11 @@ char *int_to_string(int i) {
 	snprintf(str, length + 1, "%d", i);
 	return str;
 }
+
+int min(int x, int y) {
+    return x < y ? x : y;
+}
+
+int max(int x, int y) {
+    return x > y ? x : y;
+}
