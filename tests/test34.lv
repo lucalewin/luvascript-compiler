@@ -1,0 +1,19 @@
+function main(): i32 {
+
+	const x: i32 = 20;
+
+	if (x > 10) {
+		
+		if (x < 20) {	
+			return 1;
+		} else if (x > 20) {	
+			return 2;
+		} else {
+			return 3;
+		}
+
+	} else {
+		return 0;
+	}
+
+}
