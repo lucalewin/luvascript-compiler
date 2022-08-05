@@ -7,6 +7,7 @@
 FunctionTemplate *convert_to_function_template(Function *func) {
 	FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));
 	func_template->identifier = strdup(func->identifier);
+	func_template->id = func->id;
 	func_template->return_type = copy_datatype(func->return_type);
 	func_template->param_datatypes = arraylist_create();
 
@@ -23,6 +24,7 @@ FunctionTemplate *copy_function_template(FunctionTemplate *template_function) {
 	FunctionTemplate *new_func_template = calloc(1, sizeof(FunctionTemplate));
 	
 	new_func_template->identifier = strdup(template_function->identifier);
+	new_func_template->id = template_function->id;
 	new_func_template->return_type = copy_datatype(template_function->return_type);
 	new_func_template->param_datatypes = arraylist_create();
 

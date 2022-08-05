@@ -70,8 +70,9 @@ bool generate_expression_statement(ExpressionStatement *expr_stmt, Scope *scope)
 bool generate_conditional_statement(ConditionalStatement *conditional_stmt, Scope *scope);
 bool generate_loop_statement(LoopStatement *loop_stmt, Scope *scope);
 bool generate_return_statement(ReturnStatement *return_statement, Scope *scope);
-bool generate_block_statement(CompoundStatement *block_stmt, Scope *scope);
+bool generate_block_statement(CompoundStatement *assembly_code_block, Scope *scope);
 bool generate_declaration_statement(VariableDeclarationStatement *decl_stmt, Scope *scope);
+bool generate_assembly_code_block_statement(AssemblyCodeBlockStatement *block_stmt, Scope *scope);
 
 // expressions
 bool generate_expression(Expression_T *expression, Register reg, Scope *scope);
@@ -374,9 +375,14 @@ bool evaluate_function(Function *function) {
 
 		for (size_t i = 0; i < arraylist_size(function->scope->local_variable_templates); i++) {
 			VariableTemplate *variable_template = arraylist_get(function->scope->local_variable_templates, i);
-			bytes_to_allocate += variable_template->datatype->size;
+			
+			size_t size = variable_template->datatype->is_array
+							|| variable_template->datatype->is_pointer
+							? 8 : variable_template->datatype->size;
 
-			stack_pushVariable(stack_layout, variable_template->identifier, variable_template->datatype->size);
+			bytes_to_allocate += size;
+
+			stack_pushVariable(stack_layout, variable_template->identifier, size);
 		}
 
 		char *bytes_to_allocate_label = int_to_string(bytes_to_allocate);
@@ -393,7 +399,10 @@ bool evaluate_function(Function *function) {
 		for (size_t i = 0; i < index; i++) {
 			VariableTemplate *variable_template = arraylist_get(function->scope->local_variable_templates, i);
 			char *var = generate_variable_pointer(variable_template->identifier, function->scope);
-			ADD_INST("mov", var, register_toString(param_regs[i], variable_template->datatype->size));
+			size_t size = variable_template->datatype->is_array
+							|| variable_template->datatype->is_pointer
+							? 8 : variable_template->datatype->size;
+			ADD_INST("mov", var, register_toString(param_regs[i], size));
 			free(var);
 		}
 
@@ -447,7 +456,7 @@ bool generate_statement(Statement *statement) {
 		case STATEMENT_VARIABLE_DECLARATION:
 			return generate_declaration_statement(statement->stmt.variable_decl, statement->scope);
 		case STATEMENT_ASSEMBLY_CODE_BLOCK:
-			return false;
+			return generate_assembly_code_block_statement(statement->stmt.assembly_code_block_statement, statement->scope);
 	}
 
 	return false;
@@ -694,6 +703,27 @@ bool generate_declaration_statement(VariableDeclarationStatement *decl_stmt, Sco
 	return true;
 }
 
+/**
+ * @brief 
+ * 
+ * @param assembly_code_block 
+ * @param scope 
+ * @return true 
+ * @return false 
+ */
+bool generate_assembly_code_block_statement(AssemblyCodeBlockStatement *assembly_code_block, Scope *scope) {
+
+	// TODO: parse assembly + check if assembly is valid
+	// (1) split assembly code into lines
+	// (2) trim lines
+	// (3) check if line is empty
+	// (4) add line as instruction
+
+	ADD_INST(assembly_code_block->code);
+
+	return true;
+}
+
 // ------------------------------------------- EXPRESSIONS -------------------------------------------
 
 /**
@@ -789,12 +819,14 @@ bool generate_literal_expression(Literal_T *literal, Register reg, Scope *scope)
 				VariableTemplate *variable = scope_get_variable_by_name(scope, literal->value);
 
 				// char *lcc_ident = variabletemplate_toLCCIdentifier(variable);
-				char *mnemonic = variable->datatype->size == 8 ? "mov" : "movsx";
+				char *mnemonic = variable->datatype->size == 8 
+								|| variable->datatype->is_array
+								|| variable->datatype->is_pointer ? "mov" : "movsx";
 
 				// char *var = generate_operand_for_variable(variable, scope);
 				char *var = generate_variable_pointer(variable->identifier, scope);
 
-				printf("%s %s, %s\n", mnemonic, register_toString(reg, 8), var);
+				// printf("%s %s, %s\n", mnemonic, register_toString(reg, 8), var);
 
 				ADD_INST(mnemonic, register_toString(reg, 8), var);
 				register_setVariable(register_layout, reg, 8, literal->value);
@@ -1000,6 +1032,7 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 
 	// step 2
 	char *second_operand = NULL;
+	bool free_second_operand = false;
 
 	if (binary_expr->expression_right->type == EXPRESSION_TYPE_LITERAL) {
 
@@ -1036,6 +1069,14 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 				reg_other_size = var_size;
 				second_operand = var_pointer;
 			}
+		} else if (literal->type == LITERAL_CHARACTER) {
+			const char *format = "%d";
+			size_t length = snprintf(NULL, 0, format, (int) *(literal->value)) + 1;
+			char *value = malloc(length);
+			sprintf(value, format, (int) *(literal->value));
+			
+			second_operand = value;
+			free_second_operand = true;
 		} else {
 			second_operand = literal->value;
 		}
@@ -1175,6 +1216,10 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 		register_clear(register_layout, other);
 	}
 
+	if (free_second_operand) {
+		free(second_operand);
+	}
+
 	return true;
 }
 
@@ -1231,7 +1276,10 @@ bool generate_functioncall_expression(FunctionCallExpression_T *func_call_expr, 
 			return false;
 	}
 
-	FunctionTemplate *func = scope_get_function_by_name(scope, func_call_expr->function_identifier);
+	// FunctionTemplate *func = scope_get_function_by_name(scope, func_call_expr->function_identifier);
+	FunctionTemplate *func = scope_getFunctionByID(scope, func_call_expr->id);
+
+	// printf("FUNC: %s - %llu\n", func->identifier, func_call_expr->id);
 
 	char *lcc_ident = functiontemplate_as_lcc_identifier(func);
 
@@ -1393,6 +1441,12 @@ bool generate_array_access_expression(ArrayAccessExpression_T *array_index_expr,
 	VariableTemplate *variable = scope_get_variable_by_name(scope, array_index_expr->identifier->value);
 	char *mnemonic = variable->datatype->size == 8 ? "mov" : "movsx";
 
+	if (!variable->datatype->is_array && !variable->datatype->is_pointer) {
+		// printf("VAR: %s\n", variable->identifier);
+		log_error("Array access to non-array variable not supported\n");
+		return false;
+	}
+
 	if (scope_contains_local_variable(scope, array_index_expr->identifier->value)) {
 		// local variable
 		size_t var_rbp_offset = stack_getVariableOffset(stack_layout, array_index_expr->identifier->value);
@@ -1402,26 +1456,34 @@ bool generate_array_access_expression(ArrayAccessExpression_T *array_index_expr,
 			return false;
 		}
 
-		const char *format = "%s[rbp-%d+%s*%d]";
+		Register pointer_register = register_getEmpty(register_layout);
+		
+		// mov pointer_register, qword[rbp-X] ; --> the pointer
+		// mov out-reg, qword[pointer_register+index_expression_register*size] ; --> the value
+
+		// using 8 because the pointer is always 8 bytes
+		char *var_pointer = generate_local_variable_pointer(var_rbp_offset, 8);
+		ADD_INST("mov", register_toString(pointer_register, 8), var_pointer);
+
+		const char *format = "%s[%s+%s*%d]";
 		const char *datatype_directive = _AssemblyDataType_directives[variable->datatype->size];
-		const int offset = var_rbp_offset + variable->datatype->size * (variable->datatype->array_size - 1);
-		const char *register_str = register_toString(index_expression_register, 8);
+		const char *reg = register_toString(pointer_register, 8);
+		const char *index_reg = register_toString(index_expression_register, 8);
 		const int array_offset = variable->datatype->size;
 
+		size_t length = snprintf(NULL, 0, format, datatype_directive, reg, index_reg, array_offset) + 1;
+		char *instruction = calloc(length, sizeof(char));
+		sprintf(instruction, format, datatype_directive, reg, index_reg, array_offset);
 
-		size_t address_str_length = snprintf(NULL, 0, format, datatype_directive, offset, register_str, array_offset);
-		char *address_str = calloc(address_str_length + 1, sizeof(char));
-		sprintf(address_str, format, datatype_directive, offset, register_str, array_offset);	
+		ADD_INST(mnemonic, register_toString(out_reg, 8), instruction);
 
-		ADD_INST(mnemonic, register_toString(out_reg, 8), address_str);
-
-		free(address_str);
+		free(instruction);
 	} else {
 		// global variable
-		char *format = "%s[%s+%d*%s]";
+		const char *format = "%s[%s+%d*%s]";
 		const char *datatype_directive = _AssemblyDataType_directives[variable->datatype->size];
 		char *lcc_identifier = variabletemplate_toLCCIdentifier(variable);
-		char *register_str = register_toString(index_expression_register, 8);
+		const char *register_str = register_toString(index_expression_register, 8);
 
 		size_t source_operand_length = snprintf(NULL, 0, format, datatype_directive,
 					lcc_identifier, variable->datatype->size, register_str);
@@ -1559,7 +1621,3 @@ char *generate_local_variable_pointer(size_t rbp_offset, size_t size) {
 
 	return var_pointer;
 }
-
-// char *generate_global_variable_pointer(char *name) {
-// 	return NULL;
-// }

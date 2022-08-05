@@ -129,7 +129,7 @@ int register_containsVariable(RegisterLayout *layout, char *var_name) {
 	for (size_t i = 0; i < REGISTER_COUNT; i++) {
 		if (layout->registers[i]->value_type == REGISTER_INFO_VALUE_TYPE_VARIABLE &&
 					strcmp(layout->registers[i]->value, var_name) == 0) {
-						printf("%s\n", layout->registers[i]->value);
+						// printf("%s\n", layout->registers[i]->value);
 			return 1;
 		}
 	}

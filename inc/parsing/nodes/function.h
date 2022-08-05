@@ -7,6 +7,7 @@
 
 typedef struct _function {
 	char *identifier;
+	unsigned long long int id;
 	ArrayList *parameters;
 	Datatype *return_type;
 	ArrayList *body_statements;
@@ -17,6 +18,7 @@ typedef struct _function {
 
 typedef struct _func_template {
 	char *identifier;
+	unsigned long long int id;
 	ArrayList *param_datatypes;
 	Datatype *return_type;
 } FunctionTemplate;

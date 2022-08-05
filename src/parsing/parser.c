@@ -24,6 +24,8 @@ ArrayList *tokens;
 Token *current;
 Token *lookahead;
 
+static unsigned long long int function_id_counter = 0;
+
 int expect(TokenType type) {
     if (current->type != type) {
         log_error("Expected token '%s' at [%d:%d] but got '%s' with value '%s' instead\n",
@@ -415,6 +417,8 @@ FunctionTemplate *expectExternFunctionTemplate() {
 
 	eat(TOKEN_SEMICOLON);
 
+	func_template->id = function_id_counter++;
+
 	return func_template;
 }
 
@@ -550,6 +554,7 @@ Function *expectFunction() {
     }	
 
 	function->body_statements = statements_array;
+	function->id = function_id_counter++;
 
 	eat(TOKEN_RBRACE);
 

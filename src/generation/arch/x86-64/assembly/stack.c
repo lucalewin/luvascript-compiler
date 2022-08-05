@@ -150,7 +150,7 @@ size_t stack_getVariableOffset(StackLayout *stack_layout, char *var_name) {
         }
     }
 
-    printf("Error: stack_getVariableOffset: variable %s not found\n", var_name);
+    // printf("Error: stack_getVariableOffset: variable %s not found\n", var_name);
 
     return -1;
 }
@@ -168,7 +168,7 @@ size_t stack_getItemSize(StackLayout *stack_layout, size_t item_rbp_offset) {
         }
     }
 
-    printf("Error: stack_getItemSize: item at rbp_offset %zu not found\n", item_rbp_offset);
+    // printf("Error: stack_getItemSize: item at rbp_offset %zu not found\n", item_rbp_offset);
 
     return -1;
 }

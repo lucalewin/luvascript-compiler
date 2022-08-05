@@ -86,3 +86,4 @@ int scope_contains_function(Scope *scope, char *func_name);
 
 VariableTemplate *scope_get_variable_by_name(Scope *scope, char *var_name);
 FunctionTemplate *scope_get_function_by_name(Scope *scope, char *func_name);
+FunctionTemplate *scope_getFunctionByID(Scope *scope, unsigned long long int id);

@@ -679,3 +679,15 @@ FunctionTemplate *scope_get_function_by_name(Scope *scope, char *func_name) {
 	// function with name $func_name does not exist in the current scope
 	return NULL;
 }
+
+FunctionTemplate *scope_getFunctionByID(Scope *scope, unsigned long long int id) {
+	for (int i = 0; i < scope->function_templates->size; i++) {
+		FunctionTemplate *func_template = arraylist_get(scope->function_templates, i);
+		if (func_template->id == id) {
+			return func_template;
+		}
+	}
+
+	// function with id $id does not exist in the current scope
+	return NULL;
+}

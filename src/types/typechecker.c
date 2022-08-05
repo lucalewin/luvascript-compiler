@@ -754,6 +754,8 @@ Datatype *type_of_function_call_expression(FunctionCallExpression_T *expression,
 
 		expression->argument_datatypes = arg_types;
 
+		expression->id = ft->id;
+
 		return ft->return_type;
 
 		next_function: ;
