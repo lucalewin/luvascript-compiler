@@ -356,8 +356,29 @@ int scope_evaluate_statement(Statement *stmt) {
 			Variable *var = stmt->stmt.variable_decl->variable;
 
 			if (scope_contains_local_variable(stmt->scope, var->identifier->value)) {
-				log_error("variable '%s' is already defined!\n", var->identifier->value);
-				return 0;
+				// stmt->scope->parent is the local scope of the compound statement
+				// if the variable is not defined in the local scope, the variable will
+				// replace the existing variable (with the same identifier) in the parent scope
+
+				if (!scope_contains_local_variable(stmt->scope->parent, var->identifier->value)) {
+					// replace existing variable with the same name in the scope
+					for (size_t i = 0; i < stmt->scope->local_variable_templates->size; i++) {
+						VariableTemplate *var_template = arraylist_get(stmt->scope->local_variable_templates, i);
+						if (strcmp(var_template->identifier, var->identifier->value) == 0) {
+							variable_template_free(var_template);
+
+							arraylist_set_at_index(
+									stmt->scope->local_variable_templates,
+									i,
+									convert_to_variable_template(var),
+									false);
+						}
+					}
+				} else {
+					log_error("variable '%s' is already defined!\n", var->identifier->value);
+					return 0;
+				}
+				
 			}
 
 			arraylist_add(stmt->scope->parent->local_variable_templates, convert_to_variable_template(var));
@@ -425,6 +446,7 @@ Scope *scope_new() {
 	scope->global_variable_templates = arraylist_create();
 	scope->local_variable_templates = arraylist_create();
 	scope->function_templates = arraylist_create();
+	scope->parent = NULL;
 	return scope;
 }
 
