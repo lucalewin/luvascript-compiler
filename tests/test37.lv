@@ -1,0 +1,6 @@
+
+function main(): char {
+    const str: string = "Hello, World!";
+    
+    return str[5];
+}
