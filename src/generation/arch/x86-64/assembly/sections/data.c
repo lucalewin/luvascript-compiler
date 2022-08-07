@@ -27,9 +27,20 @@ char *data_section_to_string(DataSection *section) {
 
     for (size_t i = 0; i < arraylist_size(section->data); i++) {
         AssemblyDataVariable *variable = arraylist_get(section->data, i);
-        buffer_length += strlen(variable->label) + 2
-                      +  strlen(_AssemblyDataSectionTypes_names[variable->type]) + 1
-                      +  strlen(variable->value) + 1;
+
+        if (variable->label != NULL) {
+            buffer_length += strlen(variable->label) + 1;
+        }
+
+        if (variable->type != 0) {
+            buffer_length += 1 + strlen(_AssemblyDataSectionTypes_names[variable->type]);
+        }
+
+        if (variable->value != NULL) {
+            buffer_length += 1 + strlen(variable->value);
+        }
+
+        buffer_length += 1;
     }
 
 
@@ -38,11 +49,21 @@ char *data_section_to_string(DataSection *section) {
 
     for (size_t i = 0; i < arraylist_size(section->data); i++) {
         AssemblyDataVariable *variable = arraylist_get(section->data, i);
-        strcat(str, variable->label);
-        strcat(str, ": ");
-        strcat(str, _AssemblyDataSectionTypes_names[variable->type]);
-        strcat(str, " ");
-        strcat(str, variable->value);
+        if (variable->label != NULL) {
+            strcat(str, variable->label);
+            strcat(str, ":");
+        }
+
+        if (variable->type != 0) {
+            strcat(str, " ");
+            strcat(str, _AssemblyDataSectionTypes_names[variable->type]);
+        }
+
+        if (variable->value != NULL) {
+            strcat(str, " ");
+            strcat(str, variable->value);
+        }
+
         strcat(str, "\n");
     }
 
