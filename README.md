@@ -1,26 +1,17 @@
-# LuvaScript Compiler
+<h3 align="center">⚠️ W.I.P. ⚠️</h3>
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/61d94deb7635450b9574d95aed0c5492)](https://app.codacy.com/gh/lucr4ft/luvascript-compiler?utm_source=github.com&utm_medium=referral&utm_content=lucr4ft/luvascript-compiler&utm_campaign=Badge_Grade_Settings)
-[![Build status](https://ci.appveyor.com/api/projects/status/t0g7nftrb6413tp7/branch/develop?svg=true)](https://ci.appveyor.com/project/lucalewin/luvascript-compiler/branch/develop)
+# Luvascript Compiler
 
-## LuvaScript Docs
-Take a look at the [LuvaScript Documentation](https://lucr4ft.github.io/luvascript-compiler/)
+This repo contains the code for the Luvascript Compiler. <br>
+For more information, please visit the [Documentation](https://lucr4ft.github.io/luvascript-compiler/)
 
-## How to install
-
-Clone the repo and run
-
-```shell
-sudo make install
-```
-
-## How to compile a file
-
-```shell
-lvc [filename]
-```
+### Limitations
+The compiler
+* is currently in early development.
+* currently only supports compilation to x86_64 binaries.
+* currently only works on Linux.
 
 <br>
 
 ---
-**DISCLAIMER**: This project is still in **early development** and should **not** yet be used in any application!
+**DISCLAIMER**: This project is still in **early development** and should **NOT** yet be used in any application!
