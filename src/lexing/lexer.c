@@ -46,7 +46,7 @@ char *keywords[keywords_length] = {
 };
 
 ArrayList *tokenize(char *code, const char *file) {
-	log_info("tokenizing sourcecode\n");
+	log_debug("tokenizing sourcecode\n");
 	
 	ArrayList *list = arraylist_create();
 
@@ -408,7 +408,7 @@ ArrayList *tokenize(char *code, const char *file) {
 
 	arraylist_add(list, token_create(NULL, TOKEN_EOF, line, pos));
 
-	log_info("finished tokenization\n");
+	log_debug("finished tokenization\n");
 
 	return list;
 }
