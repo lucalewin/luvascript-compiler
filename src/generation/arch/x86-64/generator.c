@@ -3,8 +3,6 @@
 #include <stdbool.h>
 
 #include <util/util.h>
-
-// #include <x86-64/compiler.h>
 #include <conventions/lcc.h>
 
 #include <parsing/scope_impl.h>
@@ -59,6 +57,8 @@ bool evaluate_package(Package *package);
 bool evaluate_global_variables(ArrayList *global_variables);
 bool evaluate_global_variable(Variable *variable);
 bool generate_extern_functions(ArrayList *extern_functions);
+bool generate_imported_functions(ArrayList *imported_functions);
+bool generate_imported_global_variables(ArrayList *imported_global_variables);
 bool evaluate_functions(ArrayList *functions);
 bool evaluate_function(Function *function);
 
@@ -83,7 +83,6 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 bool generate_functioncall_expression(FunctionCallExpression_T *func_call_expr, Register out_reg, Scope *scope);
 bool generate_assignment_expression(AssignmentExpression_T *assignment_expr, Register out_reg, Scope *scope);
 bool generate_array_access_expression(ArrayAccessExpression_T *array_index_expr, Register out_reg, Scope *scope);
-// bool generate_member_access_expression(MemberAccessExpression_T *member_access_expr, Register out_reg, Scope *scope);
 bool generate_list_expression(ExpressionList_T *expr_list, Register out_reg, Scope *scope);
 
 // utility functions
@@ -136,7 +135,9 @@ char *generate_x86_64_assembly(AST *ast, CommandlineOptions *options) {
 			return NULL;
 		}
 
+#if defined DEBUG
 		printf(GREEN "✓" RESET "\n");
+#endif
 	}
 
 	// assembly.toString()
@@ -153,9 +154,9 @@ char *generate_x86_64_assembly(AST *ast, CommandlineOptions *options) {
 
 		return NULL;
 	} 
-
+#if defined DEBUG
 	printf(GREEN "✓" RESET "\n");
-
+#endif
 	// free allocated memory
 	assembly_program_free(assembly);
 
@@ -199,6 +200,14 @@ bool evaluate_package(Package *package) {
 		return false;
 	}
 
+	if (!generate_imported_functions(package->imported_functions)) {
+		return false;
+	}
+
+	if (!generate_imported_global_variables(package->imported_global_variables)) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -226,11 +235,14 @@ bool evaluate_global_variables(ArrayList *global_variables) {
  * @return true 
  */
 bool evaluate_global_variable(Variable *variable) {
+	char *lcc_identifier = variable_as_lcc_identifier(variable);
+	DEFINE_GLOBAL(lcc_identifier);
+
 	if (variable->default_value == NULL) {
 		// add to .bss section
 		bss_section_declare_space(
-				assembly->bss,					// BssSection
-				variable->identifier->value, 	// label
+				assembly->bss,		// BssSection
+				lcc_identifier, 	// label
 				(AssemblyBssSectionTypes) variable->type->size,				// type - TODO(lucalewin): get correct directive for variable type
 				variable->type->is_array ? variable->type->array_size : 1);	// count
 	} else {
@@ -242,24 +254,24 @@ bool evaluate_global_variable(Variable *variable) {
 		}
 		
 		Literal_T *literal = variable->default_value->expr.literal_expr;
-		char *value = NULL;
-		unsigned int size = variable->type->size;
-		char *label = variable_as_lcc_identifier(variable);
 
 		if (literal->type == LITERAL_STRING) {
 			// add the string to the string table
 			string_table_add(assembly->string_table, literal->value);
-			string_table_add_label(assembly->string_table, literal->value, label);
+			string_table_add_label(assembly->string_table, literal->value, lcc_identifier);
 		} else {
-			value = strdup(literal->value);
-			size = variable->type->size;
+			char *value = strdup(literal->value);
 			// add to .data section
-			DECLARE_VARIABLE(label, (AssemblyDataSectionTypes) size, value);
+			DECLARE_VARIABLE(
+					lcc_identifier,
+					(AssemblyDataSectionTypes) variable->type->size,
+					value);
+			
+			free(value);
 		}
-
-		free(label);
-		free(value);
 	}
+
+	free(lcc_identifier);
 
 	return true;
 }
@@ -274,12 +286,48 @@ bool generate_extern_functions(ArrayList *extern_functions) {
 	for (size_t i = 0; i < arraylist_size(extern_functions); i++) {
 		FunctionTemplate *extern_function = arraylist_get(extern_functions, i);
 		char *extern_func_lcc_ident = function_to_lcc_identifier(extern_function);
-		
+
 		DEFINE_EXTERN(extern_func_lcc_ident);
 		
 		free(extern_func_lcc_ident);
 	}
 
+	return true;
+}
+
+/**
+ * @brief 
+ * 
+ * @param imported_functions 
+ * @return true 
+ * @return false 
+ */
+bool generate_imported_functions(ArrayList *imported_functions) {
+	for (size_t i = 0; i < arraylist_size(imported_functions); i++) {
+		FunctionTemplate *imported_function = arraylist_get(imported_functions, i);
+		char *imported_func_lcc_ident = function_to_lcc_identifier(imported_function);
+
+		DEFINE_EXTERN(imported_func_lcc_ident);
+
+		free(imported_func_lcc_ident);
+	}
+	return true;
+}
+
+/**
+ * @brief 
+ * 
+ * @param imported_global_variables 
+ * @return true 
+ * @return false 
+ */
+bool generate_imported_global_variables(ArrayList *imported_global_variables) {
+	for (size_t i = 0; i < arraylist_size(imported_global_variables); i++) {
+		VariableTemplate *imported_global_variable = arraylist_get(imported_global_variables, i);
+		char *imported_global_var_lcc_ident = variabletemplate_toLCCIdentifier(imported_global_variable);
+		DEFINE_EXTERN(imported_global_var_lcc_ident);
+		free(imported_global_var_lcc_ident);
+	}
 	return true;
 }
 
