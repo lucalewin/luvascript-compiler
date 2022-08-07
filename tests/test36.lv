@@ -1,0 +1,23 @@
+function main(): i32 {
+    return func() + func(2) + func(4, 3);
+}
+
+function func(): i32 {
+    return 2;
+}
+
+function func(n: i16): i32 {
+    return n * 3;
+}
+
+function func(n: i32): i32 {
+    return n * 5;
+}
+
+function func(a: i32, b: char): i32 {
+    return a * 4;
+}
+
+function func(a: i32, b: i32): i32 {
+    return a + b;
+}

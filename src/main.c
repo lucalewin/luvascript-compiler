@@ -3,21 +3,21 @@
 #include <string.h>
 
 #include <options.h>
-#include <scope_impl.h>
+#include <parsing/scope_impl.h>
 #include <util/util.h>
 #include <util/arraylist.h>
-#include <util/file.h>
-#include <logging/logger.h>
+#include <util/io/file.h>
+#include <util/logging/logger.h>
 
-#include <types/package.h>
-#include <types/ast.h>
-#include <types/module.h>
+#include <parsing/nodes/package.h>
+#include <parsing/nodes/ast.h>
+#include <parsing/nodes/module.h>
 
-#include <lexer.h>
-#include <parser.h>
-#include <typechecker.h>
-#include <generator.h>
-#include <compiler.h>
+#include <lexing/lexer.h>
+#include <parsing/parser.h>
+#include <types/typechecker.h>
+#include <generation/generator.h>
+#include <compiler/compiler.h>
 
 // directory of the globaly installed libraries for luvascript
 #define GLOBAL_LIBRARY_DIR "/usr/lib/luva/"

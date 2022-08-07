@@ -1,0 +1,11 @@
+
+function main(): i32 {
+    const x: i32 = 10;
+
+    if (x == 10) {
+        const x: i32 = 20;
+        return x;
+    }
+
+    return 0;
+}

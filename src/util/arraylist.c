@@ -1,7 +1,7 @@
 #include <util/arraylist.h>
 
 #include <string.h>
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 ArrayListPtr arraylist_create() {
     ArrayList *list = malloc(sizeof *list);

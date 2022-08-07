@@ -1,0 +1,7 @@
+const str0: string = "Test";
+const str1: string = "Different String Literal";
+const str2: string = "Test";
+
+function main(): char {
+    return str0[2];
+}

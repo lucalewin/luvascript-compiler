@@ -1,8 +1,8 @@
-#include <token.h>
-#include <types/literal.h>
-#include <types/expression.h>
-#include <types/statement.h>
-#include <types/operator.h>
+#include <lexing/token.h>
+#include <parsing/nodes/literal.h>
+#include <parsing/nodes/expression.h>
+#include <parsing/nodes/statement.h>
+#include <parsing/nodes/operator.h>
 
 const char *TOKEN_TYPE_NAMES[] = {
 	[TOKEN_KEYWORD] = "token_keyword",

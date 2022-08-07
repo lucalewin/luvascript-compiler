@@ -29,6 +29,8 @@ char *straddall(char *src, ...);
 char *strdup(const char *src);
 char *allocate_string(const char *str);
 
+char** copy_all(char** argv, int length);
+
 int strendswith(const char *str, const char *suffix);
 
 int str_last_index_of(char *str, char x);
@@ -40,5 +42,9 @@ bool arr_contains(char **arr, int arr_length, char *key);
 
 int32_t get_int(char *c);
 char *int_to_string(int i);
+
+// math
+int min(int x, int y);
+int max(int x, int y);
 
 #endif // LUVA_UTIL_H

@@ -4,8 +4,8 @@
 #include <string.h>
 
 #include <util/util.h>
-#include <util/file.h>
-#include <logging/logger.h>
+#include <util/io/file.h>
+#include <util/logging/logger.h>
 
 // default filename of the generated binary file if no output filename is specified
 #define DEFAULT_BINARY_NAME "a.out"

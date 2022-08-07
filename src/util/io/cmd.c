@@ -1,11 +1,11 @@
-#include <util/cmd.h>
+#include <util/io/cmd.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 
-#include <logging/logger.h>
+#include <util/logging/logger.h>
 
 int exec(const char *cmd, ...) {
     int ret;
