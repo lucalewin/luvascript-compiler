@@ -29,29 +29,6 @@ VariableTemplate *copy_variable_template(VariableTemplate *template_variable) {
 	return new_template;
 }
 
-/**
- * @brief implementation according to the `Luvascript Naming Convention` (LNC)
- * [https://lucr4ft.github.io/luvascript-compiler/compiler/conventions/luvascript-naming-convention/]
- * 
- * @param var_template the VariableTemplate to convert to a lcc identifier
- * @return char* the lcc identifier
- */
-char *variable_to_lcc_identifier(VariableTemplate *var_template) {
-	size_t var_ident_length = strlen(var_template->identifier);
-	size_t datatype_ident_length = strlen(var_template->datatype->type_identifier);
-	size_t identifier_length = var_ident_length + datatype_ident_length + 7;
-	size_t array_length = var_template->datatype->is_array ? 2 : 0;
-	char *identifier = calloc(identifier_length + 1 + array_length, sizeof(char));
-	strcpy(identifier, "_var_");
-	strcat(identifier, var_template->identifier);
-	strcat(identifier, "__");
-	strcat(identifier, var_template->datatype->type_identifier);
-	if (var_template->datatype->is_array) {
-		strcat(identifier, "@1");
-	}
-	return identifier;
-}
-
 void variable_free(Variable *variable) {
 	if (variable == NULL) {
 		return;
