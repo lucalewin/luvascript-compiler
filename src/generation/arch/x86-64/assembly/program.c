@@ -10,6 +10,7 @@ AssemblyProgram *assembly_program_new() {
     AssemblyProgram *assembly = calloc(1, sizeof(AssemblyProgram));
     assembly->global_directives = arraylist_create();
     assembly->extern_directives = arraylist_create();
+    assembly->string_table = string_table_new();
     assembly->data = data_section_new();
     assembly->bss = bss_section_new();
     assembly->text = text_section_new();
@@ -19,12 +20,14 @@ AssemblyProgram *assembly_program_new() {
 char *assembly_program_to_string(AssemblyProgram *program) {
     char *global_directives = global_directive_to_string(program);
     char *extern_directives = external_directive_to_string(program);
+    char *string_table      = string_table_toString(program->string_table);
     char *data_section      = data_section_to_string(program->data);
     char *bss_section       = bss_section_to_string(program->bss);
     char *text_section      = text_section_to_string(program->text);
 
     size_t buffer_size = strlen(global_directives)
                        + strlen(extern_directives)
+                       + strlen(string_table)
                        + strlen(data_section)
                        + strlen(bss_section)
                        + strlen(text_section)
@@ -34,10 +37,14 @@ char *assembly_program_to_string(AssemblyProgram *program) {
 
     strcpy(buffer, global_directives);
     strcat(buffer, extern_directives);
+    strcat(buffer, string_table);
     strcat(buffer, data_section);
     strcat(buffer, bss_section);
     strcat(buffer, text_section);
 
+    // free(global_directives);
+    // free(extern_directives);
+    free(string_table);
     free(data_section);
     free(bss_section);
     free(text_section);
@@ -104,8 +111,9 @@ void assembly_program_free(AssemblyProgram *program) {
         arraylist_free(program->extern_directives);
     }
 
+    string_table_free(program->string_table);
+
     data_section_free(program->data);
-    // rodata_section_free(program->rodata);
     bss_section_free(program->bss);
     text_section_free(program->text);
     free(program);

@@ -243,19 +243,19 @@ bool evaluate_global_variable(Variable *variable) {
 		
 		Literal_T *literal = variable->default_value->expr.literal_expr;
 		char *value = NULL;
-
-		if (literal->type == LITERAL_STRING) {
-			// surround with ` quotes
-			value = malloc(strlen(literal->value) + 3);
-			sprintf(value, "`%s`", literal->value);
-		} else {
-			value = strdup(literal->value);
-		}
-
+		unsigned int size = variable->type->size;
 		char *label = variable_as_lcc_identifier(variable);
 
-		// add to .data section
-		DECLARE_VARIABLE(label, (AssemblyDataSectionTypes) variable->type->size, value);
+		if (literal->type == LITERAL_STRING) {
+			// add the string to the string table
+			string_table_add(assembly->string_table, literal->value);
+			string_table_add_label(assembly->string_table, literal->value, label);
+		} else {
+			value = strdup(literal->value);
+			size = variable->type->size;
+			// add to .data section
+			DECLARE_VARIABLE(label, (AssemblyDataSectionTypes) size, value);
+		}
 
 		free(label);
 		free(value);
@@ -441,6 +441,8 @@ bool evaluate_function(Function *function) {
  * @return true 
  */
 bool generate_statement(Statement *statement) {
+
+	// printf("Statement: %d\n", statement->type);
 
 	switch (statement->type) {
 		case STATEMENT_EXPRESSION:
@@ -804,7 +806,7 @@ bool generate_literal_expression(Literal_T *literal, Register reg, Scope *scope)
 			
 			return true;
 		}
-		case LITERAL_IDENTIFIER:
+		case LITERAL_IDENTIFIER: {
 			// check if the variable is already stored in a register
 			if (register_containsVariable(register_layout, literal->value)) {
 				Register other = register_getVariable(register_layout, literal->value);
@@ -865,6 +867,27 @@ bool generate_literal_expression(Literal_T *literal, Register reg, Scope *scope)
 			free(var_pointer);
 
 			return true;
+		}
+		case LITERAL_STRING: {
+			// check if the string is in the string_table
+			if (!string_table_contains(assembly->string_table, literal->value)) {
+				// add string to string_table
+				string_table_add(assembly->string_table, literal->value);
+			}
+
+			// get the LNC identifer of the string
+			char *lnc_ident = string_table_toLNCIdentifier(assembly->string_table, literal->value);
+
+			// add instruction
+			ADD_INST("mov", register_toString(reg, 8), lnc_ident);
+
+			// set the register to the string
+			register_setVariable(register_layout, reg, 8, literal->value);
+
+			free(lnc_ident);
+
+			return true;
+		}
 		default:
 			// TODO: support other types
 			// print error
