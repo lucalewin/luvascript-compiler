@@ -86,7 +86,7 @@ ArrayList *tokenize(char *code, const char *file) {
 			}
 
 			// extract string from *code
-			char *string = malloc(sizeof(char) * i);
+			char *string = calloc(i + 1, sizeof(char));
 			substring(code - i, string, i);
 
 			// create new token && add it to the list
