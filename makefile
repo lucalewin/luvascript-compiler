@@ -41,6 +41,7 @@ mkdirs:
 	@mkdir -p $(RELEASE_BIN_DIR)
 
 debug: CFLAGS += -DDEBUG
+debug: CFLAGS += -g
 debug: mkdirs debug_build
 
 release: CFLAGS += -O3
