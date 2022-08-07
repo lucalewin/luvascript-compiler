@@ -5,7 +5,7 @@ function main(): int {
 	var sum: int = 0;
 	var index: int = 0;
 
-	while (index < 100) {
+	while (index < array_length) {
 		sum += array[index];
 		++index;
 	}

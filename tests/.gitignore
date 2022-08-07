@@ -1,5 +1,6 @@
 # generated assembly files
 *.lv.asm
+*.asm
 
 # generated binary files
 *.out
