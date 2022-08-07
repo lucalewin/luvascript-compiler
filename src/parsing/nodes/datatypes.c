@@ -16,10 +16,10 @@ int types_equal(const Datatype *a, const Datatype *b) {
 
 int datatype_is_number(const Datatype *datatype) {
 	if (datatype == NULL) return 0;
-	if (strcmp(datatype->type_identifier, "byte") == 0 || 
-				strcmp(datatype->type_identifier, "short") == 0 || 
-				strcmp(datatype->type_identifier, "int") == 0 || 
-				strcmp(datatype->type_identifier, "long") == 0) {
+	if (strcmp(datatype->type_identifier, "i8") == 0 || 
+				strcmp(datatype->type_identifier, "i16") == 0 || 
+				strcmp(datatype->type_identifier, "i32") == 0 || 
+				strcmp(datatype->type_identifier, "i64") == 0) {
 		// TODO: check for unsigned numbers
 		return 1;
 	}
@@ -29,24 +29,24 @@ int datatype_is_number(const Datatype *datatype) {
 Datatype *parse_datatype(char *type) {
 	Datatype *dt = calloc(1, sizeof(Datatype));
 
-	if (strcmp(type, "byte") == 0 || strcmp(type, "i8") == 0) {
+	if (strcmp(type, "i8") == 0) {
 		dt->is_primitive = 1;
-		dt->type_identifier = "byte";
+		dt->type_identifier = "i8";
 		dt->is_pointer = 0;
 		dt->size = 1; // 1 byte
-	} else if (strcmp(type, "short") == 0 || strcmp(type, "i16") == 0) {
+	} else if (strcmp(type, "i16") == 0) {
 		dt->is_primitive = 1;
-		dt->type_identifier = "short";
+		dt->type_identifier = "i16";
 		dt->is_pointer = 0;
 		dt->size = 2; // 2 bytes
-	} else if (strcmp(type, "int") == 0 || strcmp(type, "i32") == 0) {
+	} else if (strcmp(type, "i32") == 0) {
 		dt->is_primitive = 1;
-		dt->type_identifier = "int";
+		dt->type_identifier = "i32";
 		dt->is_pointer = 0;
 		dt->size = 4; // 4 bytes
-	} else if (strcmp(type, "long") == 0 || strcmp(type, "i64") == 0) {
+	} else if (strcmp(type, "i64") == 0) {
 		dt->is_primitive = 1;
-		dt->type_identifier = "long";
+		dt->type_identifier = "i64";
 		dt->is_pointer = 0;
 		dt->size = 8; // 8 bytes
 	} else if (strcmp(type, "bool") == 0) {
@@ -103,28 +103,4 @@ void datatype_free(Datatype *datatype) {
 	if (!datatype->is_primitive)
 		free(datatype->type_identifier);
 	free(datatype);
-}
-
-// char *to_datatype_directive(const Datatype *datatype) {
-// 	if (datatype == NULL) return NULL;
-// 	//if (datatype->is_pointer) {
-// 	//	return "qword";
-// 	//}
-// 	switch (datatype->size) {
-// 		case DATATYPE_DIRECTIVE_BYTE:
-// 			return "byte";
-// 		case DATATYPE_DIRECTIVE_WORD:
-// 			return "word";
-// 		case DATATYPE_DIRECTIVE_DWORD:
-// 			return "dword";
-// 		case DATATYPE_DIRECTIVE_QWORD:
-// 			return "qword";
-// 		default:
-// 			return NULL;
-// 	}
-// }
-
-char *datatype_to_datatype_directive(const Datatype *datatype) {
-	log_error("datatype_to_datatype_directive not implemented\n");
-	return NULL;
 }

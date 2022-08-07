@@ -6,7 +6,6 @@ echo ""
 
 cd ..
 
-pwd
 # build the project
 make debug
 

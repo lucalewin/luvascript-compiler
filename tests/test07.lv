@@ -1,7 +1,7 @@
-function main(): int {
+function main(): i32 {
 	return add(5, 7);
 }
 
-function add(x: int, y: int): int {
+function add(x: i32, y: i32): i32 {
 	return x + y;
 }

@@ -1,5 +1,5 @@
-const RETURN_VALUE: int = 40;
+const RETURN_VALUE: i32 = 40;
 
-function main(): int {
+function main(): i32 {
 	return RETURN_VALUE;
 }

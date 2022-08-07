@@ -1,19 +1,19 @@
 
-function main(): int {
-	var x: int = 20;
-	var y: int = 2;
-	var z: int = 7;
-	var w: int =  two(x, y) - one(x, y, z);
+function main(): i32 {
+	var x: i32 = 20;
+	var y: i32 = 2;
+	var z: i32 = 7;
+	var w: i32 =  two(x, y) - one(x, y, z);
 
 	return w + two(y, z);
 }
 
-function one(a: int, b: int, c: int): int {
-	var d: int = 20;
+function one(a: i32, b: i32, c: i32): i32 {
+	var d: i32 = 20;
 
 	return a - b * c + d;
 }
 
-function two(a: int, b: int): int {
+function two(a: i32, b: i32): i32 {
 	return a * b + a;
 }

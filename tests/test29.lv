@@ -1,9 +1,9 @@
-const array_length: int = 6;
-const array: int[] = [1, 2, 4, 8, 16, 32];
+const array_length: i32 = 6;
+const array: i32[] = [1, 2, 4, 8, 16, 32];
 
-function main(): int {
-	var sum: int = 0;
-	var index: int = 0;
+function main(): i32 {
+	var sum: i32 = 0;
+	var index: i32 = 0;
 
 	while (index < array_length) {
 		sum += array[index];

@@ -1,7 +1,7 @@
 
-function main(): int {
-	const x: int = 6;
-	var y: int = 10;
+function main(): i32 {
+	const x: i32 = 6;
+	var y: i32 = 10;
 
 	y = x + y;
 	y *= x / 2;

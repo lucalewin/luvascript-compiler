@@ -1,5 +1,5 @@
-function main(): int {
-	const a: int = 23;
+function main(): i32 {
+	const a: i32 = 23;
 
 	if (a == 0)
 		return 2;

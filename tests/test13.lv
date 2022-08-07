@@ -1,5 +1,5 @@
 
-function main(): int {
-	var x: int = 32;
+function main(): i32 {
+	var x: i32 = 32;
 	return (x >> 2) << 2;
 }

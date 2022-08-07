@@ -1,5 +1,5 @@
-function main(): int {
-	var x: int = 36;
+function main(): i32 {
+	var x: i32 = 36;
 
 	if (x == 0)
 		return 2;

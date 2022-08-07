@@ -1,6 +1,6 @@
-function main(): int {
-	var x: int = 6;
-	var y: int = 9;
+function main(): i32 {
+	var x: i32 = 6;
+	var y: i32 = 9;
 
 	return x + y * x + y;
 }

@@ -1,6 +1,6 @@
-const EXIT_SUCCESS: int = 0;
-const EXIT_FAILURE: int = 1;
+const EXIT_SUCCESS: i32 = 0;
+const EXIT_FAILURE: i32 = 1;
 
-function main(): int {
+function main(): i32 {
 	return EXIT_SUCCESS + EXIT_FAILURE;
 }

@@ -10,12 +10,15 @@
 
 #include <util/logging/logger.h>
 
-#define keywords_length 30
+#define keywords_length 31
  
 char *keywords[keywords_length] = {
 	"function",
 	"var",
+	"let",
 	"const",
+	"struct",
+	"enum",
 	"return",
 	"void",
 	"true",
@@ -23,18 +26,14 @@ char *keywords[keywords_length] = {
 	"null",
 	"char",
 	"string",
-	"int",
-	"long",
-	"float",
-	"double",
 	"extern",
 	"if",
 	"else",
 	"while",
 	"asm",
+	"unsafe",
 	"package",
 	"import",
-	"from",
 	"i8",
 	"i16",
 	"i32",
@@ -42,7 +41,9 @@ char *keywords[keywords_length] = {
 	"u8",
 	"u16",
 	"u32",
-	"u64"
+	"u64",
+	"f32",
+	"f64",
 };
 
 ArrayList *tokenize(char *code, const char *file) {

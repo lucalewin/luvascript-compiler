@@ -1,6 +1,6 @@
-function main(): int {
-	var a: int = 5;
-	var b: byte = 9;
+function main(): i32 {
+	var a: i32 = 5;
+	var b: i8 = 9;
 
 	return a | b;
 }

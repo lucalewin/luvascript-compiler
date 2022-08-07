@@ -1,12 +1,12 @@
 
-function sqrt(n: int): int {
+function sqrt(n: i32): i32 {
 	if (n < 0)
 		return -1;
 	if (n == 0)
 		return 0;
 
-	var x: int = n;
-	var y: int = 1;
+	var x: i32 = n;
+	var y: i32 = 1;
 	while (x > y) {
 		x = (x + y) / 2;
 		y = n / x;
@@ -14,6 +14,6 @@ function sqrt(n: int): int {
 	return x;
 }
 
-function main(): int {
+function main(): i32 {
 	return sqrt(144);
 }

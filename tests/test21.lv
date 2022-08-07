@@ -1,6 +1,6 @@
 function main(): bool {
-	var x: int = 20;
-	var y: int = 100;
+	var x: i32 = 20;
+	var y: i32 = 100;
 
 	return x != y;
 }

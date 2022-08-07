@@ -530,13 +530,13 @@ Datatype *type_of_literal_expression(const Literal_T *literal, Scope *scope) {
 
 			// check size and therefore the type of the number
 			if (number >= CHAR_MIN && number <= CHAR_MAX) {
-				return parse_datatype("byte");
+				return parse_datatype("i8");
 			} else if (number >= SHRT_MIN && number <= SHRT_MAX) {
-				return parse_datatype("short");
+				return parse_datatype("i16");
 			} else if (number >= INT_MIN && number <= INT_MAX) {
-				return parse_datatype("int");
+				return parse_datatype("i32");
 			} else if (number >= LONG_MIN && number <= LONG_MAX) {
-				return parse_datatype("long");
+				return parse_datatype("i64");
 			} else {
 				// TODO: handle unsigned numbers
 				return NULL;

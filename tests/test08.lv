@@ -1,12 +1,12 @@
 
-function main(): int {
+function main(): i32 {
 	return one() + two();
 }
 
-function one(): int {
+function one(): i32 {
 	return 1;
 }
 
-function two(): int {
+function two(): i32 {
 	return 2;
 }

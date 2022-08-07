@@ -1,4 +1,4 @@
-function main(): int {
-	var x: int = 10;
+function main(): i32 {
+	var x: i32 = 10;
 	return x & 8;
 }
