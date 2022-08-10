@@ -24,7 +24,7 @@ typedef signed long int64_t;
 void substring(char *source, char *target, int offset); 
 
 char *stradd(char *s1, char *s2);
-char *straddall(char *src, ...);
+// char *straddall(char *src, ...);
 
 char *strdup(const char *src);
 char *allocate_string(const char *str);

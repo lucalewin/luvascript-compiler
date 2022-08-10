@@ -26,19 +26,19 @@ char *stradd(char *s1, char *s2) {
 	return str;
 }
 
-char *straddall(char *src, ...) {
-    va_list args;
-    va_start(args, src);
+// char *straddall(char *src, ...) {
+//     va_list args;
+//     va_start(args, src);
 
-    char *str;
-    while ((str = va_arg(args, char *)) != NULL) {
-        src = stradd(src, str);
-    }
+//     char *str;
+//     while ((str = va_arg(args, char *)) != NULL) {
+//         src = stradd(src, str);
+//     }
 
-    va_end(args);
+//     va_end(args);
 
-	return src;
-}
+// 	return src;
+// }
 
 char *strdup(const char *src) {
     if (src == NULL) return NULL;

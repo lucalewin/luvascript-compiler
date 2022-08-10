@@ -71,9 +71,9 @@ const char *EXPRESSION_TYPES[] = {
 	[EXPRESSION_TYPE_UNARY] = "unary_expression",
 	[EXPRESSION_TYPE_BINARY] = "binary_expression",
 	[EXPRESSION_TYPE_NESTED] = "nested_expression",
-	[EXPRESSION_TYPE_FUNCTIONCALL] = "function_call_expression",
+	[EXPRESSION_TYPE_FUNCTION_CALL] = "function_call_expression",
 	[EXPRESSION_TYPE_ASSIGNMENT] = "assignment_expression",
-	[EXPRESSION_TYPE_ARRAYACCESS] = "array_access_expression",
+	[EXPRESSION_TYPE_ARRAY_ACCESS] = "array_access_expression",
 	[EXPRESSION_TYPE_LIST] = "list_expression"
 };
 

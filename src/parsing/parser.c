@@ -17,6 +17,7 @@
 #include <parsing/nodes/variable.h>
 #include <parsing/nodes/package.h>
 #include <parsing/nodes/import.h>
+#include <parsing/nodes/enum.h>
 
 // global variables used by the parser
 int _index;
@@ -104,6 +105,12 @@ int isUnaryOperator(Token *t) {
 Package *expectPackage();
 Variable *parseVariable();
 
+EnumDefinition *parseEnumDefinition();
+// StructDefinition *parseStructDefinition();
+
+char *eatIdentifier();
+bool expectKeyword(const char *keyword);
+
 // -----------------------------------------------------------------------------------
 
 const char *_filename;
@@ -117,7 +124,13 @@ Package *parse(ArrayList *token_list, const char *filename) {
     // load tokens into 'current' and 'lookahead'
     next();
 
-    return expectPackage();
+	log_debug("Parsing file '%s'\n", filename);
+
+	Package *package = expectPackage();
+
+	log_debug("Parsing finished\n");
+
+    return package;
 }
 
 Package *expectPackage() {
@@ -126,6 +139,7 @@ Package *expectPackage() {
 	package->functions = arraylist_create();
 	package->extern_functions = arraylist_create();
 	package->global_variables = arraylist_create();
+	package->enum_definitions = arraylist_create();
 	package->import_declarations = arraylist_create();
 	package->imported_functions = arraylist_create();
 	package->imported_global_variables = arraylist_create();
@@ -318,6 +332,15 @@ Package *expectPackage() {
 				return NULL;
 			}
 			arraylist_add(package->extern_functions, extern_func_template);
+		} else if (strcmp(current->data, "enum") == 0) {
+			EnumDefinition *enum_definition = parseEnumDefinition();
+			printf("%s:%d:%d: " RED "error: " RESET "enums are not supported\n", _filename, current->line, current->pos);
+			if (enum_definition == NULL) {
+				// free allocated memory
+				package_free(package);
+				return NULL;
+			}
+			arraylist_add(package->enum_definitions, enum_definition);
 		} else {
 			printf("%s:%d:%d: " RED "error: " RESET "unexpected token '%s'\n", _filename, current->line, current->pos, current->data);
 			package_free(package);
@@ -370,7 +393,7 @@ FunctionTemplate *expectExternFunctionTemplate() {
 
 	// parse argument types (if any are defined)
 
-	func_template->param_datatypes = arraylist_create();
+	func_template->parameter_types = arraylist_create();
 
 	if (!is(TOKEN_RPAREN)) {
 		while (1) {
@@ -380,14 +403,14 @@ FunctionTemplate *expectExternFunctionTemplate() {
 				return NULL;
 			}
 
-			Datatype *type = parse_datatype(current->data);
+			DatatypeOLD *type = parse_datatype(current->data);
 			if (type == NULL) {
 				printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
 				function_template_free(func_template);
 				return NULL;
 			}
 			// TODO: check if type is an array type
-			arraylist_add(func_template->param_datatypes, type);
+			arraylist_add(func_template->parameter_types, type);
 
 			next();
 
@@ -403,16 +426,17 @@ FunctionTemplate *expectExternFunctionTemplate() {
 
 	eat(TOKEN_COLON);
 
-	Datatype *return_type = parse_datatype(current->data);
-	if (return_type == NULL) {
-		printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
-		function_template_free(func_template);
-		return NULL;
-	}
-	// TODO: check if return type is an array type
+	// DatatypeOLD *return_typeOLD = parse_datatype(current->data);
+	// if (return_typeOLD == NULL) {
+	// 	printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
+	// 	function_template_free(func_template);
+	// 	return NULL;
+	// }
+	// // TODO: check if return type is an array type
 
-	func_template->return_type = return_type;
+	// func_template->return_typeOLD = return_typeOLD;
 
+	func_template->return_type = strdup(current->data);
 	next();
 
 	eat(TOKEN_SEMICOLON);
@@ -436,15 +460,16 @@ Function *expectFunction() {
 		return NULL;
 	}
 
-	Function *function = calloc(1, sizeof(Function));
+	Function *function = calloc(1, sizeof(Function)); // FIXME: memory leak --> replace with function_new()
 	if (function == NULL) {
 		log_error("unable to allocate memory for function\n");
 		return NULL;
 	}
 
 	function->identifier = calloc(strlen(current->data), sizeof(char));
-	function->body_statements = NULL;
 	function->return_type = NULL;
+	function->statements = NULL;
+	// function->return_typeOLD = NULL;
 	function->parameters = NULL;
 	function->scope = NULL;
 
@@ -468,56 +493,36 @@ Function *expectFunction() {
 
 	if (!is(TOKEN_RPAREN)) {
 		while(1) {
-			Variable *parameter = calloc(1, sizeof(Variable));
+			Variable *parameter = variable_new();
 			
 			if (!is(TOKEN_IDENTIFIER)) {
-				printf("%s:%d:%d: " RED "error: " RESET "expected identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);
+				printf("%s:%d:%d: " RED "error: " RESET "expected parameter identifier, but got '%s'\n",
+							_filename, current->line, current->pos, current->data);
 				// free allocated memory
 				function_free(function);
-				log_error("herhe\n");
+				variable_free(parameter);
 				return NULL;
 			}
 
-			parameter->identifier = calloc(1, sizeof(Literal_T));
-			if (parameter->identifier == NULL) {
-				free(parameter);
-				log_error("calloc failed: unable to allocate memory for parameter identifier\n");
-				return NULL;
-			}
-
-			parameter->identifier->type = LITERAL_IDENTIFIER;
-			parameter->identifier->value = calloc(strlen(current->data), sizeof(char));
-			if (parameter->identifier->value == NULL) {
-				free(parameter->identifier);
-				free(parameter);
-				log_error("calloc failed: unable to allocate memory for parameter identifier value\n");
-				return NULL;
-			}
-
-			strcpy(parameter->identifier->value, current->data);
+			parameter->identifier = strdup(current->data);
 			next();
 
-			expect(TOKEN_COLON); // `:`
-			next();
+			eat(TOKEN_COLON);
 
 			if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENTIFIER)) {
-				free(function->identifier);
-				free(function);
-				free(parameter->identifier->value);
-				free(parameter);
-				// log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
-				printf("%s:%d:%d: " RED "error: " RESET "expected type identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);// free allocated memory
+				printf("%s:%d:%d: " RED "error: " RESET "expected type identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);
 
 				// free allocated memory
 				function_free(function);
+				variable_free(parameter);
 
 				return NULL;
 			}
 
-			parameter->type = parse_datatype(current->data);
+			parameter->type_identifier = strdup(current->data);
 			next();
 
-			parameter->default_value = NULL;
+			parameter->initializer = NULL;
 
 			arraylist_add(function->parameters, parameter);
 
@@ -542,7 +547,8 @@ Function *expectFunction() {
 		exit(1);
 	}
 
-	function->return_type = parse_datatype(current->data);
+	// function->return_typeOLD = parse_datatype(current->data);
+	function->return_type = strdup(current->data);
 	next();
 
 	eat(TOKEN_LBRACE);
@@ -553,7 +559,7 @@ Function *expectFunction() {
         arraylist_add(statements_array, expectStatement());
     }	
 
-	function->body_statements = statements_array;
+	function->statements = statements_array;
 	function->id = function_id_counter++;
 
 	eat(TOKEN_RBRACE);
@@ -566,7 +572,7 @@ Variable *parseVariable() {
 	Variable *variable = calloc(1, sizeof(Variable));
 	if (variable == NULL) {
 		log_error("unable to allocate memory for Variable\n");
-		exit(1);
+		return NULL;
 	}
 
 	if (strcmp(current->data, "var") == 0) {
@@ -575,164 +581,138 @@ Variable *parseVariable() {
 		variable->is_constant = 1;
 	} else {
 		log_error("unexpected token '%s' at [%d:%d], expected 'var' or 'const' keyword\n", current->data, current->line, current->pos);
-		exit(1);
+		variable_free(variable);
+		return NULL;
 	}
 
 	eat(TOKEN_KEYWORD); // 'var' keyword
-	expect(TOKEN_IDENTIFIER); // the identifier of the variable
-	// save identifier for later
-	Literal_T *identifier = calloc(1, sizeof(Literal_T));
-	if (identifier == NULL) {
-		free(variable);
-		log_error("unable to allocate memory for Literal_T\n");
-		exit(1);
-	}
-
-	identifier->type = LITERAL_IDENTIFIER;
-	identifier->value = calloc(strlen(current->data), sizeof(char));
-	strcpy(identifier->value, current->data);
-
-	variable->identifier = identifier;
-
-	next();
+	variable->identifier = eatIdentifier();
 	eat(TOKEN_COLON);
 
 	// expect type identifier
 	// this could be a keyword, aka. a primitive type
-	// or an identifier
-	if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENTIFIER)) {
-		log_error("parseVariable(): expected type identifier at [%d:%d]\n", current->line, current->pos);
-		free(variable);
-		free(identifier->value);
-		free(identifier);
+	// or an identifier, aka. a user-defined type
+	if (!is(TOKEN_IDENTIFIER) && !is(TOKEN_KEYWORD)) {
+		// primitive types are keywords
+		printf("%s:%d:%d: " RED "error: " RESET "expected type identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);
+		variable_free(variable);
 		return NULL;
 	}
 
-	variable->type = parse_datatype(current->data);
+	variable->type_identifier = strdup(current->data);
 	next();
+
 	int array_size_specified = 0;
+
 	if (is(TOKEN_LBRACKET)) {
 		eat(TOKEN_LBRACKET);
 		// arraysize is specified
 		if (is(TOKEN_NUMBER)) {
-			variable->type->array_size = atoi(current->data);
+			variable->array_size = atoi(current->data);
 			array_size_specified = 1;
 			next();
 		}
 		eat(TOKEN_RBRACKET);
-		variable->type->is_array = 1;
+		variable->is_array = 1;
 	}
 
 	if (is(TOKEN_SEMICOLON)) {
 		if (variable->is_constant) {
-			log_error("parseVariable(): expected constant expression at [%d:%d]\n", current->line, current->pos);
-			datatype_free(variable->type);
-			free(variable);
-			free(identifier->value);
-			free(identifier);
-			return NULL;
-		}
-
-		if (variable->type->is_array) {
-			log_error("parseVariable(): incomplete type '%s' at [%d:%d]\nether initialize array or specify array-size\n", current->line, current->pos);
+			printf("%s:%d:%d: " RED "error: " RESET "constant variables must be initialized\n", _filename, current->line, current->pos);
 			variable_free(variable);
 			return NULL;
 		}
 
-		eat(TOKEN_SEMICOLON);
-		Literal_T *default_value = calloc(1, sizeof(Literal_T));
-		if (default_value == NULL) {
-			datatype_free(variable->type);
-			free(variable);
-			free(identifier->value);
-			free(identifier);
-			log_error("parseVariable(): cannot allocate memory for default_value\n");
+		if (variable->is_array) {
+			printf("%s:%d:%d: " RED "error: " RESET "incomplete array declaration: either initialize array or specify array-size",
+						_filename, current->line, current->pos);
+			variable_free(variable);
 			return NULL;
 		}
 
-		default_value->type = LITERAL_NUMBER;
-		default_value->value = calloc(2, sizeof(char));
-		default_value->value[0] = '0';
-		default_value->value[1] = '\0';
+		variable->initializer = NULL;
+		eat(TOKEN_SEMICOLON);
 
-		Expression_T *default_value_expr = calloc(1, sizeof(Expression_T));
-		if (default_value_expr == NULL) {
-			free(variable);
-			free(identifier);
-			free(default_value);
-			log_error("parseVariable(): cannot allocate memory for default_value_expr\n");
-			exit(1);
-		}
-
-		default_value_expr->type = EXPRESSION_TYPE_LITERAL;
-		default_value_expr->expr.literal_expr = default_value;
-		variable->default_value = default_value_expr;
 	} else if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
 		// default value assignment
 		eat(TOKEN_ASSIGNMENT_SIMPLE);
 
-		if (variable->type->is_array) {
-
-			// log_debug("parseVariable(): current tokentype: %s\n", TOKEN_TYPE_NAMES[current->type]);
-
-			if (strcmp(variable->type->type_identifier, "char") == 0) {
-				if (is(TOKEN_STRING)) {
-					// it is a string literal
-
-					Literal_T *literal = calloc(1, sizeof(Literal_T));
-					if (literal == NULL) {
-						datatype_free(variable->type);
-						free(variable);
-						free(identifier->value);
-						free(identifier);
-						log_error("parseVariable(): cannot allocate memory for literal\n");
-						exit(1);
-					}
-					literal->type = LITERAL_STRING;
-					literal->value = strdup(current->data);
-
-					Expression_T *expression = calloc(1, sizeof(Expression_T));
-					if (expression == NULL) {
-						datatype_free(variable->type);
-						free(variable);
-						free(identifier->value);
-						free(identifier);
-						free(literal);
-						log_error("parseVariable(): cannot allocate memory for expression\n");
-						exit(1);
-					}
-
-					expression->type = EXPRESSION_TYPE_LITERAL;
-					expression->expr.literal_expr = literal;
-
-					variable->default_value = expression;
-
-					eat(TOKEN_STRING);
-					eat(TOKEN_SEMICOLON);
-					return variable;
-				} // else: it is just an array of chars
-			}
+		if (variable->is_array) {
 
 			eat(TOKEN_LBRACKET);
-			variable->default_value = expectExpressionList();
+
+			variable->initializer = expectExpressionList();
 			if (array_size_specified) {
-				if (variable->default_value->expr.list_expr->expressions->size != variable->type->array_size) {
-					log_error("parseVariable(): array-size mismatch at [%d:%d]\n", current->line, current->pos);
+				if (variable->initializer->expr.list_expr->expressions->size != variable->array_size) {
+					printf("%s:%d:%d: " RED "error: " RESET "array size mismatch: expected %lld elements, but got %ld",
+								_filename, current->line, current->pos, variable->array_size,
+								variable->initializer->expr.list_expr->expressions->size);
 					variable_free(variable);
 					return NULL;
 				}
 			} else {
-				variable->type->array_size = variable->default_value->expr.list_expr->expressions->size;
+				variable->array_size = variable->initializer->expr.list_expr->expressions->size;
 			}
+
 			eat(TOKEN_RBRACKET);
 		} else {
-			Expression_T *default_value = expectExpression();
-			variable->default_value = default_value;
+			Expression_T *initializer = expectExpression();
+			variable->initializer = initializer;
 		}
 	}
 	eat(TOKEN_SEMICOLON);
 
 	return variable;
+}
+
+EnumDefinition *parseEnumDefinition() {
+	if (!expectKeyword("enum")) {
+		printf("%s:%d:%d: " RED "error: " RESET "expected 'enum' keyword\n", _filename, current->line, current->pos);
+		return NULL;
+	}
+
+	EnumDefinition *enum_definition = enum_definition_new();
+	if (enum_definition == NULL) {
+		log_error("parseEnumDefinition(): cannot allocate memory for enum_definition\n");
+		return NULL;
+	}
+
+	enum_definition->name = eatIdentifier();
+	if (enum_definition->name == NULL) {
+		enum_definition_free(enum_definition);
+		return NULL;
+	}
+
+	eat(TOKEN_LBRACE);
+
+	unsigned long long int index = 0;
+	while (!is(TOKEN_RBRACE)) {
+
+		EnumDefinitionMember *member = enum_definition_member_new(eatIdentifier(), index++);
+		if (member == NULL) {
+			enum_definition_free(enum_definition);
+			return NULL;
+		}
+
+		arraylist_add(enum_definition->members, member);
+		
+		if (is(TOKEN_COMMA)) {
+			eat(TOKEN_COMMA);
+		} else {
+			break;
+		}
+	}
+
+
+	if (!is(TOKEN_RBRACE)) {
+		printf("%s:%d:%d: " RED "error: " RESET "expected '}'\n", _filename, current->line, current->pos);
+		enum_definition_free(enum_definition);
+		return NULL;
+	}
+
+	next();
+
+	return enum_definition;
 }
 
 Statement *expectStatement() {
@@ -1633,7 +1613,7 @@ Expression_T *expectPostfixExpression() {
 				return NULL;
 			}
 
-			expr->type = EXPRESSION_TYPE_FUNCTIONCALL;
+			expr->type = EXPRESSION_TYPE_FUNCTION_CALL;
 			expr->expr.func_call_expr = func_call_expr;
 
 			func_call_expr->function_identifier = calloc(strlen(current->data), sizeof(char));
@@ -1682,7 +1662,7 @@ Expression_T *expectPostfixExpression() {
 				return NULL;
 			}
 
-			expr->type = EXPRESSION_TYPE_ARRAYACCESS;
+			expr->type = EXPRESSION_TYPE_ARRAY_ACCESS;
 			expr->expr.array_access_expr = array_access_expr;
 
 			array_access_expr->identifier = calloc(1, sizeof(Literal_T));
@@ -1726,31 +1706,15 @@ Expression_T *expectPostfixExpression() {
 				return NULL;
 			}
 
-			expr->type = EXPRESSION_TYPE_MEMBERACCESS;
+			expr->type = EXPRESSION_TYPE_MEMBER_ACCESS;
 			expr->expr.member_access_expr = member_access_expr;
 
-			// member_access_expr->identifier = calloc(1, sizeof(Literal_T));
-			// if (member_access_expr->identifier == NULL) {
-			// 	free(expr);
-			// 	free(member_access_expr);
-			// 	log_error("calloc failed: unable to allocate memory for Literal_T\n");
-			// 	return NULL;
-			// }
-
-			// member_access_expr->identifier->type = LITERAL_IDENTIFIER;
-			// member_access_expr->identifier->value = calloc(strlen(current->data), sizeof(char));
-			// strcpy(member_access_expr->identifier->value, current->data);
-			// eat(TOKEN_IDENTIFIER);
-
-			// TODO: implement member access expression
-
-			member_access_expr->identifier = expectPrimaryExpression();
+			// member_access_expr->identifier_old = expectPrimaryExpression();
+			member_access_expr->identifier = eatIdentifier();
 
 			eat(TOKEN_DOT);
 
-			member_access_expr->member_identifier = calloc(strlen(current->data), sizeof(char));
-			strcpy(member_access_expr->member_identifier, current->data);
-			eat(TOKEN_IDENTIFIER);
+			member_access_expr->member_identifier = eatIdentifier();
 
 			return expr;
 		}
@@ -1850,4 +1814,34 @@ Expression_T *expectPrimaryExpression() {
 		exit(1);
 	}
 	return expression;
+}
+
+char *eatIdentifier() {
+	if (current->type != TOKEN_IDENTIFIER) {
+		log_error("eatIdentifier(): expected identifier but got %s at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->line, current->pos);
+		return NULL;
+	}
+
+	char *identifier = strdup(current->data);
+	if (identifier == NULL) {
+		log_error("calloc failed: unable to allocate memory for identifier\n");
+		return NULL;
+	}
+	
+	next();
+	
+	return identifier;
+}
+
+bool expectKeyword(const char *keyword) {
+	if (current->type != TOKEN_KEYWORD) {
+		// log_error("expectKeyword(): expected keyword but got %s at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->line, current->pos);
+		return false;
+	}
+	if (strcmp(current->data, keyword) != 0) {
+		// log_error("expectKeyword(): expected keyword '%s' but got '%s' at [%d:%d]\n", keyword, current->data, current->line, current->pos);
+		return false;
+	}
+	next();
+	return true;
 }

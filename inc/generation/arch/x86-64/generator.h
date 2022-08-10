@@ -4,6 +4,8 @@
 #include <parsing/nodes/ast.h>
 #include <options.h>
 
-char *generate_x86_64_assembly(AST *ast, CommandlineOptions *options);
+#include <types/table.h>
+
+char *generate_x86_64_assembly(AST *ast, DataTypeTable *dtt, CommandlineOptions *options);
 
 #endif // __LUVA_X86_64_GENERATOR_H__

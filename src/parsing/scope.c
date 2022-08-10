@@ -19,6 +19,7 @@
 #include <parsing/nodes/import.h>
 #include <parsing/nodes/package.h>
 #include <parsing/nodes/module.h>
+#include <parsing/nodes/enum.h>
 
 /**
  * @brief evaluates the scopes of the ast
@@ -189,7 +190,7 @@ int scope_evaluate_ast(CommandlineOptions *options, AST *ast) {
 							for (size_t l = 0; l < arraylist_size(local_pkg->global_variables); l++) {
 								Variable *global_var = arraylist_get(local_pkg->global_variables, l);
 
-								if (strcmp(global_var->identifier->value, type_identifier) == 0) {
+								if (strcmp(global_var->identifier, type_identifier) == 0) {
 									// add the variable to the package
 									arraylist_add(pkg->imported_global_variables, convert_to_variable_template(global_var));
 								}
@@ -242,6 +243,12 @@ int scope_evaluate_package(Package *package) {
 	// initialize a empty global scope
 	package->package_scope = scope_new();
 	package->package_scope->parent = NULL;
+
+	// add enum definitions to the global scope
+	for (size_t i = 0; i < arraylist_size(package->enum_definitions); i++) {
+		EnumDefinition *enum_def = arraylist_get(package->enum_definitions, i);
+		arraylist_add(package->package_scope->enum_definitions, enum_def);
+	}
 
 	// convert variables to variable templates + add them to the global scope
 	for (size_t i = 0; i < package->global_variables->size; i++) {
@@ -296,7 +303,7 @@ int scope_evaluate_function(Function *function) {
 	// add parameter templates to local variables
 	for (size_t i = 0; i < function->parameters->size; i++) {
 		Variable *parameter = arraylist_get(function->parameters, i);
-		if (scope_contains_local_variable(function->scope, parameter->identifier->value)) {
+		if (scope_contains_local_variable(function->scope, parameter->identifier)) {
 			log_error("variable already defined\n");
 			return 0;
 		}
@@ -304,8 +311,8 @@ int scope_evaluate_function(Function *function) {
 	}
 
 	// evaluate scopes of function statements
-	for (size_t i = 0; i < function->body_statements->size; i++) {
-		Statement *stmt = arraylist_get(function->body_statements, i);
+	for (size_t i = 0; i < function->statements->size; i++) {
+		Statement *stmt = arraylist_get(function->statements, i);
 
 		stmt->scope = scope_copy(function->scope);
 		stmt->scope->parent = function->scope;
@@ -355,16 +362,16 @@ int scope_evaluate_statement(Statement *stmt) {
 		case STATEMENT_VARIABLE_DECLARATION: {
 			Variable *var = stmt->stmt.variable_decl->variable;
 
-			if (scope_contains_local_variable(stmt->scope, var->identifier->value)) {
+			if (scope_contains_local_variable(stmt->scope, var->identifier)) {
 				// stmt->scope->parent is the local scope of the compound statement
 				// if the variable is not defined in the local scope, the variable will
 				// replace the existing variable (with the same identifier) in the parent scope
 
-				if (!scope_contains_local_variable(stmt->scope->parent, var->identifier->value)) {
+				if (!scope_contains_local_variable(stmt->scope->parent, var->identifier)) {
 					// replace existing variable with the same name in the scope
 					for (size_t i = 0; i < stmt->scope->local_variable_templates->size; i++) {
 						VariableTemplate *var_template = arraylist_get(stmt->scope->local_variable_templates, i);
-						if (strcmp(var_template->identifier, var->identifier->value) == 0) {
+						if (strcmp(var_template->identifier, var->identifier) == 0) {
 							variable_template_free(var_template);
 
 							arraylist_set_at_index(
@@ -375,7 +382,7 @@ int scope_evaluate_statement(Statement *stmt) {
 						}
 					}
 				} else {
-					log_error("variable '%s' is already defined!\n", var->identifier->value);
+					log_error("variable '%s' is already defined!\n", var->identifier);
 					return 0;
 				}
 				
@@ -443,6 +450,7 @@ Scope *scope_new() {
 		log_error("could not allocate memory for scope\n");
 		return NULL;
 	}
+	scope->enum_definitions = arraylist_create();
 	scope->global_variable_templates = arraylist_create();
 	scope->local_variable_templates = arraylist_create();
 	scope->function_templates = arraylist_create();
@@ -463,6 +471,12 @@ Scope *scope_copy(Scope *scope) {
 	// copy->function_templates = arraylist_copy(scope->function_templates);
 	// return copy;
 	Scope *copy = scope_new();
+
+	// TODO: copy enum definitions
+	for (size_t i = 0; i < scope->enum_definitions->size; i++) {
+		EnumDefinition *enum_def = arraylist_get(scope->enum_definitions, i);
+		arraylist_add(copy->enum_definitions, enum_definition_copy(enum_def));
+	}
 
 	for (size_t i = 0; i < scope->global_variable_templates->size; i++) {
 		VariableTemplate *var_template = arraylist_get(scope->global_variable_templates, i);
@@ -495,6 +509,7 @@ Scope *scope_copy(Scope *scope) {
 Scope *scope_join(Scope *scope, Scope *other) {
 	Scope *joined = scope_copy(scope);
 
+	arraylist_addall(joined->enum_definitions, other->enum_definitions);
 	arraylist_addall(joined->global_variable_templates, other->global_variable_templates);
 	arraylist_addall(joined->local_variable_templates, other->local_variable_templates);
 	arraylist_addall(joined->function_templates, other->function_templates);
@@ -511,6 +526,7 @@ void scope_free(Scope *scope) {
 	if (scope == NULL) {
 		return;
 	}
+	arraylist_free(scope->enum_definitions);
 	arraylist_free(scope->global_variable_templates);
 	arraylist_free(scope->local_variable_templates);
 	arraylist_free(scope->function_templates);
@@ -614,33 +630,6 @@ int scope_contains_global_variable(Scope *scope, char *var_name) {
 }
 
 /**
- * @brief get the address of the variable with the given name
- * 
- * @param scope the current scope
- * @param var_name the name of the variable
- * @return char* the address of the variable
- */
-char *scope_get_variable_address(Scope *scope, char *var_name) {
-	if (!scope_contains_variable(scope, var_name)) {
-		log_error("undefined variable '%s'\n", var_name);
-		return NULL;
-	}
-
-
-	char *address;
-
-	if (scope_contains_local_variable(scope, var_name)) {
-		address = straddall("rbp-", int_to_string(scope_get_variable_rbp_offset(scope, var_name)), NULL);
-	} else {
-		// variable is a global variable
-		address = calloc(strlen(var_name) + 1, sizeof(char));
-		address = strcpy(address, var_name);
-	}
-
-	return address;
-}
-
-/**
  * @brief checks if the given scope contains a function with the given name
  * 
  * @param scope the current scope
@@ -651,6 +640,16 @@ int scope_contains_function(Scope *scope, char *func_name) {
 	for (int i = 0; i < scope->function_templates->size; i++) {
 		FunctionTemplate *func_template = arraylist_get(scope->function_templates, i);
 		if (strcmp(func_template->identifier, func_name) == 0) {
+			return 1; // true
+		}
+	}
+	return 0; // false
+}
+
+int scope_contains_enum(Scope *scope, char *enum_name) {
+	for (int i = 0; i < scope->enum_definitions->size; i++) {
+		EnumDefinition *enum_definition = arraylist_get(scope->enum_definitions, i);
+		if (strcmp(enum_definition->name, enum_name) == 0) {
 			return 1; // true
 		}
 	}
@@ -699,6 +698,18 @@ FunctionTemplate *scope_get_function_by_name(Scope *scope, char *func_name) {
 	}
 
 	// function with name $func_name does not exist in the current scope
+	return NULL;
+}
+
+EnumDefinition *scope_get_enum_by_name(Scope *scope, char *enum_name) {
+	for (int i = 0; i < scope->enum_definitions->size; i++) {
+		EnumDefinition *enum_definition = arraylist_get(scope->enum_definitions, i);
+		if (strcmp(enum_definition->name, enum_name) == 0) {
+			return enum_definition;
+		}
+	}
+
+	// enum with name $enum_name does not exist in the current scope
 	return NULL;
 }
 

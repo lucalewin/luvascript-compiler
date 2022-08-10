@@ -7,6 +7,7 @@
 #include <parsing/nodes/statement.h>
 #include <parsing/nodes/function.h>
 #include <parsing/nodes/package.h>
+#include <parsing/nodes/enum.h>
 
 /**
  * @brief 
@@ -79,11 +80,12 @@ int scope_get_variable_rbp_offset(Scope *scope, char *var_name);
 int scope_contains_variable(Scope *scope, char *var_name);
 int scope_contains_local_variable(Scope *scope, char *var_name);
 int scope_contains_global_variable(Scope *scope, char *var_name);
-
-char *scope_get_variable_address(Scope *scope, char *var_name);
-
 int scope_contains_function(Scope *scope, char *func_name);
+int scope_contains_enum(Scope *scope, char *enum_name);
 
 VariableTemplate *scope_get_variable_by_name(Scope *scope, char *var_name);
 FunctionTemplate *scope_get_function_by_name(Scope *scope, char *func_name);
+EnumDefinition *scope_get_enum_by_name(Scope *scope, char *enum_name);
+
 FunctionTemplate *scope_getFunctionByID(Scope *scope, unsigned long long int id);
+EnumDefinition *scope_get_enum_by_id(Scope *scope, unsigned long long int id);

@@ -14,6 +14,9 @@
 #include <parsing/nodes/datatypes.h>
 #include <parsing/nodes/literal.h>
 
+#include <types/datatype.h>
+#include <types/table.h>
+
 #include <generation/arch/x86-64/assembly/section.h>
 #include <generation/arch/x86-64/assembly/program.h>
 #include <generation/arch/x86-64/assembly/registers.h>
@@ -54,6 +57,7 @@
 void add__start_function(FunctionTemplate *main_func_template);
 
 bool evaluate_package(Package *package);
+
 bool evaluate_global_variables(ArrayList *global_variables);
 bool evaluate_global_variable(Variable *variable);
 bool generate_extern_functions(ArrayList *extern_functions);
@@ -61,7 +65,8 @@ bool generate_imported_functions(ArrayList *imported_functions);
 bool generate_imported_global_variables(ArrayList *imported_global_variables);
 bool evaluate_functions(ArrayList *functions);
 bool evaluate_function(Function *function);
-
+bool generate_enum_definitions(ArrayList *enum_definitions);
+bool generate_enum_definition(EnumDefinition *enum_definition);
 
 // statements
 bool generate_statement(Statement *statement);
@@ -83,6 +88,7 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 bool generate_functioncall_expression(FunctionCallExpression_T *func_call_expr, Register out_reg, Scope *scope);
 bool generate_assignment_expression(AssignmentExpression_T *assignment_expr, Register out_reg, Scope *scope);
 bool generate_array_access_expression(ArrayAccessExpression_T *array_index_expr, Register out_reg, Scope *scope);
+bool generate_member_access_expression(MemberAccessExpression_T *member_access_expr, Register out_reg, Scope *scope);
 bool generate_list_expression(ExpressionList_T *expr_list, Register out_reg, Scope *scope);
 
 // utility functions
@@ -101,6 +107,8 @@ RegisterLayout *register_layout = NULL;
 // will be reseted each time 'evaluate_function' is called
 StackLayout *stack_layout = NULL;
 
+DataTypeTable *dtt = NULL;
+
 bool setup_stack_frame = false;
 
 // ------------------------------------------------------------------------
@@ -112,12 +120,12 @@ bool setup_stack_frame = false;
  * @param options 
  * @return char* 
  */
-char *generate_x86_64_assembly(AST *ast, CommandlineOptions *options) {
+char *generate_x86_64_assembly(AST *ast, DataTypeTable *_dtt, CommandlineOptions *options) {
 	log_debug("Generating x86-64 assembly code...\n");
 	// TODO
 
 	assembly = assembly_program_new();
-
+	dtt = _dtt;
 
 	for (size_t i = 0; i < arraylist_size(ast->packages); i++) {
 		Package *package = arraylist_get(ast->packages, i);
@@ -188,6 +196,8 @@ void add__start_function(FunctionTemplate *main_func_template) {
  * @return true 
  */
 bool evaluate_package(Package *package) {
+	printf(" - evaluating package '%s' ", package->name);
+	
 	if (!evaluate_global_variables(package->global_variables)) {
 		return false;
 	}
@@ -205,6 +215,10 @@ bool evaluate_package(Package *package) {
 	}
 
 	if (!generate_imported_global_variables(package->imported_global_variables)) {
+		return false;
+	}
+
+	if (!generate_enum_definitions(package->enum_definitions)) {
 		return false;
 	}
 
@@ -238,22 +252,24 @@ bool evaluate_global_variable(Variable *variable) {
 	char *lcc_identifier = variable_as_lcc_identifier(variable);
 	DEFINE_GLOBAL(lcc_identifier);
 
-	if (variable->default_value == NULL) {
+	DataType *data_type = data_type_table_get(dtt, variable->type_identifier);
+
+	if (variable->initializer == NULL) {
 		// add to .bss section
 		bss_section_declare_space(
 				assembly->bss,		// BssSection
 				lcc_identifier, 	// label
-				(AssemblyBssSectionTypes) variable->type->size,				// type - TODO(lucalewin): get correct directive for variable type
-				variable->type->is_array ? variable->type->array_size : 1);	// count
+				(AssemblyBssSectionTypes) data_type->size,				// type - TODO(lucalewin): get correct directive for variable type
+				variable->is_array ? variable->array_size : 1);	// count
 	} else {
 		// TODO: preevaluate the constant
 		// just for testing purposes
-		if (variable->default_value->type != EXPRESSION_TYPE_LITERAL) {
-			log_error("Default value of global variable '%s' is not a literal.\n", variable->identifier->value);
+		if (variable->initializer->type != EXPRESSION_TYPE_LITERAL) {
+			log_error("Default value of global variable '%s' is not a literal.\n", variable->identifier);
 			return false;
 		}
 		
-		Literal_T *literal = variable->default_value->expr.literal_expr;
+		Literal_T *literal = variable->initializer->expr.literal_expr;
 
 		if (literal->type == LITERAL_STRING) {
 			// add the string to the string table
@@ -264,7 +280,7 @@ bool evaluate_global_variable(Variable *variable) {
 			// add to .data section
 			DECLARE_VARIABLE(
 					lcc_identifier,
-					(AssemblyDataSectionTypes) variable->type->size,
+					(AssemblyDataSectionTypes) data_type->size,
 					value);
 			
 			free(value);
@@ -338,8 +354,11 @@ bool generate_imported_global_variables(ArrayList *imported_global_variables) {
  * @return true 
  */
 bool evaluate_functions(ArrayList *functions) {
+	printf(" - evaluating functions");
 	for (size_t i = 0; i < functions->size; i++) {
 		Function *function = arraylist_get(functions, i);
+
+		printf(" %s\n", function->identifier);
 
 		if (!evaluate_function(function)) {
 			return false;
@@ -378,34 +397,42 @@ bool evaluate_function(Function *function) {
 	if (arraylist_size(function->parameters) > 6) {
 		for (size_t i = arraylist_size(function->parameters) - 1; i > 5; i--) {
 			Variable *variable = arraylist_get(function->parameters, i);
+			DataType *data_type = data_type_table_get(dtt, variable->type_identifier);
 			// FIXME: if var is a pointer or an array set size to 8
-			stack_pushVariable(stack_layout, variable->identifier->value, variable->type->size);
+			stack_pushVariable(stack_layout, variable->identifier, data_type->size);
 		}
 	}
 
 	if (arraylist_size(function->parameters) > 0) {
 		Variable *var;
+		DataType *data_type;
 
 		// 	rdi	rsi	rdx	rcx	r8	r9
 		switch (arraylist_size(function->parameters)) {
 			case 6:
 				var = arraylist_get(function->parameters, 5);
-				register_setVariable(register_layout, REGISTER_R9, var->type->size, var->identifier->value);
+				data_type = data_type_table_get(dtt, var->type_identifier);
+				register_setVariable(register_layout, REGISTER_R9, data_type->size, var->identifier);
 			case 5:
 				var = arraylist_get(function->parameters, 4);
-				register_setVariable(register_layout, REGISTER_R8, var->type->size, var->identifier->value);
+				data_type = data_type_table_get(dtt, var->type_identifier);
+				register_setVariable(register_layout, REGISTER_R8, data_type->size, var->identifier);
 			case 4:
 				var = arraylist_get(function->parameters, 3);
-				register_setVariable(register_layout, REGISTER_RCX, var->type->size, var->identifier->value);
+				data_type = data_type_table_get(dtt, var->type_identifier);
+				register_setVariable(register_layout, REGISTER_RCX, data_type->size, var->identifier);
 			case 3:
 				var = arraylist_get(function->parameters, 2);
-				register_setVariable(register_layout, REGISTER_RDX, var->type->size, var->identifier->value);
+				data_type = data_type_table_get(dtt, var->type_identifier);
+				register_setVariable(register_layout, REGISTER_RDX, data_type->size, var->identifier);
 			case 2:
 				var = arraylist_get(function->parameters, 1);
-				register_setVariable(register_layout, REGISTER_RSI, var->type->size, var->identifier->value);
+				data_type = data_type_table_get(dtt, var->type_identifier);
+				register_setVariable(register_layout, REGISTER_RSI, data_type->size, var->identifier);
 			case 1:
 				var = arraylist_get(function->parameters, 0);
-				register_setVariable(register_layout, REGISTER_RDI, var->type->size, var->identifier->value);
+				data_type = data_type_table_get(dtt, var->type_identifier);
+				register_setVariable(register_layout, REGISTER_RDI, data_type->size, var->identifier);
 				break;
 			default:
 				log_error("Too many parameters for function '%s'.\n", function->identifier);
@@ -429,6 +456,8 @@ bool evaluate_function(Function *function) {
 							? 8 : variable_template->datatype->size;
 
 			bytes_to_allocate += size;
+
+			printf(" - allocating %s (%zu bytes)\n", variable_template->identifier, size);
 
 			stack_pushVariable(stack_layout, variable_template->identifier, size);
 		}
@@ -458,16 +487,19 @@ bool evaluate_function(Function *function) {
 
 	}
 
+	printf("eval stmts\n");
+
 	// generate statements
-	for (size_t i = 0; i < arraylist_size(function->body_statements); i++) {
-		Statement *statement = arraylist_get(function->body_statements, i);
+	for (size_t i = 0; i < arraylist_size(function->statements); i++) {
+		Statement *statement = arraylist_get(function->statements, i);
 		if (!generate_statement(statement)) {
 			return false;
 		}
 	}
 
 	// end of function: return (if function is void)
-	if (strcmp(function->return_type->type_identifier, "void") == 0) {
+	DataType *return_type = data_type_table_get(dtt, function->return_type);
+	if (return_type->type == DATA_TYPE_VOID) {
 		if (setup_stack_frame) {
 			ADD_INST("leave");
 			// TODO: clear stack
@@ -477,6 +509,33 @@ bool evaluate_function(Function *function) {
 
 	register_layout_free(register_layout);
 	freeStackLayout(stack_layout);
+	return true;
+}
+
+bool generate_enum_definitions(ArrayList *enum_definitions) {
+	for (size_t i = 0; i < arraylist_size(enum_definitions); i++) {
+		EnumDefinition *enum_definition = arraylist_get(enum_definitions, i);
+		if (!generate_enum_definition(enum_definition)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool generate_enum_definition(EnumDefinition *enum_definition) {
+	char *enum_lcc_identifer = enum_definition_as_lcc_identifier(enum_definition);
+	DECLARE_VARIABLE(enum_lcc_identifer, 0, NULL); // just the label
+
+	for (size_t i = 0; i < arraylist_size(enum_definition->members); i++) {
+		EnumDefinitionMember *member = arraylist_get(enum_definition->members, i);
+		char *member_lcc_identifer = enum_definition_member_as_lcc_identifier(member);
+		DECLARE_VARIABLE(member_lcc_identifer, DATATYPE_DIRECTIVE_DWORD, "1");
+		free(member_lcc_identifer);
+	}
+
+	printf("enum_definition: %s\n", enum_lcc_identifer);
+	free(enum_lcc_identifer);
+
 	return true;
 }
 
@@ -722,20 +781,23 @@ bool generate_block_statement(CompoundStatement *block_stmt, Scope *scope) {
  * @return false 
  */
 bool generate_declaration_statement(VariableDeclarationStatement *decl_stmt, Scope *scope) {
-	if (decl_stmt->variable->default_value != NULL) {
-		if (!generate_expression(decl_stmt->variable->default_value, REGISTER_RAX, scope)) {
+	if (decl_stmt->variable->initializer != NULL) {
+		if (!generate_expression(decl_stmt->variable->initializer, REGISTER_RAX, scope)) {
+			printf("Error: could not generate default value for variable %s\n", decl_stmt->variable->identifier);
 			return false;
 		}
 	}
 	
 	// get the position of the variable on the stack
-	size_t var_rbp_offset = stack_getVariableOffset(stack_layout, decl_stmt->variable->identifier->value);
+	size_t var_rbp_offset = stack_getVariableOffset(stack_layout, decl_stmt->variable->identifier);
 	size_t var_size = stack_getItemSize(stack_layout, var_rbp_offset);
 
-	if (var_rbp_offset == -1 || var_size == -1) {
+	if ((signed int)var_rbp_offset == -1 || (signed int)var_size == -1) {
 		return false;
 	}
 
+	printf("    " IRED "error: " RESET "generate_declaration_statement not implemented\n");
+	printf("var size: %d\n", (signed int)var_size);
 	const char *size_directive = _AssemblyDataType_directives[var_size];
 
 	size_t len = snprintf(NULL, 0, "%s[rbp-%zu]", size_directive, var_rbp_offset);
@@ -794,12 +856,14 @@ bool generate_expression(Expression_T *expression, Register reg, Scope *scope) {
 			return generate_binary_expression(expression->expr.binary_expr, reg, scope);
 		case EXPRESSION_TYPE_NESTED:
 			return generate_expression(expression->expr.nested_expr->expression, reg, scope);
-		case EXPRESSION_TYPE_FUNCTIONCALL:
+		case EXPRESSION_TYPE_FUNCTION_CALL:
 			return generate_functioncall_expression(expression->expr.func_call_expr, reg, scope);
 		case EXPRESSION_TYPE_ASSIGNMENT:
 			return generate_assignment_expression(expression->expr.assignment_expr, reg, scope);
-		case EXPRESSION_TYPE_ARRAYACCESS:
+		case EXPRESSION_TYPE_ARRAY_ACCESS:
 			return generate_array_access_expression(expression->expr.array_access_expr, reg, scope);
+		case EXPRESSION_TYPE_MEMBER_ACCESS:
+			return generate_member_access_expression(expression->expr.member_access_expr, reg, scope);
 		case EXPRESSION_TYPE_LIST:
 			return generate_list_expression(expression->expr.list_expr, reg, scope);
 		default:
@@ -1042,6 +1106,8 @@ bool generate_binary_expression(BinaryExpression_T *binary_expr, Register out_re
 			generate expression 2 and store result in out_reg
 
 	*/
+
+	printf("Binary expression: %d\n", binary_expr->operator);
 
 	// step 1
 	Register other = -1;
@@ -1359,8 +1425,10 @@ bool generate_functioncall_expression(FunctionCallExpression_T *func_call_expr, 
 
 	free(lcc_ident);
 
+	DataType *return_type = data_type_table_get(dtt, func->return_type);
+
 	// set output register
-	register_setValue(register_layout, out_reg, func->return_type->size, NULL);
+	register_setValue(register_layout, out_reg, return_type->size, NULL);
 
 	// clear registers
 	register_clear(register_layout, REGISTER_RDI);
@@ -1569,6 +1637,11 @@ bool generate_array_access_expression(ArrayAccessExpression_T *array_index_expr,
 		free(source_operand);
 	}
 
+	return true;
+}
+
+bool generate_member_access_expression(MemberAccessExpression_T *member_access_expr, Register out_reg, Scope *scope) {
+	printf("Generating access to member %s\n", member_access_expr->identifier);
 	return true;
 }
 

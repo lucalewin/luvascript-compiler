@@ -3,6 +3,7 @@
 
 #include <parsing/nodes/variable.h>
 #include <parsing/nodes/function.h>
+#include <parsing/nodes/enum.h>
 
 /**
  * @brief implementation according to the `Luvascript Naming Convention` (LNC)
@@ -39,5 +40,21 @@ char *function_as_lcc_identifier(Function *func);
  * @return char* the lcc identifier
  */
 char *functiontemplate_as_lcc_identifier(FunctionTemplate *func);
+
+/**
+ * @brief TODO: add description
+ * 
+ * @param enum_definition 
+ * @return char* 
+ */
+char *enum_definition_as_lcc_identifier(EnumDefinition *enum_definition);
+
+/**
+ * @brief TODO: add description
+ * 
+ * @param enum_definition_member 
+ * @return char* 
+ */
+char *enum_definition_member_as_lcc_identifier(EnumDefinitionMember *enum_definition_member);
 
 #endif // __LUVA_COMPILER_CONVENTION_LCC_H__

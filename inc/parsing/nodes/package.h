@@ -8,9 +8,7 @@ typedef struct package Package;
 
 struct package {
 	char *name;
-
 	char *file_path;
-	// ArrayList *imported_packages;
 
 	ArrayList *import_declarations;
 
@@ -18,6 +16,7 @@ struct package {
 	ArrayList *functions;
 	ArrayList *global_variables;
 	ArrayList *extern_functions;
+	ArrayList *enum_definitions;
 
 	ArrayList *imported_functions;
 	ArrayList *imported_global_variables;

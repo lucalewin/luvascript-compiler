@@ -38,7 +38,7 @@ void expression_free(Expression_T *expression) {
 		case EXPRESSION_TYPE_NESTED:
 			expression_free(expression->expr.nested_expr->expression);
 			break;
-		case EXPRESSION_TYPE_FUNCTIONCALL:
+		case EXPRESSION_TYPE_FUNCTION_CALL:
 			free(expression->expr.func_call_expr->function_identifier);
 			for (size_t i = 0; i < expression->expr.func_call_expr->argument_expression_list->expressions->size; i++) {
 				Expression_T *argument = arraylist_get(expression->expr.func_call_expr->argument_expression_list->expressions, i);
@@ -49,12 +49,12 @@ void expression_free(Expression_T *expression) {
 			expression_free(expression->expr.assignment_expr->identifier);
 			expression_free(expression->expr.assignment_expr->assignment_value);
 			break;
-		case EXPRESSION_TYPE_ARRAYACCESS:
+		case EXPRESSION_TYPE_ARRAY_ACCESS:
 			literal_free(expression->expr.array_access_expr->identifier);
 			expression_free(expression->expr.array_access_expr->index_expression);
 			break;
-		case EXPRESSION_TYPE_MEMBERACCESS:
-			expression_free(expression->expr.member_access_expr->identifier);
+		case EXPRESSION_TYPE_MEMBER_ACCESS:
+			expression_free(expression->expr.member_access_expr->identifier_old);
 			free(expression->expr.member_access_expr->member_identifier);
 			break;
 		case EXPRESSION_TYPE_LIST:
@@ -128,48 +128,48 @@ void statement_free(Statement *statement) {
 	free(statement);
 }
 
-void package_free(Package *package) {
-	if (package == NULL) {
-		return;
-	}
-	free(package->name);
-	free(package->file_path);
-	scope_free(package->package_scope);
+// void package_free(Package *package) {
+// 	if (package == NULL) {
+// 		return;
+// 	}
+// 	free(package->name);
+// 	free(package->file_path);
+// 	scope_free(package->package_scope);
 
-	for (size_t i = 0; i < package->import_declarations->size; i++) {
-		ImportDeclaration *import_declaration = arraylist_get(package->import_declarations, i);
-		import_declaration_free(import_declaration);
-	}
+// 	for (size_t i = 0; i < package->import_declarations->size; i++) {
+// 		ImportDeclaration *import_declaration = arraylist_get(package->import_declarations, i);
+// 		import_declaration_free(import_declaration);
+// 	}
 
-	if (package->functions != NULL) {
-		for (size_t i = 0; i < package->functions->size; i++) {
-			Function *function = arraylist_get(package->functions, i);
-			function_free(function);
-		}
-		arraylist_free(package->functions);
-	}
+// 	if (package->functions != NULL) {
+// 		for (size_t i = 0; i < package->functions->size; i++) {
+// 			Function *function = arraylist_get(package->functions, i);
+// 			function_free(function);
+// 		}
+// 		arraylist_free(package->functions);
+// 	}
 
-	for (size_t i = 0; i < package->extern_functions->size; i++) {
-		FunctionTemplate *function_template = arraylist_get(package->extern_functions, i);
-		function_template_free(function_template);
-	}
+// 	for (size_t i = 0; i < package->extern_functions->size; i++) {
+// 		FunctionTemplate *function_template = arraylist_get(package->extern_functions, i);
+// 		function_template_free(function_template);
+// 	}
 
-	for (size_t i = 0; i < package->global_variables->size; i++) {
-		Variable *variable = arraylist_get(package->global_variables, i);
-		variable_free(variable);
-	}
+// 	for (size_t i = 0; i < package->global_variables->size; i++) {
+// 		Variable *variable = arraylist_get(package->global_variables, i);
+// 		variable_free(variable);
+// 	}
 
-	// free imported functions and variables
-	for (size_t i = 0; i < package->imported_functions->size; i++) {
-		FunctionTemplate *function = arraylist_get(package->imported_functions, i);
-		function_template_free(function);
-	}
+// 	// free imported functions and variables
+// 	for (size_t i = 0; i < package->imported_functions->size; i++) {
+// 		FunctionTemplate *function = arraylist_get(package->imported_functions, i);
+// 		function_template_free(function);
+// 	}
 
-	for (size_t i = 0; i < package->imported_global_variables->size; i++) {
-		VariableTemplate *variable = arraylist_get(package->imported_global_variables, i);
-		variable_template_free(variable);
-	}
-}
+// 	for (size_t i = 0; i < package->imported_global_variables->size; i++) {
+// 		VariableTemplate *variable = arraylist_get(package->imported_global_variables, i);
+// 		variable_template_free(variable);
+// 	}
+// }
 
 void options_free(CommandlineOptions *options) {
 	if (options == NULL) return;

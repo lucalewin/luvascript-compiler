@@ -6,21 +6,30 @@
 #include <parsing/nodes/datatypes.h>
 
 typedef struct _function {
+
 	char *identifier;
+	char *return_type;
 	unsigned long long int id;
 	ArrayList *parameters;
-	Datatype *return_type;
-	ArrayList *body_statements;
+	ArrayList *statements;
 	Scope *scope;
+
 	unsigned int is_extern : 1;
 	unsigned int is_imported : 1;
+
+	// DatatypeOLD *return_typeOLD;
 } Function;
 
 typedef struct _func_template {
 	char *identifier;
+	char *return_type;
 	unsigned long long int id;
-	ArrayList *param_datatypes;
-	Datatype *return_type;
+	ArrayList *parameter_types;
+
+	unsigned int is_extern : 1;
+	unsigned int is_imported : 1;
+
+	// DatatypeOLD *return_typeOLD;
 } FunctionTemplate;
 
 FunctionTemplate *convert_to_function_template(Function *function);

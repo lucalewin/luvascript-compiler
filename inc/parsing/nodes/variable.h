@@ -2,24 +2,35 @@
 #define LUVA_TYPE_VARIABLE_H
 
 #include <parsing/nodes/datatypes.h>
-#include <parsing/nodes/literal.h>
 #include <parsing/nodes/expression.h>
 
 typedef struct _Variable Variable;
 typedef struct _VariableTemplate VariableTemplate;
 
 struct _Variable {
-	Datatype *type;
-	Literal_T *identifier;
-	Expression_T *default_value;
+	char *identifier;
+	char *type_identifier;
+	Expression_T *initializer;
+
 	unsigned int is_constant : 1;
+	unsigned int is_array : 1;
+	unsigned int is_pointer : 1;
+
+	// is only used when is_array is true
+	unsigned long long int array_size;
 };
 
+// this should also be [Deprecated]
 struct _VariableTemplate {
-	Datatype *datatype;
 	char *identifier;
+	char *type_identifier;
+
 	unsigned int is_constant : 1;
+	
+	DatatypeOLD *datatype;
 };
+
+Variable *variable_new();
 
 VariableTemplate *convert_to_variable_template(Variable *variable);
 VariableTemplate *copy_variable_template(VariableTemplate *template_variable);

@@ -21,10 +21,10 @@ enum ExpressionType {
     EXPRESSION_TYPE_UNARY,
     EXPRESSION_TYPE_BINARY,
     EXPRESSION_TYPE_NESTED,
-	EXPRESSION_TYPE_FUNCTIONCALL,
+	EXPRESSION_TYPE_FUNCTION_CALL,
 	EXPRESSION_TYPE_ASSIGNMENT,
-	EXPRESSION_TYPE_ARRAYACCESS,
-	EXPRESSION_TYPE_MEMBERACCESS,
+	EXPRESSION_TYPE_ARRAY_ACCESS,
+	EXPRESSION_TYPE_MEMBER_ACCESS,
 	EXPRESSION_TYPE_LIST,
 };
 
@@ -73,7 +73,8 @@ struct AssignmentExpression {
 };
 
 struct MemberAccessExpression {
-	Expression_T *identifier;
+	Expression_T *identifier_old;
+	char *identifier;
 	char *member_identifier;
 };
 

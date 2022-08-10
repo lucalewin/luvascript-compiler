@@ -48,7 +48,7 @@ void print_expression(Expression_T *expression) {
             printf("}");
             break;
         }
-        case EXPRESSION_TYPE_FUNCTIONCALL: {
+        case EXPRESSION_TYPE_FUNCTION_CALL: {
             printf("{\"name\":\"%s\",\"arguments\":[", expression->expr.func_call_expr->function_identifier);
             for (int i = 0; i < arraylist_size(expression->expr.func_call_expr->argument_expression_list->expressions); i++) {
                 printf("{");
@@ -97,8 +97,8 @@ void print_statement(Statement *statement) {
             break;
 		case STATEMENT_VARIABLE_DECLARATION: {
 			Variable *var = statement->stmt.variable_decl->variable;
-			printf("\"identifier\":\"%s\",\"type\":%s,\"default_value\":{", var->identifier->value, var->type->type_identifier);
-			print_expression(var->default_value);
+			printf("\"identifier\":\"%s\",\"type\":%s,\"initializer\":{", var->identifier, var->type_identifier);
+			print_expression(var->initializer);
 			printf("}");
 			break;
 		}
@@ -122,7 +122,7 @@ void print_statement(Statement *statement) {
 }
 
 void print_variable(Variable *var) {
-    printf("{\"identifier\":\"%s\",\"type\":%s,\"default_value\":{", var->identifier->value, var->type->type_identifier);
-    print_expression(var->default_value);
+    printf("{\"identifier\":\"%s\",\"type\":%s,\"initializer\":{", var->identifier, var->type_identifier);
+    print_expression(var->initializer);
     printf("}}");
 }

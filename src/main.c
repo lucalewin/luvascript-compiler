@@ -9,14 +9,19 @@
 #include <util/io/file.h>
 #include <util/logging/logger.h>
 
+#include <lexing/lexer.h>
+
+#include <parsing/parser.h>
 #include <parsing/nodes/package.h>
 #include <parsing/nodes/ast.h>
 #include <parsing/nodes/module.h>
 
-#include <lexing/lexer.h>
-#include <parsing/parser.h>
-#include <types/typechecker.h>
+// #include <types/typechecker.h>
+#include <types/analysis/analyser.h>
+#include <types/table.h>
+
 #include <generation/generator.h>
+
 #include <compiler/compiler.h>
 
 // directory of the globaly installed libraries for luvascript
@@ -99,6 +104,8 @@ int main(int argc, char **argv)
 	// 	// arraylist_add(modules, std_module);
 	// }
 
+	log_debug("scope analysis\n");
+
 	// evaluate the scopes of the packages
 	if (scope_evaluate_ast(options, ast) != 0) {
 		// free allocated memory
@@ -107,17 +114,28 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	// check types
-	if (check_types(ast) == 0) {
-		// free allocated memory
+	log_debug("type analysis\n");
+
+	// // check types
+	// if (check_types(ast) == 0) {
+	// 	// free allocated memory
+	// 	log_debug("check_types failed\n");
+	// 	options_free(options);
+	// 	ast_free(ast);
+	// 	return -1;
+	// }
+
+	DataTypeTable *dtt = analyse_syntax(ast);
+	if (dtt == NULL) {
 		log_debug("check_types failed\n");
+		// free allocated memory
 		options_free(options);
 		ast_free(ast);
 		return -1;
 	}
 
 	// generate assembly code
-	char *assembly_code = generate_assembly(ast, options);
+	char *assembly_code = generate_assembly(ast, dtt, options);
 	if (assembly_code == NULL) {
 		// free allocated memory
 		options_free(options);

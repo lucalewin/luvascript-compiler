@@ -4,16 +4,16 @@
 #include <string.h>
 
 char *variable_as_lcc_identifier(Variable *var) {
-    size_t var_ident_length = strlen(var->identifier->value);
-	size_t datatype_ident_length = strlen(var->type->type_identifier);
+    size_t var_ident_length = strlen(var->identifier);
+	size_t datatype_ident_length = strlen(var->type_identifier);
 	size_t identifier_length = var_ident_length + datatype_ident_length + 7;
-	size_t array_length = var->type->is_array ? 2 : 0;
+	size_t array_length = var->is_array ? 2 : 0;
 	char *identifier = calloc(identifier_length + 1 + array_length, sizeof(char));
 	strcpy(identifier, "_var_");
-	strcat(identifier, var->identifier->value);
+	strcat(identifier, var->identifier);
 	strcat(identifier, "__");
-	strcat(identifier, var->type->type_identifier);
-	if (var->type->is_array) {
+	strcat(identifier, var->type_identifier);
+	if (var->is_array) {
 		strcat(identifier, "@1");
 	}
 	return identifier;
@@ -44,11 +44,10 @@ char *function_as_lcc_identifier(Function *func) {
 
 	for (size_t i = 0; i < param_count; i++) {
         Variable *parameter = arraylist_get(func->parameters, i);
-		Datatype *datatype = parameter->type;
 		
-        param_ident_length += strlen(datatype->type_identifier);
+        param_ident_length += strlen(parameter->type_identifier);
 
-        if (datatype->is_array) {
+        if (parameter->is_array) {
 			param_ident_length += 2;
 		}
 	}
@@ -66,12 +65,11 @@ char *function_as_lcc_identifier(Function *func) {
 
 	for (size_t i = 0; i < param_count; i++) {
 		Variable *parameter = arraylist_get(func->parameters, i);
-		Datatype *datatype = parameter->type;
 
 		strcat(identifier, "_");
-		strcat(identifier, datatype->type_identifier);
+		strcat(identifier, parameter->type_identifier);
 
-		if (datatype->is_array) {
+		if (parameter->is_array) {
 			strcat(identifier, "@1");
 		}
 	}
@@ -80,15 +78,15 @@ char *function_as_lcc_identifier(Function *func) {
 
 char *functiontemplate_as_lcc_identifier(FunctionTemplate *func) {
 	size_t func_ident_length = strlen(func->identifier);
-	size_t param_count = func->param_datatypes->size;
+	size_t param_count = func->parameter_types->size;
 	size_t param_ident_length = 0;
 	for (size_t i = 0; i < param_count; i++) {
-		Datatype *datatype = arraylist_get(func->param_datatypes, i);
+		DatatypeOLD *datatype = arraylist_get(func->parameter_types, i);
 		param_ident_length += strlen(datatype->type_identifier);
 	}
 	size_t extra_length_for_array_length = 0;
 	for (size_t i = 0; i < param_count; i++) {
-		Datatype *datatype = arraylist_get(func->param_datatypes, i);
+		DatatypeOLD *datatype = arraylist_get(func->parameter_types, i);
 		if (datatype->is_array) {
 			extra_length_for_array_length += 2;
 		}
@@ -100,7 +98,7 @@ char *functiontemplate_as_lcc_identifier(FunctionTemplate *func) {
 	strcat(identifier, func->identifier);
 	strcat(identifier, "_");
 	for (size_t i = 0; i < param_count; i++) {
-		Datatype *datatype = arraylist_get(func->param_datatypes, i);
+		DatatypeOLD *datatype = arraylist_get(func->parameter_types, i);
 		strcat(identifier, "_");
 		strcat(identifier, datatype->type_identifier);
 
@@ -108,5 +106,23 @@ char *functiontemplate_as_lcc_identifier(FunctionTemplate *func) {
 			strcat(identifier, "@1");
 		}
 	}
+	return identifier;
+}
+
+// -------------------------------------------------------------------------
+
+char *enum_definition_as_lcc_identifier(EnumDefinition *enum_definition) {
+	const char *format = "_enum_%s";
+	size_t length = snprintf(NULL, 0, format, enum_definition->name) + 1;
+	char *identifier = calloc(length, sizeof(char));
+	sprintf(identifier, format, enum_definition->name);
+	return identifier;
+}
+
+char *enum_definition_member_as_lcc_identifier(EnumDefinitionMember *enum_definition_member) {
+	const char *format = "._enum_member_%s";
+	size_t length = snprintf(NULL, 0, format, enum_definition_member->name) + 1;
+	char *identifier = calloc(length, sizeof(char));
+	sprintf(identifier, format, enum_definition_member->name);
 	return identifier;
 }
