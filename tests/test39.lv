@@ -1,0 +1,11 @@
+enum TestEnum { A, B, C }
+
+function main(): i32 {
+    const testEnum: TestEnum = TestEnum.A;
+
+    if (testEnum == TestEnum.B) {
+        return 1;
+    }
+
+    return 0;
+}
