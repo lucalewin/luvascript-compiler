@@ -1,6 +1,8 @@
 #ifndef LUVA_LITERAL_H
 #define LUVA_LITERAL_H
 
+#include <types/datatype.h>
+
 typedef enum _LiteralType {
     LITERAL_NUMBER,
     LITERAL_STRING,
@@ -9,13 +11,15 @@ typedef enum _LiteralType {
 	LITERAL_BOOLEAN
 } LiteralType;
 
-typedef struct Literal {
+typedef struct _literal {
     LiteralType type;
     char *value;
-} Literal_T;
+    DataType *datatype;
+} Literal;
 
 extern const char *LITERAL_TYPES[];
 
-void literal_free(Literal_T *literal);
+Literal *literal_create(LiteralType type, char *value);
+void literal_free(Literal *literal);
 
 #endif

@@ -6,7 +6,7 @@ typedef enum UnaryOperator {
 	UNARY_OPERATOR_INCREMENT
 	// ...
 	// TODO: add missing unary operator types
-} UnaryOperator_T;
+} UnaryOperator;
 
 typedef enum BinaryOperator {
 	BINARY_OPERATOR_ADD,
@@ -40,7 +40,7 @@ typedef enum AssignmentOperator {
 	ASSIGNMENT_OPERATOR_DIVIDE
 	// ... 
 	// TODO: add missing assignment operator types
-} AssignmentOperator_T;
+} AssignmentOperator;
 
 extern const char *BINARY_OPERATOR_TYPES[];
 

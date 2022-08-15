@@ -58,11 +58,8 @@ Scope *scope_new();
  * @return Scope* the new scope
  */
 Scope *scope_copy(Scope *scope);
-
 Scope *scope_join(Scope *scope, Scope *other);
-
 void scope_free(Scope *scope);
-
 void scope_merge(Scope *dest, Scope *src);
 
 /**
@@ -72,8 +69,7 @@ void scope_merge(Scope *dest, Scope *src);
  * @param var_name the name of the variable
  * @return int the offset from the base pointer
  */
-int scope_get_variable_rbp_offset(Scope *scope, char *var_name);
-
+// int scope_get_variable_rbp_offset(Scope *scope, char *var_name);
 
 // ----------------------------------------------------------------
 
@@ -83,9 +79,12 @@ int scope_contains_global_variable(Scope *scope, char *var_name);
 int scope_contains_function(Scope *scope, char *func_name);
 int scope_contains_enum(Scope *scope, char *enum_name);
 
-VariableTemplate *scope_get_variable_by_name(Scope *scope, char *var_name);
-FunctionTemplate *scope_get_function_by_name(Scope *scope, char *func_name);
-EnumDefinition *scope_get_enum_by_name(Scope *scope, char *enum_name);
+// VariableTemplate *scope_get_variable_by_name(Scope *scope, char *var_name);
+Variable *scope_get_variable_by_name(Scope *scope, char *var_name);
+// FunctionTemplate *scope_get_function_by_name(Scope *scope, char *func_name);
+Function *scope_get_function_by_name(Scope *scope, char *func_name);
+Enum *scope_get_enum_by_name(Scope *scope, char *enum_name);
 
-FunctionTemplate *scope_getFunctionByID(Scope *scope, unsigned long long int id);
-EnumDefinition *scope_get_enum_by_id(Scope *scope, unsigned long long int id);
+// FunctionTemplate *scope_getFunctionByID(Scope *scope, unsigned long long int id);
+Function *scope_getFunctionByID(Scope *scope, unsigned long long int id);
+Enum *scope_get_enum_by_id(Scope *scope, unsigned long long int id);

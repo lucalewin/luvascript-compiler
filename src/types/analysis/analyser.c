@@ -25,6 +25,12 @@ DataTypeTable *analyse_syntax(AST *ast) {
         return NULL;
     }
 
+    // analyse the syntax tree
+    if (!analyse_ast(table, ast)) {
+        data_type_table_free(table);
+        return NULL;
+    }
+
     return table;
 }
 
@@ -36,7 +42,7 @@ bool load_user_defined_types(DataTypeTable *dtt, AST *ast) {
 
         // enum definitions
         for (size_t j = 0; j < arraylist_size(package->enum_definitions); j++) {
-            EnumDefinition *enum_definition = arraylist_get(package->enum_definitions, j);
+            Enum *enum_definition = arraylist_get(package->enum_definitions, j);
 
             if (data_type_table_contains(dtt, enum_definition->name)) {
                 printf("%s:%d:%d: " RED "error: " RESET "type '%s' already defined\n", "TODO", 0, 0, enum_definition->name);
@@ -78,6 +84,7 @@ bool analyse_package(DataTypeTable *dtt, Package *package) {
         return false;
     }
 
+
     // analyse functions
     for (size_t i = 0; i < arraylist_size(package->functions); i++) {
         Function *function = arraylist_get(package->functions, i);
@@ -100,26 +107,48 @@ bool analyse_package(DataTypeTable *dtt, Package *package) {
 }
 
 bool analyse_function(DataTypeTable *dtt, Function *function) {
-    return false;
+    if (function == NULL) {
+        return false;
+    }
+
+    // TODO: analyse function parameters
+
+
+    // analyse function body
+    for (size_t i = 0; i < arraylist_size(function->statements); i++) {
+        Statement *statement = arraylist_get(function->statements, i);
+
+        if (!analyse_statement(dtt, statement)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool analyse_variable(DataTypeTable *dtt, Variable *variable, Scope *scope) {
-    DataType *type_of_expression = analyse_expression(dtt, variable->initializer, scope);
-
-    if (type_of_expression == NULL) {
+    // check if the type of the variables datatype is known
+    if (variable->type->type == DATA_TYPE_UNKNOWN) {
+        // check if the type is defined in the datatype table
+        if (data_type_table_contains(dtt, variable->type->identifier)) {
+            // set the type of the variable to the type of the datatype
+            variable->type = data_type_copy(data_type_table_get(dtt, variable->type->identifier));
+        } else {
+            // the type is not defined in the datatype table
+            printf("%s:%d:%d: " RED "error: " RESET "type '%s' is not defined\n", "TODO", 0, 0, variable->type->identifier);
+            return false;
+        }
+    }
+    
+    if (!analyse_expression(dtt, variable->initializer, scope)) {
         return false;
     }
 
-    DataType *type_of_variable = data_type_table_get(dtt, variable->type_identifier);
+    DataType *type_of_expression = expression_get_datatype(variable->initializer);
 
-    if (type_of_variable == NULL) {
-        printf("%s:%d:%d: " RED "error: " RESET "type '%s' not defined\n", "TODO", 0, 0, variable->type_identifier);
-        return false;
-    }
-
-    if (!data_type_is_compatible(type_of_variable, type_of_expression)) {
+    if (!data_type_is_compatible(variable->type, type_of_expression)) {
         printf("%s:%d:%d: " RED "error: " RESET "type '%s' is not compatible with type '%s'\n", "TODO", 0, 0, 
-                type_of_expression->identifier, type_of_variable->identifier);
+                type_of_expression->identifier, variable->type->identifier);
         return false;
     }
 

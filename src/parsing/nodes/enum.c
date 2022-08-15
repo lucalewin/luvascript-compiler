@@ -1,18 +1,20 @@
 #include <parsing/nodes/enum.h>
 
+#include <string.h>
+
 #include <util/util.h>
 
 const int ENUM_MEMBER_SIZE_BYTES = 4; // 4 bytes (32-bit)
 
-EnumDefinition *enum_definition_new() {
-    EnumDefinition *enum_definition = malloc(sizeof(EnumDefinition));
+Enum *enum_definition_new() {
+    Enum *enum_definition = malloc(sizeof(Enum));
     enum_definition->name = NULL;
     enum_definition->members = arraylist_create();
     return enum_definition;
 }
 
-EnumDefinition *enum_definition_copy(EnumDefinition *enum_definition) {
-    EnumDefinition *copy = enum_definition_new();
+Enum *enum_definition_copy(Enum *enum_definition) {
+    Enum *copy = enum_definition_new();
     copy->name = strdup(enum_definition->name);
     for (size_t i = 0; i < enum_definition->members->size; i++) {
         EnumDefinitionMember *member = arraylist_get(enum_definition->members, i);
@@ -21,7 +23,7 @@ EnumDefinition *enum_definition_copy(EnumDefinition *enum_definition) {
     return copy;
 }
 
-void enum_definition_free(EnumDefinition *enum_definition) {
+void enum_definition_free(Enum *enum_definition) {
     if (enum_definition == NULL) {
         return;
     }
@@ -39,6 +41,17 @@ EnumDefinitionMember *enum_definition_member_new(char *name, int value) {
     enum_definition_member->name = name;
     enum_definition_member->value = value;
     return enum_definition_member;
+}
+
+
+EnumDefinitionMember *enum_definition_member_get(Enum *enum_definition, char *name) {
+    for (size_t i = 0; i < enum_definition->members->size; i++) {
+        EnumDefinitionMember *member = arraylist_get(enum_definition->members, i);
+        if (strcmp(member->name, name) == 0) {
+            return member;
+        }
+    }
+    return NULL;
 }
 
 EnumDefinitionMember *enum_definition_member_copy(EnumDefinitionMember *enum_definition_member) {

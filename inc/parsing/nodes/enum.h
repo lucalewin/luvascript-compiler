@@ -3,7 +3,7 @@
 
 #include <util/arraylist.h>
 
-typedef struct _enum_definition EnumDefinition;
+typedef struct _enum_definition Enum;
 typedef struct _enum_definition_member EnumDefinitionMember;
 
 // const int ENUM_MEMBER_SIZE_BYTES = 4; // 4 bytes (32-bit)
@@ -22,11 +22,12 @@ struct _enum_definition_member {
     int value;
 };
 
-EnumDefinition *enum_definition_new();
-EnumDefinition *enum_definition_copy(EnumDefinition *enum_definition);
-void enum_definition_free(EnumDefinition *enum_definition);
+Enum *enum_definition_new();
+Enum *enum_definition_copy(Enum *enum_definition);
+void enum_definition_free(Enum *enum_definition);
 
 EnumDefinitionMember *enum_definition_member_new(char *name, int value);
+EnumDefinitionMember *enum_definition_member_get(Enum *enum_definition, char *name);
 EnumDefinitionMember *enum_definition_member_copy(EnumDefinitionMember *enum_definition_member);
 void enum_definition_member_free(EnumDefinitionMember *enum_definition_member);
 

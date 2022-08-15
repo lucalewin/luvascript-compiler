@@ -105,7 +105,7 @@ int isUnaryOperator(Token *t) {
 Package *expectPackage();
 Variable *parseVariable();
 
-EnumDefinition *parseEnumDefinition();
+Enum *parseEnumDefinition();
 // StructDefinition *parseStructDefinition();
 
 char *eatIdentifier();
@@ -324,17 +324,19 @@ Package *expectPackage() {
 			}
 			arraylist_add(package->global_variables, glob_var);
 		} else if (strcmp(current->data, "extern") == 0) {
+			
 			// expect extern function declaration
-			FunctionTemplate *extern_func_template = expectExternFunctionTemplate();
-			if (extern_func_template == NULL) {
-				// free allocated memory
-				package_free(package);
-				return NULL;
-			}
-			arraylist_add(package->extern_functions, extern_func_template);
+			// Function *extern_func = expectExternFunction();
+			// if (extern_func == NULL) {
+			// 	// free allocated memory
+			// 	package_free(package);
+			// 	return NULL;
+			// }
+			// arraylist_add(package->extern_functions, extern_func);
+			printf("%s:%d:%d: " RED "error: " RESET "extern functions are not supported yet\n", _filename, current->line, current->pos);
 		} else if (strcmp(current->data, "enum") == 0) {
-			EnumDefinition *enum_definition = parseEnumDefinition();
-			printf("%s:%d:%d: " RED "error: " RESET "enums are not supported\n", _filename, current->line, current->pos);
+			Enum *enum_definition = parseEnumDefinition();
+			// printf("%s:%d:%d: " RED "error: " RESET "enums are not supported\n", _filename, current->line, current->pos);
 			if (enum_definition == NULL) {
 				// free allocated memory
 				package_free(package);
@@ -351,135 +353,111 @@ Package *expectPackage() {
 	return package;
 }
 
-FunctionTemplate *expectExternFunctionTemplate() {
-	eat(TOKEN_KEYWORD);
-	// expect(TOKEN_KEYWORD); // 'function'
-	if (!is(TOKEN_KEYWORD) || strcmp(current->data, "function") != 0) {
-		printf("%s:%d:%d: " RED "error: " RESET "expected 'function' keyword, but got '%s'\n", 
-					_filename, current->line, current->pos, current->data);
-		return NULL;
-	}
-	next();
+// Function *expectExternFunction() {
+// 	eat(TOKEN_KEYWORD);
 
-	// function identifier
-	if (!is(TOKEN_IDENTIFIER)) {
-		printf("%s:%d:%d: " RED "error: " RESET "expected function identifier, but got '%s'\n", 
-					_filename, current->line, current->pos, current->data);
-		return NULL;
-	}
+// 	if (!expectKeyword("function")) {
+// 		printf("%s:%d:%d: " RED "error: " RESET "expected 'function' keyword, but got '%s'\n", 
+// 					_filename, current->line, current->pos, current->data);
+// 		return NULL;
+// 	}
+// 	next();
 
-	FunctionTemplate *func_template = calloc(1, sizeof(FunctionTemplate));
-	if (func_template == NULL) {
-		log_error("unable to allocate memory for FunctionTemplate\n");
-		exit(1);
-	}
+// 	Function *function = function_new();
+// 	if (function == NULL) {
+// 		log_error("unable to allocate memory for FunctionTemplate\n");
+// 		return NULL;
+// 	}
 
-	func_template->identifier = calloc(strlen(current->data), sizeof(char));
-	if (func_template->identifier == NULL) {
-		free(func_template);
-		log_error("calloc failed: unable to allocate memory for function identifier\n");
-		exit(1);
-	}
-    strcpy(func_template->identifier, current->data);
-	next();
+// 	function->is_extern = true;
+// 	function->identifier = eatIdentifier();
 
-	// eat(TOKEN_LPAREN);
-	if (!is(TOKEN_LPAREN)) {
-		printf("%s:%d:%d: " RED "error: " RESET "expected '(', but got '%s'\n", _filename, current->line, current->pos, current->data);
-		function_template_free(func_template);
-		return NULL;
-	}
-	next();
+// 	if (function->identifier == NULL) {
+// 		function_free(function);
+// 		return NULL;
+// 	}
 
-	// parse argument types (if any are defined)
+// 	if (!is(TOKEN_LPAREN)) {
+// 		printf("%s:%d:%d: " RED "error: " RESET "expected '(', but got '%s'\n", _filename, current->line, current->pos, current->data);
+// 		function_free(function);
+// 		return NULL;
+// 	}
+// 	next();
 
-	func_template->parameter_types = arraylist_create();
+// 	// parse argument types (if any are defined)
 
-	if (!is(TOKEN_RPAREN)) {
-		while (1) {
-			if (!(is(TOKEN_KEYWORD) || is(TOKEN_IDENTIFIER))) {
-				printf("%s:%d:%d: " RED "error: " RESET "expected type, but got '%s'\n", _filename, current->line, current->pos, current->data);
-				function_template_free(func_template);
-				return NULL;
-			}
+// 	if (!is(TOKEN_RPAREN)) {
+// 		while (1) {
+// 			if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENTIFIER)) {
+// 				printf("%s:%d:%d: " RED "error: " RESET "expected type, but got '%s'\n", _filename, current->line, current->pos, current->data);
+// 				function_free(function);
+// 				return NULL;
+// 			}
 
-			DatatypeOLD *type = parse_datatype(current->data);
-			if (type == NULL) {
-				printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
-				function_template_free(func_template);
-				return NULL;
-			}
-			// TODO: check if type is an array type
-			arraylist_add(func_template->parameter_types, type);
+// 			// DatatypeOLD *type = parse_datatype(current->data);
+// 			DataType *datatype = data_type_parse(current->data);
+// 			if (datatype == NULL) {
+// 				printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
+// 				function_free(function);
+// 				return NULL;
+// 			}
+// 			// TODO: check if type is an array type
+// 			// FIXME: function->parameters is an array of Variable* not DataType*
+// 			// arraylist_add(function->parameters, datatype);
 
-			next();
+// 			next();
 
-			if (!is(TOKEN_COMMA)) {
-				break;
-			}
+// 			if (!is(TOKEN_COMMA)) {
+// 				break;
+// 			}
 
-			next();
-		}
-	}
+// 			next();
+// 		}
+// 	}
 
-	eat(TOKEN_RPAREN);
+// 	eat(TOKEN_RPAREN);
 
-	eat(TOKEN_COLON);
+// 	eat(TOKEN_COLON);
 
-	// DatatypeOLD *return_typeOLD = parse_datatype(current->data);
-	// if (return_typeOLD == NULL) {
-	// 	printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
-	// 	function_template_free(func_template);
-	// 	return NULL;
-	// }
-	// // TODO: check if return type is an array type
+// 	// DatatypeOLD *return_typeOLD = parse_datatype(current->data);
+// 	// if (return_typeOLD == NULL) {
+// 	// 	printf("%s:%d:%d: " RED "error: " RESET "unable to parse unknown type '%s'\n", _filename, current->line, current->pos, current->data);
+// 	// 	function_template_free(func_template);
+// 	// 	return NULL;
+// 	// }
+// 	// // TODO: check if return type is an array type
 
-	// func_template->return_typeOLD = return_typeOLD;
+// 	// func_template->return_typeOLD = return_typeOLD;
 
-	func_template->return_type = strdup(current->data);
-	next();
+// 	func_template->return_type = strdup(current->data);
+// 	next();
 
-	eat(TOKEN_SEMICOLON);
+// 	eat(TOKEN_SEMICOLON);
 
-	func_template->id = function_id_counter++;
+// 	func_template->id = function_id_counter++;
 
-	return func_template;
-}
+// 	return func_template;
+// }
 
 Function *expectFunction() {
-	if (!is(TOKEN_KEYWORD) && strcmp(current->data, "function") != 0) {	
-		log_error("expected function declaration at [%d:%d] but got '%s' with value '%s' instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type], current->data);
+	if (!expectKeyword("function")) {	
 		printf("%s:%d:%d: " RED "error: " RESET "expected function declaration\n", _filename, current->line, current->pos);
 		return NULL;
 	}
 	next();
 
-	// expecting function name
-	if (!is(TOKEN_IDENTIFIER)) {
-		printf("%s:%d:%d: " RED "error: " RESET "expected function identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);
-		return NULL;
-	}
-
-	Function *function = calloc(1, sizeof(Function)); // FIXME: memory leak --> replace with function_new()
+	Function *function = function_new();
 	if (function == NULL) {
 		log_error("unable to allocate memory for function\n");
 		return NULL;
 	}
 
-	function->identifier = calloc(strlen(current->data), sizeof(char));
-	function->return_type = NULL;
-	function->statements = NULL;
-	// function->return_typeOLD = NULL;
-	function->parameters = NULL;
-	function->scope = NULL;
-
+	function->identifier = eatIdentifier();
 	if (function->identifier == NULL) {
-		free(function);
+		function_free(function);
 		log_error("calloc failed: unable to allocate memory for function identifier\n");
 		return NULL;
 	}
-    strcpy(function->identifier, current->data);
-	next();
 
 	// function paramerter
 	if (!is(TOKEN_LPAREN)) {
@@ -488,8 +466,6 @@ Function *expectFunction() {
 		return NULL;
 	}
 	next();
-
-	function->parameters = arraylist_create();
 
 	if (!is(TOKEN_RPAREN)) {
 		while(1) {
@@ -519,10 +495,9 @@ Function *expectFunction() {
 				return NULL;
 			}
 
-			parameter->type_identifier = strdup(current->data);
+			// parameter->type_identifier = strdup(current->data);
+			parameter->type = data_type_parse(current->data);
 			next();
-
-			parameter->initializer = NULL;
 
 			arraylist_add(function->parameters, parameter);
 
@@ -535,31 +510,24 @@ Function *expectFunction() {
 	}
 
 	eat(TOKEN_RPAREN);
-
-	// colon + return type
 	eat(TOKEN_COLON);
 
 	if (!is(TOKEN_KEYWORD) && !is(TOKEN_IDENTIFIER)) {
-		free(function->identifier);
-		arraylist_free(function->parameters);
-		free(function);
-		log_error("expected type identifier at [%d:%d] but got %s instead\n", current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
-		exit(1);
+		printf("%s:%d:%d: " RED "error: " RESET "expected type identifier, but got '%s'\n", _filename, current->line, current->pos, current->data);
+		function_free(function);
+		return NULL;
 	}
 
-	// function->return_typeOLD = parse_datatype(current->data);
-	function->return_type = strdup(current->data);
+	function->return_type = data_type_parse(current->data);
 	next();
 
 	eat(TOKEN_LBRACE);
 
-	ArrayList *statements_array = arraylist_create();
 
     while (!is(TOKEN_RBRACE)) {
-        arraylist_add(statements_array, expectStatement());
-    }	
+        arraylist_add(function->statements, expectStatement());
+    }
 
-	function->statements = statements_array;
 	function->id = function_id_counter++;
 
 	eat(TOKEN_RBRACE);
@@ -569,7 +537,7 @@ Function *expectFunction() {
 
 Variable *parseVariable() {
 
-	Variable *variable = calloc(1, sizeof(Variable));
+	Variable *variable = variable_new();
 	if (variable == NULL) {
 		log_error("unable to allocate memory for Variable\n");
 		return NULL;
@@ -587,6 +555,12 @@ Variable *parseVariable() {
 
 	eat(TOKEN_KEYWORD); // 'var' keyword
 	variable->identifier = eatIdentifier();
+	if (variable->identifier == NULL) {
+		log_error("unable to allocate memory for variable identifier\n");
+		variable_free(variable);
+		return NULL;
+	}
+
 	eat(TOKEN_COLON);
 
 	// expect type identifier
@@ -599,7 +573,8 @@ Variable *parseVariable() {
 		return NULL;
 	}
 
-	variable->type_identifier = strdup(current->data);
+	// variable->type_identifier = strdup(current->data);
+	variable->type = data_type_parse(current->data);
 	next();
 
 	int array_size_specified = 0;
@@ -608,12 +583,12 @@ Variable *parseVariable() {
 		eat(TOKEN_LBRACKET);
 		// arraysize is specified
 		if (is(TOKEN_NUMBER)) {
-			variable->array_size = atoi(current->data);
+			variable->type->array_size = atoi(current->data);
 			array_size_specified = 1;
 			next();
 		}
 		eat(TOKEN_RBRACKET);
-		variable->is_array = 1;
+		variable->type->is_array = 1;
 	}
 
 	if (is(TOKEN_SEMICOLON)) {
@@ -623,40 +598,61 @@ Variable *parseVariable() {
 			return NULL;
 		}
 
-		if (variable->is_array) {
+		if (variable->type->is_array) {
 			printf("%s:%d:%d: " RED "error: " RESET "incomplete array declaration: either initialize array or specify array-size",
 						_filename, current->line, current->pos);
 			variable_free(variable);
 			return NULL;
 		}
 
-		variable->initializer = NULL;
 		eat(TOKEN_SEMICOLON);
 
 	} else if (is(TOKEN_ASSIGNMENT_SIMPLE)) {
 		// default value assignment
 		eat(TOKEN_ASSIGNMENT_SIMPLE);
 
-		if (variable->is_array) {
+		if (variable->type->is_array) {
 
-			eat(TOKEN_LBRACKET);
-
-			variable->initializer = expectExpressionList();
-			if (array_size_specified) {
-				if (variable->initializer->expr.list_expr->expressions->size != variable->array_size) {
-					printf("%s:%d:%d: " RED "error: " RESET "array size mismatch: expected %lld elements, but got %ld",
-								_filename, current->line, current->pos, variable->array_size,
-								variable->initializer->expr.list_expr->expressions->size);
+			if (is(TOKEN_STRING)) {
+				// SPECIAL CASE: strings
+				variable->initializer = expression_new(EXPRESSION_TYPE_LITERAL);
+				if (variable->initializer == NULL) {
+					log_error("unable to allocate memory for Expression\n");
 					variable_free(variable);
 					return NULL;
 				}
+				
+				variable->initializer->expr.literal = literal_create(LITERAL_STRING, current->data);
+				if (variable->initializer->expr.literal == NULL) {
+					log_error("unable to allocate memory for Literal\n");
+					expression_free(variable->initializer);
+					variable_free(variable);
+					return NULL;
+				}
+				
+				eat(TOKEN_STRING);
 			} else {
-				variable->array_size = variable->initializer->expr.list_expr->expressions->size;
+				// normal array initialization
+				eat(TOKEN_LBRACKET);
+
+				variable->initializer = expectExpressionList();
+				if (array_size_specified) {
+					if (variable->initializer->expr.list->expressions->size != variable->type->array_size) {
+						printf("%s:%d:%d: " RED "error: " RESET "array size mismatch: expected %lld elements, but got %ld",
+									_filename, current->line, current->pos, variable->type->array_size,
+									variable->initializer->expr.list->expressions->size);
+						variable_free(variable);
+						return NULL;
+					}
+				} else {
+					variable->type->array_size = variable->initializer->expr.list->expressions->size;
+				}
+
+				eat(TOKEN_RBRACKET);
 			}
 
-			eat(TOKEN_RBRACKET);
 		} else {
-			Expression_T *initializer = expectExpression();
+			Expression *initializer = expectExpression();
 			variable->initializer = initializer;
 		}
 	}
@@ -665,13 +661,14 @@ Variable *parseVariable() {
 	return variable;
 }
 
-EnumDefinition *parseEnumDefinition() {
+Enum *parseEnumDefinition() {
 	if (!expectKeyword("enum")) {
 		printf("%s:%d:%d: " RED "error: " RESET "expected 'enum' keyword\n", _filename, current->line, current->pos);
 		return NULL;
 	}
+	next();
 
-	EnumDefinition *enum_definition = enum_definition_new();
+	Enum *enum_definition = enum_definition_new();
 	if (enum_definition == NULL) {
 		log_error("parseEnumDefinition(): cannot allocate memory for enum_definition\n");
 		return NULL;
@@ -750,7 +747,7 @@ Statement *expectStatement() {
 		}
 
 		statement->type = STATEMENT_ASSEMBLY_CODE_BLOCK;
-		statement->stmt.assembly_code_block_statement = block;
+		statement->stmt.assembly = block;
 
 		return statement;
 	} else {
@@ -776,7 +773,7 @@ Statement *expectCompoundStatement() {
 
     compund_statement->nested_statements = statements_array;
     statement->type = STATEMENT_COMPOUND;
-    statement->stmt.compound_statement = compund_statement;
+    statement->stmt.compound = compund_statement;
 
     return statement;
 }
@@ -798,7 +795,7 @@ Statement *expectExpressionStatement() {
 		exit(1);
 	}
 	
-	Expression_T *expr = expectExpression();
+	Expression *expr = expectExpression();
 
     if (expr == NULL) {
         free(statement);
@@ -808,7 +805,7 @@ Statement *expectExpressionStatement() {
     }
 
 	expr_stmt->expression = expr;
-    statement->stmt.expression_statement = expr_stmt;
+    statement->stmt.expression = expr_stmt;
 
 	eat(TOKEN_SEMICOLON);
 
@@ -829,7 +826,7 @@ Statement *expectJumpStatement() {
 		} else {
 			ret_stmt->expression = expectExpression();
 		}
-		statement->stmt.return_statement = ret_stmt;
+		statement->stmt._return = ret_stmt;
         eat(TOKEN_SEMICOLON);
     } else {
         free(statement);
@@ -845,20 +842,22 @@ Statement *expectVariableDeclarationStatement() {
 	Statement *statement = calloc(1, sizeof(Statement));
 	if (statement == NULL) {
 		log_error("unable to allocate memory for Statement\n");
-		exit(1);
+		return NULL;
 	}
 
 	VariableDeclarationStatement *var_decl_stmt = calloc(1, sizeof(VariableDeclarationStatement));
 	if (var_decl_stmt == NULL) {
 		free(statement);
 		log_error("unable to allocate memory for VariableDeclarationStatement\n");
-		exit(1);
+		return NULL;
 	}
 
-	statement->stmt.variable_decl = var_decl_stmt;
+	statement->stmt.variable_declaration = var_decl_stmt;
 	statement->type = STATEMENT_VARIABLE_DECLARATION;
 
 	var_decl_stmt->variable = parseVariable();
+
+	log_debug("expectVariableDeclarationStatement(): parsed variable %s\n", var_decl_stmt->variable->identifier);
 
 	return statement;
 }
@@ -873,7 +872,7 @@ Statement *expectConditionalStatement() {
 
 	eat(TOKEN_LPAREN); // '('
 
-	Expression_T *condition = expectExpression();
+	Expression *condition = expectExpression();
 	if (condition == NULL) {
 		log_error("expectConditionalStatement(): expectExpression() returned NULL\n");
 		return NULL;
@@ -906,7 +905,7 @@ Statement *expectConditionalStatement() {
 	}
 
 	statement->type = STATEMENT_CONDITIONAL;
-	statement->stmt.conditional_statement = conditional_statement;
+	statement->stmt.conditional = conditional_statement;
 
 	conditional_statement->condition = condition;
 	conditional_statement->true_branch = body;
@@ -944,7 +943,7 @@ Statement *expectLoopStatement() {
 
 	eat(TOKEN_LPAREN); // '('
 
-	Expression_T *condition = expectExpression();
+	Expression *condition = expectExpression();
 	if (condition == NULL) {
 		log_error("expectLoopStatement(): expectExpression() failed\n");
 		return NULL;
@@ -977,7 +976,7 @@ Statement *expectLoopStatement() {
 	}
 
 	statement->type = STATEMENT_LOOP;
-	statement->stmt.loop_statement = loop_statement;
+	statement->stmt.loop = loop_statement;
 
 	loop_statement->condition = condition;
 	loop_statement->body = body;
@@ -987,7 +986,7 @@ Statement *expectLoopStatement() {
 
 // -----------------------------------------------------------------------------------
 
-Expression_T *expectExpressionList() {
+Expression *expectExpressionList() {
 	ArrayList *expressions = arraylist_create();
 
 	arraylist_add(expressions, expectExpression());
@@ -997,41 +996,41 @@ Expression_T *expectExpressionList() {
 		arraylist_add(expressions, expectExpression());
 	}
 
-	ExpressionList_T *expression_list = calloc(1, sizeof(ExpressionList_T));
+	ExpressionList *expression_list = calloc(1, sizeof(ExpressionList));
 	if (expression_list == NULL) {
-		log_error("expectExpressionList(): not able to allocated memory for ExpressionList_T\n");
+		log_error("expectExpressionList(): not able to allocated memory for ExpressionList\n");
 		arraylist_free(expressions);
 		return NULL;
 	}
 
 	expression_list->expressions = expressions;
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	if (expression == NULL) {
-		log_error("expectExpressionList(): not able to allocated memory for Expression_T\n");
+		log_error("expectExpressionList(): not able to allocated memory for Expression\n");
 		arraylist_free(expressions);
 		free(expression_list);
 		return NULL;
 	}
 
 	expression->type = EXPRESSION_TYPE_LIST;
-	expression->expr.list_expr = expression_list;
+	expression->expr.list = expression_list;
 
 	return expression;
 }
 
-Expression_T *expectExpression() {
+Expression *expectExpression() {
 	return expectAssignmentExpression();
     // return expectAdditiveExpression();
 }
 
-Expression_T *expectAssignmentExpression() {
+Expression *expectAssignmentExpression() {
 
 	if (!isAssignmentOperator(lookahead)) {
 		return expectLogicalOrExpression();
 	}
 
-	Expression_T *identifier_expr = expectUnaryExpression();
+	Expression *identifier_expr = expectUnaryExpression();
 
 	if (!isAssignmentOperator(current)) {
 		return identifier_expr;
@@ -1041,8 +1040,8 @@ Expression_T *expectAssignmentExpression() {
 		case EXPRESSION_TYPE_UNARY: // all unary expressions are valid (for now [lvc version 0.1.0-alpha])
 			break;
 		case EXPRESSION_TYPE_LITERAL:
-			if (identifier_expr->expr.literal_expr->type != LITERAL_IDENTIFIER) {
-				log_error("expected identifier but got '%s' instead\n", LITERAL_TYPES[identifier_expr->expr.literal_expr->type]);
+			if (identifier_expr->expr.literal->type != LITERAL_IDENTIFIER) {
+				log_error("expected identifier but got '%s' instead\n", LITERAL_TYPES[identifier_expr->expr.literal->type]);
 				exit(1);
 			}
 			break;
@@ -1052,8 +1051,8 @@ Expression_T *expectAssignmentExpression() {
 			exit(1);
 	}
 
-	Expression_T *expr = calloc(1, sizeof(Expression_T));
-	AssignmentExpression_T *assignment_expr = calloc(1, sizeof(AssignmentExpression_T));
+	Expression *expr = calloc(1, sizeof(Expression));
+	AssignmentExpression *assignment_expr = calloc(1, sizeof(AssignmentExpression));
 
 	if (expr == NULL || assignment_expr == NULL) {
 		free(expr);
@@ -1063,7 +1062,7 @@ Expression_T *expectAssignmentExpression() {
 	}
 
 	expr->type = EXPRESSION_TYPE_ASSIGNMENT;
-	expr->expr.assignment_expr = assignment_expr;
+	expr->expr.assignment = assignment_expr;
 
 	assignment_expr->identifier = identifier_expr;
 
@@ -1110,207 +1109,207 @@ Expression_T *expectAssignmentExpression() {
 	return expr;
 }
 
-// Expression_T *expectConditionalExpression() {}
-Expression_T *expectLogicalOrExpression() {
-	Expression_T *expr = expectLogicalAndExpression();
+// Expression *expectConditionalExpression() {}
+Expression *expectLogicalOrExpression() {
+	Expression *expr = expectLogicalAndExpression();
 
 	if (!is(TOKEN_LOGICAL_OR)) {
 		return expr;
 	}
 
-	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-	binary_expression->expression_left = expr;
-	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr;
+	BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+	binary_expression->left = expr;
+	BinaryExpression *temp = binary_expression;
+	Expression *temp_expr;
 
 	while (is(TOKEN_LOGICAL_OR)) {
 		temp->operator = BINARY_OPERATOR_LOGICAL_OR;
 		next();
-		temp->expression_right = expectLogicalAndExpression();
+		temp->right = expectLogicalAndExpression();
 		binary_expression = temp;
-		temp = calloc(1, sizeof(BinaryExpression_T));
-		temp_expr = calloc(1, sizeof(Expression_T));
+		temp = calloc(1, sizeof(BinaryExpression));
+		temp_expr = calloc(1, sizeof(Expression));
 		temp_expr->type = EXPRESSION_TYPE_BINARY;
-		temp_expr->expr.binary_expr = binary_expression;
-		temp->expression_left = temp_expr;
+		temp_expr->expr.binary = binary_expression;
+		temp->left = temp_expr;
 	}
 
 	free(temp_expr);
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	expression->type = EXPRESSION_TYPE_BINARY;
-	expression->expr.binary_expr = binary_expression;
+	expression->expr.binary = binary_expression;
 
 	return expression;
 }
 
-Expression_T *expectLogicalAndExpression() {
-	Expression_T *expr = expectBitwiseOrExpression();
+Expression *expectLogicalAndExpression() {
+	Expression *expr = expectBitwiseOrExpression();
 
 	if (!is(TOKEN_LOGICAL_AND)) {
 		return expr;
 	}
 
-	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-	binary_expression->expression_left = expr;
-	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr;
+	BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+	binary_expression->left = expr;
+	BinaryExpression *temp = binary_expression;
+	Expression *temp_expr;
 
 	while (is(TOKEN_LOGICAL_AND)) {
 		temp->operator = BINARY_OPERATOR_LOGICAL_AND;
 		next();
-		temp->expression_right = expectBitwiseOrExpression();
+		temp->right = expectBitwiseOrExpression();
 		binary_expression = temp;
-		temp = calloc(1, sizeof(BinaryExpression_T));
-		temp_expr = calloc(1, sizeof(Expression_T));
+		temp = calloc(1, sizeof(BinaryExpression));
+		temp_expr = calloc(1, sizeof(Expression));
 		temp_expr->type = EXPRESSION_TYPE_BINARY;
-		temp_expr->expr.binary_expr = binary_expression;
-		temp->expression_left = temp_expr;
+		temp_expr->expr.binary = binary_expression;
+		temp->left = temp_expr;
 	}
 
 	free(temp_expr);
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	expression->type = EXPRESSION_TYPE_BINARY;
-	expression->expr.binary_expr = binary_expression;
+	expression->expr.binary = binary_expression;
 
 	return expression;
 }
 
-Expression_T *expectBitwiseOrExpression() {
-	Expression_T *expr = expectBitwiseXorExpression();
+Expression *expectBitwiseOrExpression() {
+	Expression *expr = expectBitwiseXorExpression();
 
 	if (!is(TOKEN_VERTICAL_BAR)) {
 		return expr;
 	}
 
-	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-	binary_expression->expression_left = expr;
-	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr;
+	BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+	binary_expression->left = expr;
+	BinaryExpression *temp = binary_expression;
+	Expression *temp_expr;
 
 	while (is(TOKEN_VERTICAL_BAR)) {
 		temp->operator = BINARY_OPERATOR_BITWISE_OR;
 		next();
-		temp->expression_right = expectBitwiseXorExpression();
+		temp->right = expectBitwiseXorExpression();
 		binary_expression = temp;
-		temp = calloc(1, sizeof(BinaryExpression_T));
-		temp_expr = calloc(1, sizeof(Expression_T));
+		temp = calloc(1, sizeof(BinaryExpression));
+		temp_expr = calloc(1, sizeof(Expression));
 		temp_expr->type = EXPRESSION_TYPE_BINARY;
-		temp_expr->expr.binary_expr = binary_expression;
-		temp->expression_left = temp_expr;
+		temp_expr->expr.binary = binary_expression;
+		temp->left = temp_expr;
 	}
 
 	free(temp_expr);
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	expression->type = EXPRESSION_TYPE_BINARY;
-	expression->expr.binary_expr = binary_expression;
+	expression->expr.binary = binary_expression;
 
 	return expression;
 }
 
-Expression_T *expectBitwiseXorExpression() {
-	Expression_T *expr = expectBitwiseAndExpression();
+Expression *expectBitwiseXorExpression() {
+	Expression *expr = expectBitwiseAndExpression();
 
 	if (!is(TOKEN_CIRCUMFLEX)) {
 		return expr;
 	}
 
-	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-	binary_expression->expression_left = expr;
-	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr;
+	BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+	binary_expression->left = expr;
+	BinaryExpression *temp = binary_expression;
+	Expression *temp_expr;
 
 	while (is(TOKEN_CIRCUMFLEX)) {
 		temp->operator = BINARY_OPERATOR_BITWISE_XOR;
 		next();
-		temp->expression_right = expectBitwiseAndExpression();
+		temp->right = expectBitwiseAndExpression();
 		binary_expression = temp;
-		temp = calloc(1, sizeof(BinaryExpression_T));
-		temp_expr = calloc(1, sizeof(Expression_T));
+		temp = calloc(1, sizeof(BinaryExpression));
+		temp_expr = calloc(1, sizeof(Expression));
 		temp_expr->type = EXPRESSION_TYPE_BINARY;
-		temp_expr->expr.binary_expr = binary_expression;
-		temp->expression_left = temp_expr;
+		temp_expr->expr.binary = binary_expression;
+		temp->left = temp_expr;
 	}
 
 	free(temp_expr);
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	expression->type = EXPRESSION_TYPE_BINARY;
-	expression->expr.binary_expr = binary_expression;
+	expression->expr.binary = binary_expression;
 
 	return expression;
 }
 
-Expression_T *expectBitwiseAndExpression() {
-	Expression_T *expr = expectEqualitiyExpression();
+Expression *expectBitwiseAndExpression() {
+	Expression *expr = expectEqualitiyExpression();
 
 	if (!is(TOKEN_AMPERSAND)) {
 		return expr;
 	}
 
-	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-	binary_expression->expression_left = expr;
-	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr;
+	BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+	binary_expression->left = expr;
+	BinaryExpression *temp = binary_expression;
+	Expression *temp_expr;
 
 	while (is(TOKEN_AMPERSAND)) {
 		temp->operator = BINARY_OPERATOR_BITWISE_AND;
 		next();
-		temp->expression_right = expectEqualitiyExpression();
+		temp->right = expectEqualitiyExpression();
 		binary_expression = temp;
-		temp = calloc(1, sizeof(BinaryExpression_T));
-		temp_expr = calloc(1, sizeof(Expression_T));
+		temp = calloc(1, sizeof(BinaryExpression));
+		temp_expr = calloc(1, sizeof(Expression));
 		temp_expr->type = EXPRESSION_TYPE_BINARY;
-		temp_expr->expr.binary_expr = binary_expression;
-		temp->expression_left = temp_expr;
+		temp_expr->expr.binary = binary_expression;
+		temp->left = temp_expr;
 	}
 
 	free(temp_expr);
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	expression->type = EXPRESSION_TYPE_BINARY;
-	expression->expr.binary_expr = binary_expression;
+	expression->expr.binary = binary_expression;
 
 	return expression;
 }
 
-Expression_T *expectEqualitiyExpression() {
-	Expression_T *expr = expectRelationalExpression();
+Expression *expectEqualitiyExpression() {
+	Expression *expr = expectRelationalExpression();
 
 	if (!is(TOKEN_RELATIONAL_EQUAL) && !is(TOKEN_RELATIONAL_NOT_EQUAL)) {
 		return expr;
 	}
 
-	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-	binary_expression->expression_left = expr;
-	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr = NULL;
+	BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+	binary_expression->left = expr;
+	BinaryExpression *temp = binary_expression;
+	Expression *temp_expr = NULL;
 
 	while (is(TOKEN_RELATIONAL_EQUAL) || is(TOKEN_RELATIONAL_NOT_EQUAL)) {
 		temp->operator = is(TOKEN_RELATIONAL_EQUAL) ? BINARY_OPERATOR_LOGICAL_EQUAL : BINARY_OPERATOR_LOGICAL_NOT_EQUAL;
 		next();
-		temp->expression_right = expectRelationalExpression();
+		temp->right = expectRelationalExpression();
 		binary_expression = temp;
-		temp = calloc(1, sizeof(BinaryExpression_T));
-		temp_expr = calloc(1, sizeof(Expression_T));
+		temp = calloc(1, sizeof(BinaryExpression));
+		temp_expr = calloc(1, sizeof(Expression));
 		temp_expr->type = EXPRESSION_TYPE_BINARY;
-		temp_expr->expr.binary_expr = binary_expression;
-		temp->expression_left = temp_expr;
+		temp_expr->expr.binary = binary_expression;
+		temp->left = temp_expr;
 	}
 
 	free(temp_expr);
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	expression->type = EXPRESSION_TYPE_BINARY;
-	expression->expr.binary_expr = binary_expression;
+	expression->expr.binary = binary_expression;
 
 	return expression;
 }
 
-Expression_T *expectRelationalExpression() {
-	Expression_T *expr = expectShiftExpression();
+Expression *expectRelationalExpression() {
+	Expression *expr = expectShiftExpression();
 
 	if (!is(TOKEN_RELATIONAL_GREATER) &&
 				!is(TOKEN_RELATIONAL_GREATER_OR_EQUAL) &&
@@ -1319,10 +1318,10 @@ Expression_T *expectRelationalExpression() {
 		return expr;
 	}
 
-	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-	binary_expression->expression_left = expr;
-	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr = NULL;
+	BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+	binary_expression->left = expr;
+	BinaryExpression *temp = binary_expression;
+	Expression *temp_expr = NULL;
 
 	while (is(TOKEN_RELATIONAL_GREATER) ||
 				is(TOKEN_RELATIONAL_GREATER_OR_EQUAL) ||
@@ -1345,101 +1344,101 @@ Expression_T *expectRelationalExpression() {
 				break;
 		}
 		next();
-		temp->expression_right = expectShiftExpression();
+		temp->right = expectShiftExpression();
 		binary_expression = temp;
-		temp = calloc(1, sizeof(BinaryExpression_T));
-		temp_expr = calloc(1, sizeof(Expression_T));
+		temp = calloc(1, sizeof(BinaryExpression));
+		temp_expr = calloc(1, sizeof(Expression));
 		temp_expr->type = EXPRESSION_TYPE_BINARY;
-		temp_expr->expr.binary_expr = binary_expression;
-		temp->expression_left = temp_expr;
+		temp_expr->expr.binary = binary_expression;
+		temp->left = temp_expr;
 	}
 
 	free(temp_expr);
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	expression->type = EXPRESSION_TYPE_BINARY;
-	expression->expr.binary_expr = binary_expression;
+	expression->expr.binary = binary_expression;
 
 	return expression;
 }
 
-Expression_T *expectShiftExpression() {
-	Expression_T *expr = expectAdditiveExpression();
+Expression *expectShiftExpression() {
+	Expression *expr = expectAdditiveExpression();
 
 	if (!is(TOKEN_BITWISE_LEFT_SHIFT) && !is(TOKEN_BITWISE_RIGHT_SHIFT)) {
 		return expr;
 	}
 
-	BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-	binary_expression->expression_left = expr;
-	BinaryExpression_T *temp = binary_expression;
-	Expression_T *temp_expr = NULL;
+	BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+	binary_expression->left = expr;
+	BinaryExpression *temp = binary_expression;
+	Expression *temp_expr = NULL;
 
 	while (is(TOKEN_BITWISE_LEFT_SHIFT) || is(TOKEN_BITWISE_RIGHT_SHIFT)) {
 		temp->operator = is(TOKEN_BITWISE_LEFT_SHIFT) ? BINARY_OPERATOR_BITWISE_ARITHMETIC_LEFT_SHIFT : BINARY_OPERATOR_BITWISE_ARITHMETIC_RIGHT_SHIFT;
 		next();
-		temp->expression_right = expectAdditiveExpression();
+		temp->right = expectAdditiveExpression();
 		binary_expression = temp;
-		temp = calloc(1, sizeof(BinaryExpression_T));
-		temp_expr = calloc(1, sizeof(Expression_T));
+		temp = calloc(1, sizeof(BinaryExpression));
+		temp_expr = calloc(1, sizeof(Expression));
 		temp_expr->type = EXPRESSION_TYPE_BINARY;
-		temp_expr->expr.binary_expr = binary_expression;
-		temp->expression_left = temp_expr;
+		temp_expr->expr.binary = binary_expression;
+		temp->left = temp_expr;
 	}
 
 	free(temp_expr);
 
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+	Expression *expression = calloc(1, sizeof(Expression));
 	expression->type = EXPRESSION_TYPE_BINARY;
-	expression->expr.binary_expr = binary_expression;
+	expression->expr.binary = binary_expression;
 
 	return expression;
 }
 
-Expression_T *expectAdditiveExpression() {
-    Expression_T *expr = expectMultiplicativeExpression();
+Expression *expectAdditiveExpression() {
+    Expression *expr = expectMultiplicativeExpression();
 
     if (!is(TOKEN_PLUS) && !is(TOKEN_MINUS)) {
         return expr;
     }
 
-    BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-    binary_expression->expression_left = expr;
-    BinaryExpression_T *temp = binary_expression;
-    Expression_T *temp_expr = NULL;
+    BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+    binary_expression->left = expr;
+    BinaryExpression *temp = binary_expression;
+    Expression *temp_expr = NULL;
 
     while (is(TOKEN_PLUS) || is(TOKEN_MINUS)) {
         temp->operator = is(TOKEN_PLUS) ? BINARY_OPERATOR_ADD : BINARY_OPERATOR_SUBTRACT;
         next();
-        temp->expression_right = expectMultiplicativeExpression();
+        temp->right = expectMultiplicativeExpression();
         binary_expression = temp;
-        temp = calloc(1, sizeof(BinaryExpression_T));
-        temp_expr = calloc(1, sizeof(Expression_T));
+        temp = calloc(1, sizeof(BinaryExpression));
+        temp_expr = calloc(1, sizeof(Expression));
         temp_expr->type = EXPRESSION_TYPE_BINARY;
-        temp_expr->expr.binary_expr = binary_expression;
-        temp->expression_left = temp_expr;
+        temp_expr->expr.binary = binary_expression;
+        temp->left = temp_expr;
     }
 
     free(temp_expr);
 
-    Expression_T *expression = calloc(1, sizeof(Expression_T));
+    Expression *expression = calloc(1, sizeof(Expression));
     expression->type = EXPRESSION_TYPE_BINARY;
-    expression->expr.binary_expr = binary_expression;
+    expression->expr.binary = binary_expression;
 
     return expression;
 }
 
-Expression_T *expectMultiplicativeExpression() {
-    Expression_T *expr = expectUnaryExpression();
+Expression *expectMultiplicativeExpression() {
+    Expression *expr = expectUnaryExpression();
 
     if (!is(TOKEN_ASTERISK) && !is(TOKEN_SLASH) && !is(TOKEN_PERCENT)) {
         return expr;
     }
 
-    BinaryExpression_T *binary_expression = calloc(1, sizeof(BinaryExpression_T));
-    binary_expression->expression_left = expr;
-    BinaryExpression_T *temp = binary_expression;
-    Expression_T *temp_expr = NULL;
+    BinaryExpression *binary_expression = calloc(1, sizeof(BinaryExpression));
+    binary_expression->left = expr;
+    BinaryExpression *temp = binary_expression;
+    Expression *temp_expr = NULL;
 
     while (is(TOKEN_ASTERISK) || is(TOKEN_SLASH) || is(TOKEN_PERCENT)) {
         // temp->operator = is(TOKEN_ASTERISK) ? BINARY_OPERATOR_MULTIPLY : BINARY_OPERATOR_DIVIDE;
@@ -1454,28 +1453,28 @@ Expression_T *expectMultiplicativeExpression() {
 			log_error("Unexpected token type %d", current->type);
 		}
         next();
-        temp->expression_right = expectUnaryExpression();
+        temp->right = expectUnaryExpression();
         binary_expression = temp;
-        temp = calloc(1, sizeof(BinaryExpression_T));
-        temp_expr = calloc(1, sizeof(Expression_T));
+        temp = calloc(1, sizeof(BinaryExpression));
+        temp_expr = calloc(1, sizeof(Expression));
         temp_expr->type = EXPRESSION_TYPE_BINARY;
-        temp_expr->expr.binary_expr = binary_expression;
-        temp->expression_left = temp_expr;
+        temp_expr->expr.binary = binary_expression;
+        temp->left = temp_expr;
     }
 
     free(temp_expr);
 
-    Expression_T *expression = calloc(1, sizeof(Expression_T));
+    Expression *expression = calloc(1, sizeof(Expression));
     expression->type = EXPRESSION_TYPE_BINARY;
-    expression->expr.binary_expr = binary_expression;
+    expression->expr.binary = binary_expression;
 
     return expression;
 }
 
-Expression_T *expectUnaryExpression() {
+Expression *expectUnaryExpression() {
 	switch (current->type) {
 		case TOKEN_MINUS: {
-			UnaryExpression_T *unary_expr = calloc(1, sizeof(UnaryExpression_T));
+			UnaryExpression *unary_expr = calloc(1, sizeof(UnaryExpression));
 			if (unary_expr == NULL) {
 				log_error("expectUnaryExpression(): calloc failed\n");
 				exit(1);
@@ -1489,7 +1488,7 @@ Expression_T *expectUnaryExpression() {
 				exit(1);
 			}
 
-			Literal_T *literal = calloc(1, sizeof(Literal_T));
+			Literal *literal = calloc(1, sizeof(Literal));
 			if (literal == NULL) {
 				free(unary_expr);
 				log_error("expectUnaryExpression(): calloc failed\n");
@@ -1511,7 +1510,7 @@ Expression_T *expectUnaryExpression() {
 					strcat(literal->value, current->data);
 					next();
 
-					Expression_T *expr = calloc(1, sizeof(Expression_T));
+					Expression *expr = calloc(1, sizeof(Expression));
 					if (expr == NULL) {
 						free(unary_expr);
 						free(literal);
@@ -1520,7 +1519,7 @@ Expression_T *expectUnaryExpression() {
 					}
 
 					expr->type = EXPRESSION_TYPE_LITERAL;
-					expr->expr.literal_expr = literal;
+					expr->expr.literal = literal;
 					
 					return expr;
 				}
@@ -1536,7 +1535,7 @@ Expression_T *expectUnaryExpression() {
 
 			unary_expr->identifier = literal;
 
-			Expression_T *expr = calloc(1, sizeof(Expression_T));
+			Expression *expr = calloc(1, sizeof(Expression));
 			if (expr == NULL) {
 				free(unary_expr);
 				free(literal);
@@ -1545,12 +1544,12 @@ Expression_T *expectUnaryExpression() {
 			}
 
 			expr->type = EXPRESSION_TYPE_UNARY;
-			expr->expr.unary_expr = unary_expr;
+			expr->expr.unary = unary_expr;
 
 			return expr;
 		} // case TOKEN_MINUS
 		case TOKEN_INCREMENT: {
-			UnaryExpression_T *unary_expr = calloc(1, sizeof(UnaryExpression_T));
+			UnaryExpression *unary_expr = calloc(1, sizeof(UnaryExpression));
 			if (unary_expr == NULL) {
 				log_error("expectUnaryExpression(): calloc failed\n");
 				exit(1);
@@ -1564,7 +1563,7 @@ Expression_T *expectUnaryExpression() {
 				exit(1);
 			}
 
-			Literal_T *literal = calloc(1, sizeof(Literal_T));
+			Literal *literal = calloc(1, sizeof(Literal));
 			if (literal == NULL) {
 				free(unary_expr);
 				log_error("expectUnaryExpression(): calloc failed\n");
@@ -1578,7 +1577,7 @@ Expression_T *expectUnaryExpression() {
 
 			unary_expr->identifier = literal;
 
-			Expression_T *expr = calloc(1, sizeof(Expression_T));
+			Expression *expr = calloc(1, sizeof(Expression));
 			if (expr == NULL) {
 				free(unary_expr);
 				free(literal);
@@ -1587,7 +1586,7 @@ Expression_T *expectUnaryExpression() {
 			}
 
 			expr->type = EXPRESSION_TYPE_UNARY;
-			expr->expr.unary_expr = unary_expr;
+			expr->expr.unary = unary_expr;
 
 			return expr;
 		}
@@ -1597,16 +1596,16 @@ Expression_T *expectUnaryExpression() {
 	}
 }
 
-Expression_T *expectPostfixExpression() {
+Expression *expectPostfixExpression() {
 	switch (lookahead->type) {
 		case TOKEN_LPAREN: {
-			Expression_T *expr = calloc(1, sizeof(Expression_T));
+			Expression *expr = calloc(1, sizeof(Expression));
 			if (expr == NULL) {
-				log_error("calloc failed: unable to allocate memory for Expression_T\n");
+				log_error("calloc failed: unable to allocate memory for Expression\n");
 				return NULL;
 			}
 
-			FunctionCallExpression_T *func_call_expr = calloc(1, sizeof(FunctionCallExpression_T));
+			FunctionCallExpression *func_call_expr = calloc(1, sizeof(FunctionCallExpression));
 			if (func_call_expr == NULL) {
 				free(expr);
 				log_error("calloc failed: unable to allocate memory for FunctionCallExpression_T\n");
@@ -1614,7 +1613,7 @@ Expression_T *expectPostfixExpression() {
 			}
 
 			expr->type = EXPRESSION_TYPE_FUNCTION_CALL;
-			expr->expr.func_call_expr = func_call_expr;
+			expr->expr.function_call = func_call_expr;
 
 			func_call_expr->function_identifier = calloc(strlen(current->data), sizeof(char));
 			strcpy(func_call_expr->function_identifier, current->data);
@@ -1624,24 +1623,24 @@ Expression_T *expectPostfixExpression() {
 
 			if (is(TOKEN_RPAREN)) {
 				// no arguments specified
-				func_call_expr->argument_expression_list = calloc(1, sizeof(ExpressionList_T));
+				func_call_expr->argument_expression_list = calloc(1, sizeof(ExpressionList));
 				if (func_call_expr->argument_expression_list == NULL) {
 					free(func_call_expr);
 					free(expr);
-					log_error("calloc failed: unable to allocate memory for ExpressionList_T\n");
+					log_error("calloc failed: unable to allocate memory for ExpressionList\n");
 					return NULL;
 				}
 				func_call_expr->argument_expression_list->expressions = arraylist_create();
 			} else {
 				// arguments specified
-				Expression_T *argument_expr_list = expectExpressionList();
+				Expression *argument_expr_list = expectExpressionList();
 				if (argument_expr_list == NULL) {
 					free(func_call_expr);
 					free(expr);
 					log_error("expectExpressionList() failed\n");
 					return NULL;
 				}
-				func_call_expr->argument_expression_list = argument_expr_list->expr.list_expr;
+				func_call_expr->argument_expression_list = argument_expr_list->expr.list;
 			}
 
 			eat(TOKEN_RPAREN);
@@ -1649,13 +1648,13 @@ Expression_T *expectPostfixExpression() {
 			return expr;
 		}
 		case TOKEN_LBRACKET: {
-			Expression_T *expr = calloc(1, sizeof(Expression_T));
+			Expression *expr = calloc(1, sizeof(Expression));
 			if (expr == NULL) {
-				log_error("calloc failed: unable to allocate memory for Expression_T\n");
+				log_error("calloc failed: unable to allocate memory for Expression\n");
 				return NULL;
 			}
 
-			ArrayAccessExpression_T *array_access_expr = calloc(1, sizeof(ArrayAccessExpression_T));
+			ArrayAccessExpression *array_access_expr = calloc(1, sizeof(ArrayAccessExpression));
 			if (array_access_expr == NULL) {
 				free(expr);
 				log_error("calloc failed: unable to allocate memory for ArrayAccessExpression_T\n");
@@ -1663,9 +1662,9 @@ Expression_T *expectPostfixExpression() {
 			}
 
 			expr->type = EXPRESSION_TYPE_ARRAY_ACCESS;
-			expr->expr.array_access_expr = array_access_expr;
+			expr->expr.array_access = array_access_expr;
 
-			array_access_expr->identifier = calloc(1, sizeof(Literal_T));
+			array_access_expr->identifier = calloc(1, sizeof(Literal));
 			if (array_access_expr->identifier == NULL) {
 				free(expr);
 				free(array_access_expr);
@@ -1680,7 +1679,7 @@ Expression_T *expectPostfixExpression() {
 
 			eat(TOKEN_LBRACKET);
 
-			Expression_T *index_expr = expectExpression();
+			Expression *index_expr = expectExpression();
 			if (index_expr == NULL) {
 				expression_free(expr);
 				return NULL;
@@ -1693,13 +1692,13 @@ Expression_T *expectPostfixExpression() {
 			return expr;
 		}
 		case TOKEN_DOT: {
-			Expression_T *expr = calloc(1, sizeof(Expression_T));
+			Expression *expr = calloc(1, sizeof(Expression));
 			if (expr == NULL) {
-				log_error("calloc failed: unable to allocate memory for Expression_T\n");
+				log_error("calloc failed: unable to allocate memory for Expression\n");
 				return NULL;
 			}
 
-			MemberAccessExpression_T *member_access_expr = calloc(1, sizeof(MemberAccessExpression_T));
+			MemberAccessExpression *member_access_expr = calloc(1, sizeof(MemberAccessExpression));
 			if (member_access_expr == NULL) {
 				free(expr);
 				log_error("calloc failed: unable to allocate memory for MemberAccessExpression_T\n");
@@ -1707,10 +1706,16 @@ Expression_T *expectPostfixExpression() {
 			}
 
 			expr->type = EXPRESSION_TYPE_MEMBER_ACCESS;
-			expr->expr.member_access_expr = member_access_expr;
+			expr->expr.member_access = member_access_expr;
 
-			// member_access_expr->identifier_old = expectPrimaryExpression();
-			member_access_expr->identifier = eatIdentifier();
+			// FIXME: this would end in an infinite loop, bacause the lookahead
+			// token will always be the dot
+			// but it needs to expect a postfix expression (example: a[0].b)
+			// a[0] is the identifer expression, and .b is the member access expression
+			// but a[0] is a postfix expression
+			// TODO: solve this without ending in an infinite loop
+			// member_access_expr->identifier = expectPostfixExpression();
+			member_access_expr->identifier = expectPrimaryExpression();
 
 			eat(TOKEN_DOT);
 
@@ -1724,37 +1729,37 @@ Expression_T *expectPostfixExpression() {
 	}
 }
 
-Expression_T *expectPrimaryExpression() {
-	Expression_T *expression = calloc(1, sizeof(Expression_T));
+Expression *expectPrimaryExpression() {
+	Expression *expression = calloc(1, sizeof(Expression));
 	if (expression == NULL) {
-		log_error("calloc failed: unable to allocate memory for Expression_T\n");
+		log_error("calloc failed: unable to allocate memory for Expression\n");
 		return NULL;
 	}
 
 	if (is(TOKEN_LPAREN)) {
 		eat(TOKEN_LPAREN);
 		expression->type = EXPRESSION_TYPE_NESTED;
-		Expression_T *expr = expectExpression();
-		if (expr == NULL) {
+		Expression *nested_expression = expectExpression();
+		if (nested_expression == NULL) {
 			free(expression);
 			log_error("expectPrimaryExpression(): calloc failed\n");
 			return NULL;
 		}
 
-		NestedExpression_T *nested_expression = calloc(1, sizeof(NestedExpression_T));
-		if (nested_expression == NULL) {
-			log_error("calloc failed: unable to allocate memory for NestedExpression_T\n");
-			free(expression);
-			free(expr);
-			return NULL;
-		}
+		// NestedExpression_T *nested_expression = calloc(1, sizeof(NestedExpression_T));
+		// if (nested_expression == NULL) {
+		// 	log_error("calloc failed: unable to allocate memory for NestedExpression_T\n");
+		// 	free(expression);
+		// 	free(expr);
+		// 	return NULL;
+		// }
 
-		nested_expression->expression = expr;
-		expression->expr.nested_expr = nested_expression;
+		// nested_expression->expression = expr;
+		expression->expr.nested = nested_expression;
 		eat(TOKEN_RPAREN);
 	} else if (is(TOKEN_IDENTIFIER) || is(TOKEN_NUMBER) || is(TOKEN_STRING) || is(TOKEN_KEYWORD) || is(TOKEN_CHAR)) {
 		expression->type = EXPRESSION_TYPE_LITERAL;
-		Literal_T *literal = calloc(1, sizeof(Literal_T));
+		Literal *literal = calloc(1, sizeof(Literal));
 		// free memory if calloc fails
 		if (literal == NULL) {
 			free(expression);
@@ -1808,7 +1813,7 @@ Expression_T *expectPrimaryExpression() {
 			}
 		}
 		next();
-		expression->expr.literal_expr = literal;
+		expression->expr.literal = literal;
 	} else {
 		log_error("expectPrimaryExpression(): expected nested expression or literal but got %s at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->line, current->pos);
 		exit(1);
@@ -1818,7 +1823,7 @@ Expression_T *expectPrimaryExpression() {
 
 char *eatIdentifier() {
 	if (current->type != TOKEN_IDENTIFIER) {
-		log_error("eatIdentifier(): expected identifier but got %s at [%d:%d]\n", TOKEN_TYPE_NAMES[current->type], current->line, current->pos);
+		printf("%s:%d:%d: " RED "error: " RESET "expected identifier but got %s\n", _filename, current->line, current->pos, TOKEN_TYPE_NAMES[current->type]);
 		return NULL;
 	}
 
@@ -1842,6 +1847,5 @@ bool expectKeyword(const char *keyword) {
 		// log_error("expectKeyword(): expected keyword '%s' but got '%s' at [%d:%d]\n", keyword, current->data, current->line, current->pos);
 		return false;
 	}
-	next();
 	return true;
 }

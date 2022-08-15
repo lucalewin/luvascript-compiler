@@ -18,21 +18,32 @@
 
 bool load_user_defined_types(DataTypeTable *dtt, AST *ast);
 
-bool analyse_ast(DataTypeTable *dtt, AST *ast);
-bool analyse_package(DataTypeTable *dtt, Package *package);
-bool analyse_function(DataTypeTable *dtt, Function *function);
-bool analyse_statement(DataTypeTable *dtt, Statement *statement);
-bool analyse_variable(DataTypeTable *dtt, Variable *variable, Scope *scope);
+bool analyse_ast       (DataTypeTable *dtt, AST *ast);
+bool analyse_package   (DataTypeTable *dtt, Package *package);
+bool analyse_function  (DataTypeTable *dtt, Function *function);
+bool analyse_statement (DataTypeTable *dtt, Statement *statement);
+bool analyse_variable  (DataTypeTable *dtt, Variable *variable, Scope *scope);
 
-DataType *analyse_expression(DataTypeTable *dtt, Expression_T *expression, Scope *scope);
+bool analyse_expression               (DataTypeTable *dtt, Expression *expression,                Scope *scope);
+bool analyse_literal                  (DataTypeTable *dtt, Literal *literal,                      Scope *scope);
+bool analyse_unary_expression         (DataTypeTable *dtt, UnaryExpression *unary,                Scope *scope);
+bool analyse_binary_expression        (DataTypeTable *dtt, BinaryExpression *binary,              Scope *scope);
+bool analyse_function_call_expression (DataTypeTable *dtt, FunctionCallExpression *function_call, Scope *scope);
+bool analyse_assignment_expression    (DataTypeTable *dtt, AssignmentExpression *assignment,      Scope *scope);
+bool analyse_array_access_expression  (DataTypeTable *dtt, ArrayAccessExpression *array_access,   Scope *scope);
+bool analyse_member_access_expression (DataTypeTable *dtt, MemberAccessExpression *member_access, Scope *scope);
+bool analyse_expression_list          (DataTypeTable *dtt, ExpressionList *list,                  Scope *scope);
 
-DataType *analyse_literal_expression(DataTypeTable *dtt, Literal_T *literal_expression, Scope *scope);
-DataType *analyse_unary_expression(DataTypeTable *dtt, UnaryExpression_T *unary_expression, Scope *scope);
-DataType *analyse_binary_expression(DataTypeTable *dtt, BinaryExpression_T *binary_expression, Scope *scope);
-DataType *analyse_assignment_expression(DataTypeTable *dtt, AssignmentExpression_T *assignment_expression, Scope *scope);
-DataType *analyse_function_call_expression(DataTypeTable *dtt, FunctionCallExpression_T *call_expression, Scope *scope);
-DataType *analyse_member_access_expression(DataTypeTable *dtt, MemberAccessExpression_T *member_access_expression, Scope *scope);
-DataType *analyse_array_access_expression(DataTypeTable *dtt, ArrayAccessExpression_T *array_access_expression, Scope *scope);
-DataType *analyse_list_expression(DataTypeTable *dtt, ExpressionList_T *list_expression, Scope *scope);
+
+// DataType *analyse_expression(DataTypeTable *dtt, Expression *expression, Scope *scope);
+
+// DataType *analyse_literal_expression(DataTypeTable *dtt, Literal *literal_expression, Scope *scope);
+// DataType *analyse_unary_expression(DataTypeTable *dtt, UnaryExpression *unary_expression, Scope *scope);
+// DataType *analyse_binary_expression(DataTypeTable *dtt, BinaryExpression *binary_expression, Scope *scope);
+// DataType *analyse_assignment_expression(DataTypeTable *dtt, AssignmentExpression *assignment_expression, Scope *scope);
+// DataType *analyse_function_call_expression(DataTypeTable *dtt, FunctionCallExpression *call_expression, Scope *scope);
+// DataType *analyse_member_access_expression(DataTypeTable *dtt, MemberAccessExpression *member_access_expression, Scope *scope);
+// DataType *analyse_array_access_expression(DataTypeTable *dtt, ArrayAccessExpression *array_access_expression, Scope *scope);
+// DataType *analyse_list_expression(DataTypeTable *dtt, ExpressionList *list_expression, Scope *scope);
 
 #endif

@@ -36,13 +36,13 @@ typedef struct statement {
 	statement_type type;
 	Scope *scope;
 	union {
-		CompoundStatement *compound_statement;
-		ExpressionStatement *expression_statement;
-		ReturnStatement *return_statement;
-		VariableDeclarationStatement *variable_decl;
-		ConditionalStatement *conditional_statement;
-		LoopStatement *loop_statement;
-		AssemblyCodeBlockStatement *assembly_code_block_statement;
+		CompoundStatement *compound;
+		ExpressionStatement *expression;
+		ReturnStatement *_return;
+		VariableDeclarationStatement *variable_declaration;
+		ConditionalStatement *conditional;
+		LoopStatement *loop;
+		AssemblyCodeBlockStatement *assembly;
 	} stmt;
 } Statement;
 
@@ -52,11 +52,11 @@ struct CompoundStatement {
 };
 
 struct ExpressionStatement {
-	Expression_T *expression;
+	Expression *expression;
 };
 
 struct ReturnStatement {
-	Expression_T *expression;
+	Expression *expression;
 };
 
 struct VariableDeclarationStatement {
@@ -64,13 +64,13 @@ struct VariableDeclarationStatement {
 };
 
 struct ConditionalStatement {
-	Expression_T *condition;
+	Expression *condition;
 	Statement *true_branch;
 	Statement *false_branch;
 };
 
 struct LoopStatement {
-	Expression_T *condition;
+	Expression *condition;
 	Statement *body;
 };
 

@@ -3,6 +3,6 @@
 
 #include <parsing/nodes/expression.h>
 
-Expression_T *simplify_expression(Expression_T *expr);
+Expression *simplify_expression(Expression *expr);
 
 #endif // LUVA_x86_64_OPTIMIZER_H

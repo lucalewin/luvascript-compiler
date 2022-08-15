@@ -2,42 +2,28 @@
 #define LUVA_TYPES_FUNCTION_H
 
 #include <util/arraylist.h>
+#include <types/datatype.h>
 #include <parsing/nodes/statement.h>
-#include <parsing/nodes/datatypes.h>
+#include <parsing/nodes/variable.h>
 
 typedef struct _function {
+	char *identifier;      // the funtion name
+	DataType *return_type; // the return type of the function
+	unsigned int id;       // the id of the function
+	ArrayList *parameters; // ArrayList<Variable>
+	ArrayList *statements; // ArrayList<Statement>
+	Scope *scope;          // the scope of the function
 
-	char *identifier;
-	char *return_type;
-	unsigned long long int id;
-	ArrayList *parameters;
-	ArrayList *statements;
-	Scope *scope;
+	unsigned int is_extern : 1;   // 1, if function was declared as extern
+	unsigned int is_imported : 1; // 1, if function was imported from another file
 
-	unsigned int is_extern : 1;
-	unsigned int is_imported : 1;
-
-	// DatatypeOLD *return_typeOLD;
+	// node info
+	char *filename;
+	int line;
+	int column;
 } Function;
 
-typedef struct _func_template {
-	char *identifier;
-	char *return_type;
-	unsigned long long int id;
-	ArrayList *parameter_types;
-
-	unsigned int is_extern : 1;
-	unsigned int is_imported : 1;
-
-	// DatatypeOLD *return_typeOLD;
-} FunctionTemplate;
-
-FunctionTemplate *convert_to_function_template(Function *function);
-FunctionTemplate *copy_function_template(FunctionTemplate *template_function);
-
-char *function_to_lcc_identifier(FunctionTemplate *function_template);
-
+Function *function_new();
 void function_free(Function *function);
-void function_template_free(FunctionTemplate *template);
 
 #endif // LUVA_TYPES_FUNCTION_H

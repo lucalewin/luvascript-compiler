@@ -84,7 +84,7 @@ ArrayList *parse_header(ArrayList *tokens);
 
 Package *parse(ArrayList *tokens, const char *filename);
 
-FunctionTemplate *expectExternFunctionTemplate();
+Function *expectExternFunction();
 Function *expectFunction();
 
 // statements
@@ -97,25 +97,25 @@ Statement *expectConditionalStatement();
 Statement *expectLoopStatement();
 
 // expressions
-Expression_T *expectExpressionList();
-Expression_T *expectExpression();
-Expression_T *expectAssignmentExpression();
-Expression_T *expectConditionalExpression();
-Expression_T *expectLogicalOrExpression();
-Expression_T *expectLogicalAndExpression();
-Expression_T *expectBitwiseOrExpression();
-Expression_T *expectBitwiseXorExpression();
-Expression_T *expectBitwiseAndExpression();
-Expression_T *expectEqualitiyExpression();
-Expression_T *expectRelationalExpression();
-Expression_T *expectShiftExpression();
-Expression_T *expectAdditiveExpression();
-Expression_T *expectMultiplicativeExpression();
-Expression_T *expectUnaryExpression();
-Expression_T *expectPostfixExpression();
-Expression_T *expectPrimaryExpression();
+Expression *expectExpressionList();
+Expression *expectExpression();
+Expression *expectAssignmentExpression();
+Expression *expectConditionalExpression();
+Expression *expectLogicalOrExpression();
+Expression *expectLogicalAndExpression();
+Expression *expectBitwiseOrExpression();
+Expression *expectBitwiseXorExpression();
+Expression *expectBitwiseAndExpression();
+Expression *expectEqualitiyExpression();
+Expression *expectRelationalExpression();
+Expression *expectShiftExpression();
+Expression *expectAdditiveExpression();
+Expression *expectMultiplicativeExpression();
+Expression *expectUnaryExpression();
+Expression *expectPostfixExpression();
+Expression *expectPrimaryExpression();
 
 // literals
-Literal_T *expectLiteral();
+Literal *expectLiteral();
 
 #endif

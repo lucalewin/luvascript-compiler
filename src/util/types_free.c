@@ -15,67 +15,11 @@
 #include <util/logging/logger.h>
 
 /**
- * @brief free an expression
- * 
- * @param expression the expression to free
- */
-void expression_free(Expression_T *expression) {
-	if (expression == NULL) {
-		return;
-	}
-
-	switch (expression->type) {
-		case EXPRESSION_TYPE_LITERAL:
-			literal_free(expression->expr.literal_expr);
-			break;
-		case EXPRESSION_TYPE_UNARY:
-			literal_free(expression->expr.unary_expr->identifier);
-			break;
-		case EXPRESSION_TYPE_BINARY:
-			expression_free(expression->expr.binary_expr->expression_left);
-			expression_free(expression->expr.binary_expr->expression_right);
-			break;
-		case EXPRESSION_TYPE_NESTED:
-			expression_free(expression->expr.nested_expr->expression);
-			break;
-		case EXPRESSION_TYPE_FUNCTION_CALL:
-			free(expression->expr.func_call_expr->function_identifier);
-			for (size_t i = 0; i < expression->expr.func_call_expr->argument_expression_list->expressions->size; i++) {
-				Expression_T *argument = arraylist_get(expression->expr.func_call_expr->argument_expression_list->expressions, i);
-				expression_free(argument);
-			}
-			break;
-		case EXPRESSION_TYPE_ASSIGNMENT:
-			expression_free(expression->expr.assignment_expr->identifier);
-			expression_free(expression->expr.assignment_expr->assignment_value);
-			break;
-		case EXPRESSION_TYPE_ARRAY_ACCESS:
-			literal_free(expression->expr.array_access_expr->identifier);
-			expression_free(expression->expr.array_access_expr->index_expression);
-			break;
-		case EXPRESSION_TYPE_MEMBER_ACCESS:
-			expression_free(expression->expr.member_access_expr->identifier_old);
-			free(expression->expr.member_access_expr->member_identifier);
-			break;
-		case EXPRESSION_TYPE_LIST:
-			for (size_t i = 0; i < expression->expr.list_expr->expressions->size; i++) {
-				Expression_T *expr = arraylist_get(expression->expr.list_expr->expressions, i);
-				expression_free(expr);
-			}
-			arraylist_free(expression->expr.list_expr->expressions);
-			free(expression->expr.list_expr);
-			break;
-	}
-
-	free(expression);
-}
-
-/**
  * @brief free a literal
  * 
  * @param literal the literal to free
  */
-void literal_free(Literal_T *literal) {
+void literal_free(Literal *literal) {
 	free(literal->value);
 	free(literal);
 }
@@ -90,38 +34,38 @@ void statement_free(Statement *statement) {
 
 	switch (statement->type) {
 		case STATEMENT_COMPOUND:
-			for (size_t i = 0; i < statement->stmt.compound_statement->nested_statements->size; i++) {
-				Statement *stmt = arraylist_get(statement->stmt.compound_statement->nested_statements, i);
+			for (size_t i = 0; i < statement->stmt.compound->nested_statements->size; i++) {
+				Statement *stmt = arraylist_get(statement->stmt.compound->nested_statements, i);
 				statement_free(stmt);
 			}
-			scope_free(statement->stmt.compound_statement->local_scope);
+			scope_free(statement->stmt.compound->local_scope);
 			break;
 		case STATEMENT_EXPRESSION:
-			expression_free(statement->stmt.expression_statement->expression);
-			free(statement->stmt.expression_statement);
+			expression_free(statement->stmt.expression->expression);
+			free(statement->stmt.expression);
 			break;
 		case STATEMENT_RETURN:
-			expression_free(statement->stmt.return_statement->expression);
-			free(statement->stmt.return_statement);
+			expression_free(statement->stmt._return->expression);
+			free(statement->stmt._return);
 			break;
 		case STATEMENT_VARIABLE_DECLARATION:
-			variable_free(statement->stmt.variable_decl->variable);
-			free(statement->stmt.variable_decl);
+			variable_free(statement->stmt.variable_declaration->variable);
+			free(statement->stmt.variable_declaration);
 			break;
 		case STATEMENT_CONDITIONAL:
-			expression_free(statement->stmt.conditional_statement->condition);
-			statement_free(statement->stmt.conditional_statement->true_branch);
-			if (statement->stmt.conditional_statement->false_branch != NULL) {
-				statement_free(statement->stmt.conditional_statement->false_branch);
+			expression_free(statement->stmt.conditional->condition);
+			statement_free(statement->stmt.conditional->true_branch);
+			if (statement->stmt.conditional->false_branch != NULL) {
+				statement_free(statement->stmt.conditional->false_branch);
 			}
 			break;
 		case STATEMENT_LOOP:
-			expression_free(statement->stmt.loop_statement->condition);
-			statement_free(statement->stmt.loop_statement->body);
+			expression_free(statement->stmt.loop->condition);
+			statement_free(statement->stmt.loop->body);
 			break;
 		case STATEMENT_ASSEMBLY_CODE_BLOCK:
-			free(statement->stmt.assembly_code_block_statement->code);
-			free(statement->stmt.assembly_code_block_statement);
+			free(statement->stmt.assembly->code);
+			free(statement->stmt.assembly);
 			break;
 	}
 

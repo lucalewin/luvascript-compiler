@@ -54,8 +54,8 @@ void package_free(Package *package) {
 	}
 
 	for (size_t i = 0; i < package->extern_functions->size; i++) {
-		FunctionTemplate *function_template = arraylist_get(package->extern_functions, i);
-		function_template_free(function_template);
+		Function *function = arraylist_get(package->extern_functions, i);
+		function_free(function);
 	}
 
 	for (size_t i = 0; i < package->global_variables->size; i++) {
@@ -65,18 +65,18 @@ void package_free(Package *package) {
 
 	// free imported functions and variables
 	for (size_t i = 0; i < package->imported_functions->size; i++) {
-		FunctionTemplate *function = arraylist_get(package->imported_functions, i);
-		function_template_free(function);
+		Function *function = arraylist_get(package->imported_functions, i);
+		function_free(function);
 	}
 
 	for (size_t i = 0; i < package->imported_global_variables->size; i++) {
-		VariableTemplate *variable = arraylist_get(package->imported_global_variables, i);
-		variable_template_free(variable);
+		Variable *variable = arraylist_get(package->imported_global_variables, i);
+		variable_free(variable);
 	}
 
 	// free enum definitions
 	for (size_t i = 0; i < package->enum_definitions->size; i++) {
-		EnumDefinition *enum_definition = arraylist_get(package->enum_definitions, i);
+		Enum *enum_definition = arraylist_get(package->enum_definitions, i);
 		enum_definition_free(enum_definition);
 	}
 }

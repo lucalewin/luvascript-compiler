@@ -1,20 +1,21 @@
 #ifndef LUVA_EXPRESSION_H
 #define LUVA_EXPRESSION_H
 
+#include <types/datatype.h>
 #include <parsing/nodes/operator.h>
 #include <parsing/nodes/literal.h>
 #include <util/arraylist.h>
 
 typedef enum ExpressionType ExpressionType;
-typedef struct Expression Expression_T;
-typedef struct UnaryExpression UnaryExpression_T;
-typedef struct BinaryExpression BinaryExpression_T;
-typedef struct NestedExpression NestedExpression_T;
-typedef struct FunctionCallExpression FunctionCallExpression_T;
-typedef struct AssignmentExpression AssignmentExpression_T;
-typedef struct ArrayAccessExpression ArrayAccessExpression_T;
-typedef struct MemberAccessExpression MemberAccessExpression_T;
-typedef struct ExpressionList ExpressionList_T;
+
+typedef struct _expression                 Expression;
+typedef struct _unary_expression           UnaryExpression;
+typedef struct _binary_expression          BinaryExpression;
+typedef struct _function_call_expression   FunctionCallExpression;
+typedef struct _assignment_expression      AssignmentExpression;
+typedef struct _array_access_expression    ArrayAccessExpression;
+typedef struct _member_access_expression   MemberAccessExpression;
+typedef struct _expression_list            ExpressionList;
 
 enum ExpressionType {
     EXPRESSION_TYPE_LITERAL,
@@ -28,67 +29,73 @@ enum ExpressionType {
 	EXPRESSION_TYPE_LIST,
 };
 
-struct Expression {
+struct _expression {
     ExpressionType type;
 
     union {
-        Literal_T *literal_expr;
-        UnaryExpression_T *unary_expr;
-        BinaryExpression_T *binary_expr;
-        NestedExpression_T *nested_expr;
-		FunctionCallExpression_T *func_call_expr;
-		AssignmentExpression_T *assignment_expr;
-		ArrayAccessExpression_T *array_access_expr;
-		MemberAccessExpression_T *member_access_expr;
-		ExpressionList_T *list_expr;
+        Literal *literal;
+        UnaryExpression *unary;
+        BinaryExpression *binary;
+		Expression *nested;
+		FunctionCallExpression *function_call;
+		AssignmentExpression *assignment;
+		ArrayAccessExpression *array_access;
+		MemberAccessExpression *member_access;
+		ExpressionList *list;
     } expr;
 };
 
-struct UnaryExpression {
-    Literal_T *identifier;
-    UnaryOperator_T operator;
+struct _unary_expression {
+    Literal *identifier;
+    UnaryOperator operator;
+	DataType *datatype;
 };
 
-struct BinaryExpression {
-    Expression_T *expression_left;
+struct _binary_expression {
+    Expression *left;
     BinaryOperator operator;
-    Expression_T *expression_right;
+    Expression *right;
+	DataType *datatype;
 };
 
-struct NestedExpression {
-    Expression_T *expression;
-};
-
-struct FunctionCallExpression {
+struct _function_call_expression {
 	char *function_identifier;
 	unsigned long long int id;
-	ExpressionList_T *argument_expression_list;
+	ExpressionList *argument_expression_list;
 	ArrayList *argument_datatypes;
+	DataType *datatype;
 };
 
-struct AssignmentExpression {
-	Expression_T *identifier;
-	AssignmentOperator_T operator;
-	Expression_T *assignment_value;
+struct _assignment_expression {
+	Expression *identifier;
+	AssignmentOperator operator;
+	Expression *assignment_value;
+	DataType *datatype;
 };
 
-struct MemberAccessExpression {
-	Expression_T *identifier_old;
-	char *identifier;
+struct _member_access_expression {
+	// char *identifier;
+	Expression *identifier;
 	char *member_identifier;
+	DataType *datatype;
 };
 
-struct ArrayAccessExpression {
-	Literal_T *identifier;
-	Expression_T *index_expression;
+struct _array_access_expression {
+	Literal *identifier;
+	Expression *index_expression;
+	DataType *datatype;
 };
 
-struct ExpressionList {
+struct _expression_list {
 	ArrayList *expressions;
+	DataType *datatype;
 };
 
 extern const char *EXPRESSION_TYPES[];
 
-void expression_free(Expression_T *expression);
+Expression *expression_new(ExpressionType type);
+void expression_free(Expression *expression);
+
+DataType *expression_get_datatype(Expression *expression);
 
 #endif // LUVA_EXPRESSION_H

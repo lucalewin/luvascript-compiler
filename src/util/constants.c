@@ -78,13 +78,13 @@ const char *EXPRESSION_TYPES[] = {
 };
 
 const char* STATEMENT_TYPES[] = {
-	[STATEMENT_COMPOUND] = "compound_statement",
-	[STATEMENT_EXPRESSION] = "expression_statement",
+	[STATEMENT_COMPOUND] = "compound",
+	[STATEMENT_EXPRESSION] = "expression",
 	[STATEMENT_RETURN] = "return_statement",
 	[STATEMENT_VARIABLE_DECLARATION] = "variable_declaration_statement",
 	[STATEMENT_CONDITIONAL] = "conditional_statement",
-	[STATEMENT_LOOP] = "loop_statement",
-	[STATEMENT_ASSEMBLY_CODE_BLOCK] = "assembly_code_block_statement",
+	[STATEMENT_LOOP] = "loop",
+	[STATEMENT_ASSEMBLY_CODE_BLOCK] = "assembly",
 };
 
 const char *BINARY_OPERATOR_TYPES[] = {

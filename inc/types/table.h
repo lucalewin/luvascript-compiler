@@ -16,7 +16,4 @@ bool data_type_table_contains(DataTypeTable *table, char *type_identifier);
 bool data_type_table_isPrimitive(DataTypeTable *table, char *type_type_identifier);
 DataType *data_type_table_get(DataTypeTable *table, char *type_identifier);
 
-extern DataType PRIMITIVE_DATA_TYPES[];
-extern const unsigned int PRIMITIVE_DATA_TYPES_COUNT;
-
 #endif // __LUVASCRIPT_TYPES_TABLE_H__

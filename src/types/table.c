@@ -4,29 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-DataType PRIMITIVE_DATA_TYPES[] = {
-    { "void", 0, DATA_TYPE_VOID, false, false, 0 },
-    { "bool", 1, DATA_TYPE_BOOL, false, false, 0 },
-
-    { "i8",  1, DATA_TYPE_INT, false, false, 0 },
-    { "i16", 2, DATA_TYPE_INT, false, false, 0 },
-    { "i32", 4, DATA_TYPE_INT, false, false, 0 },
-    { "i64", 8, DATA_TYPE_INT, false, false, 0 },
-
-    { "u8",  1, DATA_TYPE_UNSIGNED_INT, false, false, 0 },
-    { "u16", 2, DATA_TYPE_UNSIGNED_INT, false, false, 0 },
-    { "u32", 4, DATA_TYPE_UNSIGNED_INT, false, false, 0 },
-    { "u64", 8, DATA_TYPE_UNSIGNED_INT, false, false, 0 },
-
-    { "f32", 4, DATA_TYPE_FLOAT, false, false, 0 },
-    { "f64", 8, DATA_TYPE_FLOAT, false, false, 0 },
-
-    { "char", 1, DATA_TYPE_CHAR, false, false, 0 },
-    { "string", 1, DATA_TYPE_CHAR, true, false, 0 },
-};
-
-const unsigned int PRIMITIVE_DATA_TYPES_COUNT = sizeof(PRIMITIVE_DATA_TYPES) / sizeof(DataType);
-
 struct _data_type_table {
     ArrayList *data_types;
 };
@@ -58,11 +35,13 @@ bool data_type_table_add(DataTypeTable *table, char *type_identifier, unsigned i
     }
     
     if (data_type_table_contains(table, type_identifier)) {
-        return false;
+        return true;
     }
     
-    DataType *datatype = data_type_new(type_identifier, size, type, false, false, 0);
+    DataType *datatype = data_type_init(type_identifier, size, type, false, false, 0, 0);
+    // DataType *datatype = data_type_parse(type_identifier);
     arraylist_add(table->data_types, datatype);
+    
     return true;
 }
 
