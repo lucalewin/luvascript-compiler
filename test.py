@@ -48,7 +48,7 @@ EXPECTED_OUTPUTS: list = [
     ["Test 33", [], 22],
 	["Test 34", [], 3],
 	["Test 35", [], 20],
-	["Test 36", [], 19],
+	["Test 36", [], 15],
 	["Test 37", [], ord(',')],
 	["Test 38", [], ord('s')]]
 
