@@ -177,7 +177,7 @@ void add__start_function(FunctionTemplate *main_func_template) {
 	ADD_INST("call", main_func_lcc_identifier);
 	ADD_INST("mov", "rdi", "rax");
 	ADD_INST("mov", "rax", "60");
-	ADD_INST("syscall");
+	ADD_INST("syscall", "");
 	free(main_func_lcc_identifier);
 }
 
@@ -469,10 +469,10 @@ bool evaluate_function(Function *function) {
 	// end of function: return (if function is void)
 	if (strcmp(function->return_type->type_identifier, "void") == 0) {
 		if (setup_stack_frame) {
-			ADD_INST("leave");
+			ADD_INST("leave", "");
 			// TODO: clear stack
 		}
-		ADD_INST("ret");
+		ADD_INST("ret", "");
 	}
 
 	register_layout_free(register_layout);
@@ -664,10 +664,10 @@ bool generate_return_statement(ReturnStatement *return_statement, Scope *scope) 
 	}
 
 	if (setup_stack_frame) {
-		ADD_INST("leave");
+		ADD_INST("leave", "");
 	}
 
-	ADD_INST("ret");
+	ADD_INST("ret", "");
 
 	return true;
 }
@@ -769,7 +769,7 @@ bool generate_assembly_code_block_statement(AssemblyCodeBlockStatement *assembly
 	// (3) check if line is empty
 	// (4) add line as instruction
 
-	ADD_INST(assembly_code_block->code);
+	ADD_INST(assembly_code_block->code, "");
 
 	return true;
 }
