@@ -3,7 +3,7 @@
 # Luvascript Compiler
 
 This repo contains the code for the Luvascript Compiler. <br>
-For more information, please visit the [Documentation](https://lucr4ft.github.io/luvascript-compiler/)
+For more information, please visit the [Documentation](https://lucalewin.github.io/luvascript-compiler/)
 
 ### Limitations
 The compiler
